@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 
-interface DagSummaryCardsProps {
+interface PipelineSummaryCardsProps {
   dateRange?: { start: Date; end: Date };
   refreshKey: number;
 }
 
-interface SummaryData {
+interface PipelineSummary {
   dataQuality: { total: number; success: number; failed: number };
   reconciliation: { total: number; success: number; failed: number };
   bronze: { total: number; success: number; failed: number };
@@ -13,14 +13,14 @@ interface SummaryData {
   gold: { total: number; success: number; failed: number };
 }
 
-import { useDAGSummary } from "@/hooks/use-dashboard-data";
+import { usePipelineSummary } from "@/hooks/use-dashboard-data";
 
-export default function DagSummaryCards({ dateRange, refreshKey }: DagSummaryCardsProps) {
-  const { data: summary, isLoading } = useDAGSummary(dateRange, refreshKey);
+export default function PipelineSummaryCards({ dateRange, refreshKey }: PipelineSummaryCardsProps) {
+  const { data: summary, isLoading } = usePipelineSummary(dateRange, refreshKey);
 
   const categories = [
     {
-      title: "Data Quality DAGs",
+      title: "Data Quality Pipelines",
       data: summary?.dataQuality || { total: 0, success: 0, failed: 0 },
       testId: "card-data-quality",
     },

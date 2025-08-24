@@ -1,12 +1,12 @@
 import { users, auditTable, errorTable, type User, type InsertUser, type AuditRecord, type ErrorRecord } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count, and, like, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, count, desc, asc, like, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Dashboard metrics
   getDashboardMetrics(dateRange?: { start: Date; end: Date }): Promise<{
     totalPipelines: number;
@@ -15,18 +15,18 @@ export interface IStorage {
     scheduledRuns: number;
     runningRuns: number;
   }>;
-  
-  // DAG summary by category
-  getDAGSummary(dateRange?: { start: Date; end: Date }): Promise<{
+
+  // Pipeline summary by category
+  getPipelineSummary(dateRange?: { start: Date; end: Date }): Promise<{
     dataQuality: { total: number; success: number; failed: number };
     reconciliation: { total: number; success: number; failed: number };
     bronze: { total: number; success: number; failed: number };
     silver: { total: number; success: number; failed: number };
     gold: { total: number; success: number; failed: number };
   }>;
-  
-  // DAG runs with filtering and pagination
-  getDAGRuns(options: {
+
+  // Pipeline runs with filtering and pagination
+  getPipelineRuns(options: {
     page?: number;
     limit?: number;
     search?: string;
@@ -39,19 +39,20 @@ export interface IStorage {
   }): Promise<{
     data: Array<{
       auditKey: number;
-      dagName: string;
+      pipelineName: string;
       runId: string;
       layer: string;
       status: string;
       lastRun: Date;
       owner: string;
       duration?: number;
+      errorMessage?: string;
     }>;
     total: number;
     page: number;
     limit: number;
   }>;
-  
+
   // Error logs
   getErrors(dateRange?: { start: Date; end: Date }): Promise<ErrorRecord[]>;
 }
@@ -89,7 +90,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const results = await query.groupBy(auditTable.status);
-    
+
     const metrics = {
       totalPipelines: 0,
       successfulRuns: 0,
@@ -101,9 +102,9 @@ export class DatabaseStorage implements IStorage {
     results.forEach(result => {
       const status = result.status?.toLowerCase();
       const count = result.count;
-      
+
       metrics.totalPipelines += count;
-      
+
       if (status === 'success') {
         metrics.successfulRuns += count;
       } else if (status === 'failed') {
@@ -118,7 +119,7 @@ export class DatabaseStorage implements IStorage {
     return metrics;
   }
 
-  async getDAGSummary(dateRange?: { start: Date; end: Date }) {
+  async getPipelineSummary(dateRange?: { start: Date; end: Date }) {
     let query = db.select({
       codeName: auditTable.codeName,
       status: auditTable.status,
@@ -133,7 +134,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const results = await query.groupBy(auditTable.codeName, auditTable.status);
-    
+
     const summary = {
       dataQuality: { total: 0, success: 0, failed: 0 },
       reconciliation: { total: 0, success: 0, failed: 0 },
@@ -146,9 +147,9 @@ export class DatabaseStorage implements IStorage {
       const codeName = result.codeName?.toLowerCase() || '';
       const status = result.status?.toLowerCase();
       const count = result.count;
-      
+
       let category: keyof typeof summary;
-      
+
       if (codeName.includes('quality')) {
         category = 'dataQuality';
       } else if (codeName.includes('reconciliation')) {
@@ -163,9 +164,9 @@ export class DatabaseStorage implements IStorage {
         // Default to bronze for unspecified layers
         category = 'bronze';
       }
-      
+
       summary[category].total += count;
-      
+
       if (status === 'success') {
         summary[category].success += count;
       } else if (status === 'failed') {
@@ -176,7 +177,7 @@ export class DatabaseStorage implements IStorage {
     return summary;
   }
 
-  async getDAGRuns(options: {
+  async getPipelineRuns(options: {
     page?: number;
     limit?: number;
     search?: string;
@@ -198,16 +199,19 @@ export class DatabaseStorage implements IStorage {
       sortBy = 'startTime',
       sortOrder = 'desc'
     } = options;
-    
+
     let query = db.select({
       auditKey: auditTable.auditKey,
-      dagName: auditTable.codeName,
+      pipelineName: auditTable.codeName,
       runId: auditTable.runId,
       status: auditTable.status,
       startTime: auditTable.startTime,
       endTime: auditTable.endTime,
       sourceSystem: auditTable.sourceSystem,
-    }).from(auditTable);
+      errorMessage: sql<string>`MAX(${errorTable.errorMessage})`
+    }).from(auditTable)
+      .leftJoin(errorTable, eq(auditTable.auditKey, errorTable.auditKey));
+
 
     const conditions = [];
 
@@ -215,8 +219,16 @@ export class DatabaseStorage implements IStorage {
       conditions.push(like(auditTable.codeName, `%${search}%`));
     }
 
+    if (layer && layer !== 'all') {
+      conditions.push(eq(auditTable.layer, layer));
+    }
+
     if (status && status !== 'all') {
       conditions.push(eq(auditTable.status, status.toUpperCase()));
+    }
+
+    if (owner) {
+      conditions.push(like(auditTable.owner, `%${owner}%`));
     }
 
     if (dateRange) {
@@ -231,7 +243,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Add sorting
-    const sortColumn = sortBy === 'dagName' ? auditTable.codeName :
+    const sortColumn = sortBy === 'pipelineName' ? auditTable.codeName :
                       sortBy === 'status' ? auditTable.status :
                       sortBy === 'lastRun' ? auditTable.startTime :
                       auditTable.startTime;
@@ -241,6 +253,9 @@ export class DatabaseStorage implements IStorage {
     } else {
       query = query.orderBy(sortColumn);
     }
+
+    // Group by auditKey to get the latest error message per run
+    query = query.groupBy(auditTable.auditKey, auditTable.codeName, auditTable.runId, auditTable.status, auditTable.startTime, auditTable.endTime, auditTable.sourceSystem);
 
     // Get total count
     const countQuery = db.select({ count: count() }).from(auditTable);
@@ -255,14 +270,15 @@ export class DatabaseStorage implements IStorage {
 
     const data = results.map(row => ({
       auditKey: row.auditKey,
-      dagName: row.dagName || 'Unknown DAG',
+      pipelineName: row.pipelineName || 'Unknown Pipeline',
       runId: row.runId || '',
-      layer: this.getLayerFromCodeName(row.dagName || ''),
+      layer: this.getLayerFromCodeName(row.pipelineName || ''),
       status: row.status || 'Unknown',
       lastRun: row.startTime || new Date(),
-      owner: this.getOwnerFromSystem(row.sourceSystem || ''),
-      duration: row.endTime && row.startTime ? 
+      owner: row.owner || this.getOwnerFromSystem(row.sourceSystem || ''),
+      duration: row.endTime && row.startTime ?
         Math.round((row.endTime.getTime() - row.startTime.getTime()) / 1000) : undefined,
+      errorMessage: row.errorMessage || undefined,
     }));
 
     return {

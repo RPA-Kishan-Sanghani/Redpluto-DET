@@ -1,7 +1,7 @@
 import Header from "@/components/header";
 import MetricsCards from "@/components/metrics-cards";
-import DagSummaryCards from "@/components/dag-summary-cards";
-import DagTable from "@/components/dag-table";
+import PipelineSummaryCards from "@/components/pipeline-summary-cards";
+import PipelineTable from "@/components/pipeline-table";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Date Range Filter */}
         <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -76,8 +76,8 @@ export default function Dashboard() {
         </div>
 
         <MetricsCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
-        <DagSummaryCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
-        <DagTable dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
+        <PipelineSummaryCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
+        <PipelineTable dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
       </main>
     </div>
   );

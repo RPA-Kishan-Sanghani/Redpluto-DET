@@ -24,8 +24,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DAG summary endpoint
-  app.get("/api/dashboard/dag-summary", async (req, res) => {
+  // Pipeline summary endpoint
+  app.get("/api/dashboard/pipeline-summary", async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
       
@@ -37,27 +37,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      const summary = await storage.getDAGSummary(dateRange);
+      const summary = await storage.getPipelineSummary(dateRange);
       res.json(summary);
     } catch (error) {
-      console.error('Error fetching DAG summary:', error);
-      res.status(500).json({ error: 'Failed to fetch DAG summary' });
+      console.error('Error fetching pipeline summary:', error);
+      res.status(500).json({ error: 'Failed to fetch pipeline summary' });
     }
   });
 
-  // DAG runs endpoint with filtering and pagination
-  app.get("/api/dashboard/dags", async (req, res) => {
+  // Pipeline runs endpoint with filtering and pagination
+  app.get("/api/dashboard/pipelines", async (req, res) => {
     try {
       const {
         page = "1",
         limit = "5",
         search,
-        layer,
+        sourceSystem,
         status,
-        owner,
         startDate,
         endDate,
-        sortBy = "lastRun",
+        sortBy = "startTime",
         sortOrder = "desc",
       } = req.query;
 
@@ -73,19 +72,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
         search: search as string,
-        layer: layer as string,
+        sourceSystem: sourceSystem as string,
         status: status as string,
-        owner: owner as string,
         dateRange,
         sortBy: sortBy as string,
         sortOrder: sortOrder as 'asc' | 'desc',
       };
 
-      const result = await storage.getDAGRuns(options);
+      const result = await storage.getPipelineRuns(options);
       res.json(result);
     } catch (error) {
-      console.error('Error fetching DAG runs:', error);
-      res.status(500).json({ error: 'Failed to fetch DAG runs' });
+      console.error('Error fetching pipeline runs:', error);
+      res.status(500).json({ error: 'Failed to fetch pipeline runs' });
     }
   });
 

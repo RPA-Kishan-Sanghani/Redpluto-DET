@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Download, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
@@ -6,43 +7,47 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-interface DagTableProps {
+interface PipelineTableProps {
   dateRange?: { start: Date; end: Date };
   refreshKey: number;
 }
 
-interface DAGRun {
+interface PipelineRun {
   auditKey: number;
-  dagName: string;
+  pipelineName: string;
   runId: string;
-  layer: string;
+  sourceSystem: string;
   status: string;
-  lastRun: Date;
-  owner: string;
+  startTime: Date;
+  endTime?: Date;
+  insertedRowCount?: number;
+  updatedRowCount?: number;
+  deletedRowCount?: number;
+  errorDetails?: string;
   duration?: number;
 }
 
-interface DAGData {
-  data: DAGRun[];
+interface PipelineData {
+  data: PipelineRun[];
   total: number;
   page: number;
   limit: number;
 }
 
-export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
+export default function PipelineTable({ dateRange, refreshKey }: PipelineTableProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [layerFilter, setLayerFilter] = useState("all");
+  const [sourceSystemFilter, setSourceSystemFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("lastRun");
+  const [sortBy, setSortBy] = useState("startTime");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const { data: dagData, isLoading } = useQuery<DAGData>({
+  const { data: pipelineData, isLoading } = useQuery<PipelineData>({
     queryKey: [
-      '/api/dashboard/dags',
+      '/api/dashboard/pipelines',
       page,
       search,
-      layerFilter,
+      sourceSystemFilter,
       statusFilter,
       dateRange?.start?.toISOString(),
       dateRange?.end?.toISOString(),
@@ -78,24 +83,6 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
     }
   };
 
-  const getLayerBadge = (layer: string) => {
-    const layerLower = layer.toLowerCase();
-    switch (layerLower) {
-      case "bronze":
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Bronze</Badge>;
-      case "silver":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Silver</Badge>;
-      case "gold":
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Gold</Badge>;
-      case "quality":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Quality</Badge>;
-      case "reconciliation":
-        return <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">Reconciliation</Badge>;
-      default:
-        return <Badge variant="outline">{layer}</Badge>;
-    }
-  };
-
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - new Date(date).getTime()) / (1000 * 60 * 60));
@@ -112,32 +99,48 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
     }
   };
 
+  const formatDuration = (startTime: Date, endTime?: Date) => {
+    if (!endTime) return "N/A";
+    const duration = new Date(endTime).getTime() - new Date(startTime).getTime();
+    const minutes = Math.floor(duration / (1000 * 60));
+    const seconds = Math.floor((duration % (1000 * 60)) / 1000);
+    return `${minutes}m ${seconds}s`;
+  };
+
+  const formatRowCounts = (inserted?: number, updated?: number, deleted?: number) => {
+    const counts = [];
+    if (inserted) counts.push(`+${inserted}`);
+    if (updated) counts.push(`~${updated}`);
+    if (deleted) counts.push(`-${deleted}`);
+    return counts.length > 0 ? counts.join(", ") : "N/A";
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Latest DAG Runs</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Latest Pipeline Runs</h3>
           <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search DAGs..."
+                placeholder="Search pipelines..."
                 className="w-full sm:w-64 pl-10"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                data-testid="input-search-dags"
+                data-testid="input-search-pipelines"
               />
             </div>
 
             {/* Filters */}
-            <Select value={layerFilter} onValueChange={setLayerFilter}>
-              <SelectTrigger className="w-32" data-testid="select-layer-filter">
-                <SelectValue placeholder="All Layers" />
+            <Select value={sourceSystemFilter} onValueChange={setSourceSystemFilter}>
+              <SelectTrigger className="w-40" data-testid="select-source-system-filter">
+                <SelectValue placeholder="All Systems" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Layers</SelectItem>
+                <SelectItem value="all">All Systems</SelectItem>
                 <SelectItem value="bronze">Bronze</SelectItem>
                 <SelectItem value="silver">Silver</SelectItem>
                 <SelectItem value="gold">Gold</SelectItem>
@@ -175,17 +178,17 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
             <tr>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("dagName")}
+                onClick={() => handleSort("pipelineName")}
                 data-testid="button-sort-name"
               >
-                DAG Name <ArrowUpDown className="inline ml-1 h-3 w-3" />
+                Pipeline Name <ArrowUpDown className="inline ml-1 h-3 w-3" />
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("layer")}
-                data-testid="button-sort-layer"
+                onClick={() => handleSort("sourceSystem")}
+                data-testid="button-sort-source-system"
               >
-                Layer <ArrowUpDown className="inline ml-1 h-3 w-3" />
+                Source System <ArrowUpDown className="inline ml-1 h-3 w-3" />
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -196,20 +199,19 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("lastRun")}
-                data-testid="button-sort-last-run"
+                onClick={() => handleSort("startTime")}
+                data-testid="button-sort-start-time"
               >
-                Last Run <ArrowUpDown className="inline ml-1 h-3 w-3" />
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("owner")}
-                data-testid="button-sort-owner"
-              >
-                Owner <ArrowUpDown className="inline ml-1 h-3 w-3" />
+                Started <ArrowUpDown className="inline ml-1 h-3 w-3" />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                Duration
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Row Changes
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Error Details
               </th>
             </tr>
           </thead>
@@ -235,59 +237,59 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="h-4 bg-gray-200 rounded w-16"></div>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  </td>
                 </tr>
               ))
-            ) : dagData?.data?.length === 0 ? (
+            ) : pipelineData?.data?.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                  No DAG runs found for the selected criteria.
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  No pipeline runs found for the selected criteria.
                 </td>
               </tr>
             ) : (
-              dagData?.data?.map((dag) => (
+              pipelineData?.data?.map((pipeline) => (
                 <tr
-                  key={dag.auditKey}
+                  key={pipeline.auditKey}
                   className="hover:bg-gray-50 cursor-pointer"
-                  data-testid={`row-dag-${dag.auditKey}`}
+                  data-testid={`row-pipeline-${pipeline.auditKey}`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div>
-                        <div className="text-sm font-medium text-gray-900" data-testid={`text-dag-name-${dag.auditKey}`}>
-                          {dag.dagName}
+                        <div className="text-sm font-medium text-gray-900" data-testid={`text-pipeline-name-${pipeline.auditKey}`}>
+                          {pipeline.pipelineName}
                         </div>
-                        <div className="text-sm text-gray-500" data-testid={`text-run-id-${dag.auditKey}`}>
-                          {dag.runId}
+                        <div className="text-sm text-gray-500" data-testid={`text-run-id-${pipeline.auditKey}`}>
+                          {pipeline.runId}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap" data-testid={`text-layer-${dag.auditKey}`}>
-                    {getLayerBadge(dag.layer)}
+                  <td className="px-6 py-4 whitespace-nowrap" data-testid={`text-source-system-${pipeline.auditKey}`}>
+                    <Badge variant="outline">{pipeline.sourceSystem}</Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap" data-testid={`text-status-${dag.auditKey}`}>
-                    {getStatusBadge(dag.status)}
+                  <td className="px-6 py-4 whitespace-nowrap" data-testid={`text-status-${pipeline.auditKey}`}>
+                    {getStatusBadge(pipeline.status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-last-run-${dag.auditKey}`}>
-                    {formatTimeAgo(dag.lastRun)}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-start-time-${pipeline.auditKey}`}>
+                    {formatTimeAgo(pipeline.startTime)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-900" data-testid={`text-owner-${dag.auditKey}`}>
-                        {dag.owner}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-duration-${pipeline.auditKey}`}>
+                    {formatDuration(pipeline.startTime, pipeline.endTime)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-row-changes-${pipeline.auditKey}`}>
+                    {formatRowCounts(pipeline.insertedRowCount, pipeline.updatedRowCount, pipeline.deletedRowCount)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-error-details-${pipeline.auditKey}`}>
+                    {pipeline.errorDetails ? (
+                      <span className="text-red-600 truncate max-w-xs" title={pipeline.errorDetails}>
+                        {pipeline.errorDetails.substring(0, 50)}...
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Button variant="link" size="sm" className="text-blue-600 hover:text-blue-900 p-0 mr-3" data-testid={`button-view-${dag.auditKey}`}>
-                      View
-                    </Button>
-                    <Button variant="link" size="sm" className="text-green-600 hover:text-green-900 p-0 mr-3" data-testid={`button-run-${dag.auditKey}`}>
-                      Run
-                    </Button>
-                    <Button variant="link" size="sm" className="text-red-600 hover:text-red-900 p-0" data-testid={`button-stop-${dag.auditKey}`}>
-                      Stop
-                    </Button>
+                    ) : (
+                      "None"
+                    )}
                   </td>
                 </tr>
               ))
@@ -297,7 +299,7 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
       </div>
 
       {/* Pagination */}
-      {dagData && (
+      {pipelineData && (
         <div className="bg-white px-6 py-3 flex items-center justify-between border-t border-gray-200">
           <div className="flex-1 flex justify-between sm:hidden">
             <Button
@@ -311,7 +313,7 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
             <Button
               variant="outline"
               onClick={() => setPage(page + 1)}
-              disabled={page * dagData.limit >= dagData.total}
+              disabled={page * pipelineData.limit >= pipelineData.total}
               data-testid="button-next-mobile"
             >
               Next
@@ -322,15 +324,15 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
               <p className="text-sm text-gray-700">
                 Showing{" "}
                 <span className="font-medium" data-testid="text-pagination-start">
-                  {(page - 1) * dagData.limit + 1}
+                  {(page - 1) * pipelineData.limit + 1}
                 </span>{" "}
                 to{" "}
                 <span className="font-medium" data-testid="text-pagination-end">
-                  {Math.min(page * dagData.limit, dagData.total)}
+                  {Math.min(page * pipelineData.limit, pipelineData.total)}
                 </span>{" "}
                 of{" "}
                 <span className="font-medium" data-testid="text-pagination-total">
-                  {dagData.total}
+                  {pipelineData.total}
                 </span>{" "}
                 results
               </p>
@@ -354,7 +356,7 @@ export default function DagTable({ dateRange, refreshKey }: DagTableProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setPage(page + 1)}
-                  disabled={page * dagData.limit >= dagData.total}
+                  disabled={page * pipelineData.limit >= pipelineData.total}
                   className="rounded-r-md"
                   data-testid="button-next"
                 >
