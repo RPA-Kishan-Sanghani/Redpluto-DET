@@ -1,4 +1,4 @@
-import { users, auditTable, errorTable, sourceConnectionTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, configTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
 
@@ -109,6 +109,16 @@ export interface IStorage {
     message: string;
     details?: any;
   }>;
+
+  // Pipeline configuration methods
+  getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]>;
+  getPipeline(id: number): Promise<ConfigRecord | undefined>;
+  createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord>;
+  updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined>;
+  deletePipeline(id: number): Promise<boolean>;
+  
+  // Metadata methods for dropdowns
+  getMetadata(type: string): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -721,6 +731,78 @@ export class DatabaseStorage implements IStorage {
   private async simulateConnectionDelay(): Promise<void> {
     // Simulate network delay for connection testing
     await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
+  }
+
+  // Pipeline configuration methods
+  async getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
+    let query = db.select().from(configTable);
+    
+    const conditions = [];
+    
+    if (filters?.search) {
+      conditions.push(like(configTable.sourceTableName, `%${filters.search}%`));
+    }
+    
+    if (filters?.executionLayer) {
+      conditions.push(eq(configTable.executionLayer, filters.executionLayer));
+    }
+    
+    if (filters?.sourceSystem) {
+      conditions.push(eq(configTable.sourceSystem, filters.sourceSystem));
+    }
+    
+    if (filters?.status) {
+      conditions.push(eq(configTable.activeFlag, filters.status));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(configTable.createdAt));
+  }
+
+  async getPipeline(id: number): Promise<ConfigRecord | undefined> {
+    const [pipeline] = await db.select().from(configTable).where(eq(configTable.configKey, id));
+    return pipeline || undefined;
+  }
+
+  async createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord> {
+    const [created] = await db.insert(configTable).values(pipeline).returning();
+    return created;
+  }
+
+  async updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined> {
+    const [updated] = await db
+      .update(configTable)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(configTable.configKey, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deletePipeline(id: number): Promise<boolean> {
+    const result = await db.delete(configTable).where(eq(configTable.configKey, id));
+    return result.rowCount > 0;
+  }
+
+  async getMetadata(type: string): Promise<string[]> {
+    // Static metadata for dropdowns - in production this could come from a metadata table
+    const metadataMap: Record<string, string[]> = {
+      'execution_layer': ['Bronze', 'Silver', 'Gold'],
+      'load_type': ['Truncate', 'Incremental', 'SCD1', 'SCD2'],
+      'source_system': ['MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'CSV', 'JSON', 'Parquet', 'Excel', 'API'],
+      'source_type': ['Table', 'File', 'API'],
+      'target_type': ['Table', 'File'],
+      'file_delimiter': [',', ';', '|', '\t'],
+      'active_flag': ['Y', 'N'],
+      'dynamic_schema': ['Y', 'N'],
+      'full_refresh_flag': ['Y', 'N'],
+      'execution_sequence': ['Pre', 'Post'],
+      'effective_date': ['created_at', 'updated_at', 'last_modified', 'effective_date']
+    };
+    
+    return metadataMap[type] || [];
   }
 }
 

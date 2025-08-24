@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertSourceConnectionSchema, updateSourceConnectionSchema } from "@shared/schema";
+import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics endpoint
@@ -253,6 +253,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Failed to test connection',
         details: error 
       });
+    }
+  });
+
+  // Pipeline configuration endpoints
+  // Get all pipelines with optional filtering
+  app.get("/api/pipelines", async (req, res) => {
+    try {
+      const { search, executionLayer, sourceSystem, status } = req.query;
+      
+      const filters = {
+        search: search as string,
+        executionLayer: executionLayer as string,
+        sourceSystem: sourceSystem as string,
+        status: status as string,
+      };
+
+      const pipelines = await storage.getPipelines(filters);
+      res.json(pipelines);
+    } catch (error) {
+      console.error('Error fetching pipelines:', error);
+      res.status(500).json({ error: 'Failed to fetch pipelines' });
+    }
+  });
+
+  // Get single pipeline
+  app.get("/api/pipelines/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const pipeline = await storage.getPipeline(id);
+      
+      if (!pipeline) {
+        return res.status(404).json({ error: 'Pipeline not found' });
+      }
+      
+      res.json(pipeline);
+    } catch (error) {
+      console.error('Error fetching pipeline:', error);
+      res.status(500).json({ error: 'Failed to fetch pipeline' });
+    }
+  });
+
+  // Create new pipeline
+  app.post("/api/pipelines", async (req, res) => {
+    try {
+      const validatedData = insertConfigSchema.parse(req.body);
+      const pipeline = await storage.createPipeline(validatedData);
+      res.status(201).json(pipeline);
+    } catch (error: any) {
+      console.error('Error creating pipeline:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid pipeline data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to create pipeline' });
+    }
+  });
+
+  // Update pipeline
+  app.put("/api/pipelines/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = updateConfigSchema.parse(req.body);
+      const pipeline = await storage.updatePipeline(id, validatedData);
+      
+      if (!pipeline) {
+        return res.status(404).json({ error: 'Pipeline not found' });
+      }
+      
+      res.json(pipeline);
+    } catch (error: any) {
+      console.error('Error updating pipeline:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid pipeline data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to update pipeline' });
+    }
+  });
+
+  // Delete pipeline
+  app.delete("/api/pipelines/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deletePipeline(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Pipeline not found' });
+      }
+      
+      res.json({ success: true, message: 'Pipeline deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting pipeline:', error);
+      res.status(500).json({ error: 'Failed to delete pipeline' });
+    }
+  });
+
+  // Get metadata for dropdowns
+  app.get("/api/metadata/:type", async (req, res) => {
+    try {
+      const { type } = req.params;
+      const metadata = await storage.getMetadata(type);
+      res.json(metadata);
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+      res.status(500).json({ error: 'Failed to fetch metadata' });
     }
   });
 

@@ -1,0 +1,27 @@
+Table: config_table
+Purpose: Central configuration table managing data pipeline settings for all source systems
+Fields:  
+config_key (INT): Primary key, auto-increment
+execution_layer (VARCHAR(30)): Specifies the processing layer (e.g., Bronze, Silver, Gold)
+source_system (VARCHAR(30)): Source system identifier (MySQL, Parquet, Excel, CSV, JSON)
+source_type (VARCHAR(20)): Source type whether it is a table or file
+source_file_path (VARCHAR(100)): Path to source files (for file-based sources)
+source_file_name (VARCHAR(50)): File name pattern for ingestion
+source_file_delimiter (VARCHAR(2)): Delimiter character for CSV files
+source_schema_name (VARCHAR(30)): Database schema name for RDBMS sources
+source_table_name (VARCHAR(30)): Table name for database sources
+target_type (VARCHAR(20)): Target type whether it is a table or file
+target_file_path (VARCHAR(50)): Path for target storage
+target_file_delimiter (VARCHAR(2)): Delimiter for target files if applicable
+target_schema_name (VARCHAR(30)): Target schema name
+temporary_target_table (VARCHAR(30)): Temporary staging table name for SCD2
+target_table_name (VARCHAR(30)): Final target table name
+load_type (VARCHAR(20)): Loading pattern (incremental_load, truncate_load, SCD1, SCD2)
+primary_key (VARCHAR(40)): primary_key it can be 1 or list of comma separated primary_key.
+effective_date_column (VARCHAR(30)): incremental date column in data
+md5_columns (VARCHAR(150)): Columns to include in checksum for change detection
+custom_code (VARCHAR(150)): script name to execute if custom code is applicable eg - Data_Transformation.Custom_Code.ConversionDOBtoAge.ConversionDOBtoAge
+execution_sequence (VARCHAR(5)): Whether custom_code should be executed pre or post of SCD1 and SCD2 logic
+enable_dynamic_schema (VARCHAR(1)): Flag for schema evolution handling. If it is ‘N’ even if there is a schema change it should not be updated,it should stop the flow.
+active_flag (VARCHAR(1)): Flag indicating if the table should load or skip it.
+full_data_refresh_flag (VARCHAR(1)): In silver layer before loading into target table whether data should full refresh load.

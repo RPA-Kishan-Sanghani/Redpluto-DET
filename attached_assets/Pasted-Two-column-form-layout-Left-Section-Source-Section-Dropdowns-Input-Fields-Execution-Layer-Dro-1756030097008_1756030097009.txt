@@ -1,0 +1,50 @@
+Two-column form layout:
+Left Section (Source Section)
+Dropdowns & Input Fields:
+Execution Layer (Dropdown, e.g., Bronze)
+Load Type (Dropdown, e.g., Truncate)
+Config Key (Auto-increment, disabled field)
+Source System (Dropdown, e.g., MySQL)
+Source Type (Dropdown, e.g., Table)
+Source File Path (Text input)
+Source File Name (Text input)
+Source File Delimiter (Dropdown)
+Source Schema Name (Text input)
+Source Table Name (Text input)
+Right Section (Target Section)
+11. File System (Dropdown)
+12. Target Type (Dropdown, e.g., MySQL)
+13. Target File Path (Text input)
+14. Target File Delimiter (Dropdown)
+15. Target Schema Name (Text input)
+16. Temporary Target Table (Text input, visible only for Load Type = SCD1/SCD2)
+17. Target Table Name (Text input)
+18. Primary Key (Text input)
+19. Effective Date (Dropdown, e.g., last_updated)
+20. Md5 (Text input, enabled only for Load Type = SCD1/SCD2)
+21. Active Flag (Dropdown)
+22. Custom Code (Text input, enabled only for Execution Schema Pre/Post)
+23. Execution Schema (Dropdown, enabled only for Layer Type = Silver)
+24. Dynamic Schema (Dropdown)
+25. Full Refresh Flag (Dropdown)
+Lower Section
++ Add Data Dictionary Button → opens modal/drawer for Schema Mapping (navigates to Screen_5).
+Footer Actions
+Save → saves all fields into DB and navigates to Screen_9.
+Cancel → exits to Screen_9 without saving.
+Functional Notes
+All dropdowns dynamically fetch values from Metadata Registry API.
+Support multiple Source & Target sections (Add/Collapse).
+Tooltips for complex fields.
+Validation: Required fields → Config Key, Execution Layer, Load Type.
+Always show list of pipelines on the screen → “Add Pipeline” opens popup form.
+Accessibility: Keyboard navigable, screen reader friendly.
+Backend Requirements (Node.js + Express)
+REST APIs:
+GET /pipelines → fetch all pipeline configs.
+POST /pipelines → create new pipeline.
+PUT /pipelines/:id → update existing pipeline.
+DELETE /pipelines/:id → delete pipeline.
+GET /metadata/:type → fetch dropdown values dynamically.
+Input validation (e.g., required fields, type checks).
+Return structured error responses.

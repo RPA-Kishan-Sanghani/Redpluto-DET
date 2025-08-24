@@ -59,6 +59,35 @@ export const sourceConnectionTable = pgTable("source_connection_table", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
+export const configTable = pgTable("config_table", {
+  configKey: integer("config_key").primaryKey().generatedAlwaysAsIdentity(),
+  executionLayer: varchar("execution_layer", { length: 30 }),
+  sourceSystem: varchar("source_system", { length: 30 }),
+  sourceType: varchar("source_type", { length: 20 }),
+  sourceFilePath: varchar("source_file_path", { length: 100 }),
+  sourceFileName: varchar("source_file_name", { length: 50 }),
+  sourceFileDelimiter: varchar("source_file_delimiter", { length: 2 }),
+  sourceSchemaName: varchar("source_schema_name", { length: 30 }),
+  sourceTableName: varchar("source_table_name", { length: 30 }),
+  targetType: varchar("target_type", { length: 20 }),
+  targetFilePath: varchar("target_file_path", { length: 50 }),
+  targetFileDelimiter: varchar("target_file_delimiter", { length: 2 }),
+  targetSchemaName: varchar("target_schema_name", { length: 30 }),
+  temporaryTargetTable: varchar("temporary_target_table", { length: 30 }),
+  targetTableName: varchar("target_table_name", { length: 30 }),
+  loadType: varchar("load_type", { length: 20 }),
+  primaryKey: varchar("primary_key", { length: 40 }),
+  effectiveDateColumn: varchar("effective_date_column", { length: 30 }),
+  md5Columns: varchar("md5_columns", { length: 150 }),
+  customCode: varchar("custom_code", { length: 150 }),
+  executionSequence: varchar("execution_sequence", { length: 5 }),
+  enableDynamicSchema: varchar("enable_dynamic_schema", { length: 1 }),
+  activeFlag: varchar("active_flag", { length: 1 }),
+  fullDataRefreshFlag: varchar("full_data_refresh_flag", { length: 1 }),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -81,6 +110,17 @@ export const updateSourceConnectionSchema = createInsertSchema(sourceConnectionT
   createdAt: true,
 }).partial();
 
+export const insertConfigSchema = createInsertSchema(configTable).omit({
+  configKey: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateConfigSchema = createInsertSchema(configTable).omit({
+  configKey: true,
+  createdAt: true,
+}).partial();
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type AuditRecord = typeof auditTable.$inferSelect;
@@ -90,3 +130,6 @@ export type InsertErrorRecord = z.infer<typeof insertErrorSchema>;
 export type SourceConnection = typeof sourceConnectionTable.$inferSelect;
 export type InsertSourceConnection = z.infer<typeof insertSourceConnectionSchema>;
 export type UpdateSourceConnection = z.infer<typeof updateSourceConnectionSchema>;
+export type ConfigRecord = typeof configTable.$inferSelect;
+export type InsertConfigRecord = z.infer<typeof insertConfigSchema>;
+export type UpdateConfigRecord = z.infer<typeof updateConfigSchema>;
