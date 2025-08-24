@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Database, Bell, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
 export default function Header() {
   const [username] = useState("John Doe");
   const [errorCount] = useState(3);
+  const [location, setLocation] = useLocation();
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -32,41 +34,56 @@ export default function Header() {
 
           {/* Center: Navigation Links */}
           <nav className="hidden lg:flex space-x-8">
-            <a
-              href="#"
-              className="text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-blue-600"
+            <button
+              onClick={() => setLocation('/')}
+              className={`px-3 py-2 rounded-md text-sm font-medium border-b-2 ${
+                location === '/' 
+                  ? 'text-blue-600 hover:text-blue-700 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+              }`}
               data-testid="link-dashboard"
             >
               Dashboard
-            </a>
-            <a
-              href="#"
-              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:border-b-2 hover:border-gray-300"
+            </button>
+            <button
+              onClick={() => setLocation('/source-connections')}
+              className={`px-3 py-2 rounded-md text-sm font-medium border-b-2 ${
+                location === '/source-connections' 
+                  ? 'text-blue-600 hover:text-blue-700 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+              }`}
+              data-testid="link-source-connections"
+            >
+              Source Connections
+            </button>
+            <button
+              onClick={() => setLocation('#')}
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-gray-300"
               data-testid="link-pipelines"
             >
               Pipelines
-            </a>
-            <a
-              href="#"
-              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:border-b-2 hover:border-gray-300"
+            </button>
+            <button
+              onClick={() => setLocation('#')}
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-gray-300"
               data-testid="link-data-dictionary"
             >
               Data Dictionary
-            </a>
-            <a
-              href="#"
-              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:border-b-2 hover:border-gray-300"
+            </button>
+            <button
+              onClick={() => setLocation('#')}
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-gray-300"
               data-testid="link-data-reconciliation"
             >
               Data Reconciliation
-            </a>
-            <a
-              href="#"
-              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:border-b-2 hover:border-gray-300"
+            </button>
+            <button
+              onClick={() => setLocation('#')}
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-gray-300"
               data-testid="link-data-quality"
             >
               Data Quality
-            </a>
+            </button>
           </nav>
 
           {/* Right side: Notifications and Profile */}

@@ -1,4 +1,4 @@
-import { users, auditTable, errorTable, type User, type InsertUser, type AuditRecord, type ErrorRecord } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
 
@@ -93,6 +93,22 @@ export interface IStorage {
 
   // Error logs
   getErrors(dateRange?: { start: Date; end: Date }): Promise<ErrorRecord[]>;
+
+  // Source connections
+  createConnection(connection: InsertSourceConnection): Promise<SourceConnection>;
+  getConnections(filters?: {
+    category?: string;
+    search?: string;
+    status?: string;
+  }): Promise<SourceConnection[]>;
+  getConnection(id: number): Promise<SourceConnection | undefined>;
+  updateConnection(id: number, updates: UpdateSourceConnection): Promise<SourceConnection | undefined>;
+  deleteConnection(id: number): Promise<boolean>;
+  testConnection(connectionData: Partial<SourceConnection>): Promise<{
+    success: boolean;
+    message: string;
+    details?: any;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -514,6 +530,200 @@ export class DatabaseStorage implements IStorage {
       return a & a;
     }, 0);
     return owners[Math.abs(hash) % owners.length];
+  }
+
+  // Source connection methods
+  async createConnection(connection: InsertSourceConnection): Promise<SourceConnection> {
+    const [created] = await db
+      .insert(sourceConnectionTable)
+      .values({
+        ...connection,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getConnections(filters?: {
+    category?: string;
+    search?: string;
+    status?: string;
+  }): Promise<SourceConnection[]> {
+    let query = db.select().from(sourceConnectionTable);
+
+    const conditions = [];
+
+    if (filters?.category && filters.category !== 'all') {
+      const categoryMap: { [key: string]: string[] } = {
+        'database': ['Database', 'MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'MongoDB'],
+        'file': ['File', 'CSV', 'JSON', 'XML', 'Excel'],
+        'cloud': ['Azure', 'AWS', 'GCP', 'Cloud'],
+        'api': ['API', 'REST', 'GraphQL', 'HTTP'],
+        'other': ['FTP', 'SFTP', 'Salesforce', 'SSH', 'Other']
+      };
+
+      if (categoryMap[filters.category]) {
+        conditions.push(
+          inArray(sourceConnectionTable.connectionType, categoryMap[filters.category])
+        );
+      }
+    }
+
+    if (filters?.search) {
+      conditions.push(
+        like(sourceConnectionTable.connectionName, `%${filters.search}%`)
+      );
+    }
+
+    if (filters?.status && filters.status !== 'all') {
+      conditions.push(
+        eq(sourceConnectionTable.status, filters.status)
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(sourceConnectionTable.createdAt));
+  }
+
+  async getConnection(id: number): Promise<SourceConnection | undefined> {
+    const [connection] = await db
+      .select()
+      .from(sourceConnectionTable)
+      .where(eq(sourceConnectionTable.connectionId, id));
+    return connection || undefined;
+  }
+
+  async updateConnection(id: number, updates: UpdateSourceConnection): Promise<SourceConnection | undefined> {
+    const [updated] = await db
+      .update(sourceConnectionTable)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(sourceConnectionTable.connectionId, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteConnection(id: number): Promise<boolean> {
+    const result = await db
+      .delete(sourceConnectionTable)
+      .where(eq(sourceConnectionTable.connectionId, id));
+    return result.rowCount > 0;
+  }
+
+  async testConnection(connectionData: Partial<SourceConnection>): Promise<{
+    success: boolean;
+    message: string;
+    details?: any;
+  }> {
+    const { connectionType, host, port, username, password, databaseName, apiKey, filePath } = connectionData;
+
+    try {
+      switch (connectionType?.toLowerCase()) {
+        case 'database':
+        case 'mysql':
+        case 'postgresql':
+        case 'sql server':
+          if (!host || !username || !password) {
+            return {
+              success: false,
+              message: 'Missing required database connection parameters'
+            };
+          }
+          // Simulate database connection test
+          await this.simulateConnectionDelay();
+          return {
+            success: true,
+            message: 'Database connection successful',
+            details: { host, port: port || 5432, database: databaseName }
+          };
+
+        case 'api':
+        case 'rest':
+        case 'http':
+          if (!host || !apiKey) {
+            return {
+              success: false,
+              message: 'Missing API endpoint or API key'
+            };
+          }
+          await this.simulateConnectionDelay();
+          return {
+            success: true,
+            message: 'API connection successful',
+            details: { endpoint: host }
+          };
+
+        case 'file':
+        case 'csv':
+        case 'json':
+          if (!filePath) {
+            return {
+              success: false,
+              message: 'Missing file path'
+            };
+          }
+          await this.simulateConnectionDelay();
+          return {
+            success: true,
+            message: 'File access successful',
+            details: { path: filePath }
+          };
+
+        case 'cloud':
+        case 'azure':
+        case 'aws':
+        case 'gcp':
+          if (!apiKey && !password) {
+            return {
+              success: false,
+              message: 'Missing cloud credentials'
+            };
+          }
+          await this.simulateConnectionDelay();
+          return {
+            success: true,
+            message: 'Cloud connection successful',
+            details: { provider: connectionType }
+          };
+
+        case 'ftp':
+        case 'sftp':
+          if (!host || !username || !password) {
+            return {
+              success: false,
+              message: 'Missing FTP/SFTP credentials'
+            };
+          }
+          await this.simulateConnectionDelay();
+          return {
+            success: true,
+            message: 'FTP/SFTP connection successful',
+            details: { host, port: port || 21 }
+          };
+
+        default:
+          return {
+            success: false,
+            message: 'Unsupported connection type'
+          };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Connection test failed',
+        details: error
+      };
+    }
+  }
+
+  private async simulateConnectionDelay(): Promise<void> {
+    // Simulate network delay for connection testing
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
   }
 }
 

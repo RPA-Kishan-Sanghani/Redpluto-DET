@@ -1,0 +1,92 @@
+I am building a full-stack web application.  
+The stack should always be:  
+- Frontend: React + Tailwind  
+- Backend: Node.js + Express  
+- Database: PostgreSQL  
+
+Let’s work on Page 3: Source Connection.  
+
+Requirements:  
+
+1. **Functional Requirements**  
+   - Provide a "Connect Data Source" button → opens connection creation screen.  
+   - Support creating and capturing multiple connection types:  
+     - Database connections  
+     - File storage connections  
+     - API connections  
+     - Cloud platforms (Azure, AWS, GCP)  
+     - Other platforms (FTP/SFTP, Salesforce, etc.)  
+   - Store all connection details in **a single database table** (`source_connection_table`).  
+   - Provide "Test Connection" feature in frontend → validates whether connection details are correct before saving.  
+
+2. **Main Content Layout (Two-Column Design)**  
+   - **Left Sidebar (Categories)**:  
+     - All connectors  
+     - File-based connectors  
+     - Database connectors  
+     - Cloud platforms (Azure, AWS, GCP)  
+     - APIs  
+     - Other platforms (FTP/SFTP, Salesforce, etc.)  
+   - **Right Column (Connector Grid)**:  
+     - Responsive grid of connector cards.  
+     - Each card should have:  
+       - Connector name + type  
+       - Test button  
+       - Hover interactions showing:  
+         - Last sync timestamp  
+         - Error messages (if any)  
+         - Quick connection status indicator.  
+
+3. **Visual Design**  
+   - Clean, modern UI with consistent spacing.  
+   - Status indicators with color scheme (e.g., green=active, red=failed, yellow=warning).  
+   - Proper contrast ratios for accessibility.  
+   - Clear typography hierarchy (titles, labels, details).  
+   - Show loading states (when testing connection) and empty states (no connections yet).  
+
+---
+
+### Database Integration  
+
+**Table: `source_connection_table`**  
+**Purpose**: Centralized storage for all types of source connections (DB, file storage, APIs, cloud, etc.).  
+
+**Fields**:  
+- `connection_id (INT)` → Primary key, auto-increment.  
+- `connection_name (VARCHAR(100))` → User-friendly connection name.  
+- `connection_type (VARCHAR(50))` → Type of connection (Database, File, API, Cloud, FTP, etc.).  
+- `host (VARCHAR(100))` → Host URL or endpoint (if applicable).  
+- `port (INT)` → Port number (for DB/FTP connections).  
+- `username (VARCHAR(50))` → Username for authentication.  
+- `password (VARCHAR(200))` → Encrypted password/secret for authentication.  
+- `database_name (VARCHAR(50))` → Database/schema name (if DB connection).  
+- `file_path (VARCHAR(200))` → File path or directory (if file-based).  
+- `api_key (VARCHAR(200))` → API key/token (if API connection).  
+- `cloud_provider (VARCHAR(50))` → Cloud platform (Azure, AWS, GCP, etc.).  
+- `last_sync (TIMESTAMP)` → Last successful sync timestamp.  
+- `status (VARCHAR(20))` → Current connection status (Active, Failed, Pending, etc.).  
+- `created_at (TIMESTAMP)` → Record creation timestamp.  
+- `updated_at (TIMESTAMP)` → Record last update timestamp.  
+
+---
+
+### Deliverables  
+
+1. **Frontend (React + Tailwind)**  
+   - Connection form modal with dynamic fields based on connection type.  
+   - Sidebar categories with filters.  
+   - Connector cards grid with hover effects.  
+   - "Test Connection" button → shows loading, success, or error state.  
+
+2. **Backend (Express + Node.js)**  
+   - API endpoint `/connections/create` → Save connection details in DB.  
+   - API endpoint `/connections/test` → Attempt connection based on type (DB query, file read, API ping, etc.).  
+   - API endpoint `/connections/list` → Fetch list of all connections with filters.  
+
+3. **Database (PostgreSQL)**  
+   - Create and manage the `source_connection_table`.  
+   - Store encrypted credentials securely.  
+   - Support CRUD operations for connections.  
+
+Keep the code modular, scalable, and production-ready.  
+Give option to view, edit and delete connections.

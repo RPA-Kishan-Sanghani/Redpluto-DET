@@ -41,6 +41,24 @@ export const errorTable = pgTable("error_table", {
   errorDetails: text("error_details"),
 });
 
+export const sourceConnectionTable = pgTable("source_connection_table", {
+  connectionId: integer("connection_id").primaryKey().generatedAlwaysAsIdentity(),
+  connectionName: varchar("connection_name", { length: 100 }).notNull(),
+  connectionType: varchar("connection_type", { length: 50 }).notNull(),
+  host: varchar("host", { length: 100 }),
+  port: integer("port"),
+  username: varchar("username", { length: 50 }),
+  password: varchar("password", { length: 200 }),
+  databaseName: varchar("database_name", { length: 50 }),
+  filePath: varchar("file_path", { length: 200 }),
+  apiKey: varchar("api_key", { length: 200 }),
+  cloudProvider: varchar("cloud_provider", { length: 50 }),
+  lastSync: timestamp("last_sync"),
+  status: varchar("status", { length: 20 }).notNull().default('Pending'),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -52,9 +70,23 @@ export const insertAuditSchema = createInsertSchema(auditTable).omit({
 
 export const insertErrorSchema = createInsertSchema(errorTable);
 
+export const insertSourceConnectionSchema = createInsertSchema(sourceConnectionTable).omit({
+  connectionId: true,
+  createdAt: true,
+  updatedAt: true,
+} as const);
+
+export const updateSourceConnectionSchema = createInsertSchema(sourceConnectionTable).omit({
+  connectionId: true,
+  createdAt: true,
+} as const).partial();
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type AuditRecord = typeof auditTable.$inferSelect;
 export type InsertAuditRecord = z.infer<typeof insertAuditSchema>;
 export type ErrorRecord = typeof errorTable.$inferSelect;
 export type InsertErrorRecord = z.infer<typeof insertErrorSchema>;
+export type SourceConnection = typeof sourceConnectionTable.$inferSelect;
+export type InsertSourceConnection = z.infer<typeof insertSourceConnectionSchema>;
+export type UpdateSourceConnection = z.infer<typeof updateSourceConnectionSchema>;
