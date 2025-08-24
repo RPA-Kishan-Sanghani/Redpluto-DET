@@ -24,9 +24,9 @@ interface PipelineFilters {
 export function Pipelines() {
   const [filters, setFilters] = useState<PipelineFilters>({
     search: '',
-    executionLayer: '',
-    sourceSystem: '',
-    status: ''
+    executionLayer: 'all',
+    sourceSystem: 'all',
+    status: 'all'
   });
   const [openPipelines, setOpenPipelines] = useState<Set<number>>(new Set());
   const [editingPipeline, setEditingPipeline] = useState<ConfigRecord | null>(null);
@@ -158,24 +158,24 @@ export function Pipelines() {
               />
             </div>
             
-            <Select value={filters.executionLayer} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value }))}>
+            <Select value={filters.executionLayer} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
               <SelectTrigger data-testid="select-execution-layer">
                 <SelectValue placeholder="Execution Layer" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Layers</SelectItem>
+                <SelectItem value="all">All Layers</SelectItem>
                 <SelectItem value="Bronze">Bronze</SelectItem>
                 <SelectItem value="Silver">Silver</SelectItem>
                 <SelectItem value="Gold">Gold</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select value={filters.sourceSystem} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value }))}>
+            <Select value={filters.sourceSystem} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
               <SelectTrigger data-testid="select-source-system">
                 <SelectValue placeholder="Source System" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Systems</SelectItem>
+                <SelectItem value="all">All Systems</SelectItem>
                 <SelectItem value="MySQL">MySQL</SelectItem>
                 <SelectItem value="PostgreSQL">PostgreSQL</SelectItem>
                 <SelectItem value="SQL Server">SQL Server</SelectItem>
@@ -185,12 +185,12 @@ export function Pipelines() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+            <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === 'all' ? '' : value }))}>
               <SelectTrigger data-testid="select-status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Y">Active</SelectItem>
                 <SelectItem value="N">Inactive</SelectItem>
               </SelectContent>
