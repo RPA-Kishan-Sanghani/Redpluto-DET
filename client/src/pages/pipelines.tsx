@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ConfigRecord, InsertConfigRecord, UpdateConfigRecord } from '@shared/schema';
 import { PipelineForm } from '@/components/pipeline-form';
+import Header from '@/components/header';
 
 interface PipelineFilters {
   search: string;
@@ -124,27 +125,30 @@ export function Pipelines() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="heading-pipelines">Pipeline Configuration</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your data pipeline configurations</p>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="heading-pipelines">Pipeline Configuration</h1>
+          <p className="text-gray-600">Manage your data pipeline configurations</p>
         </div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] })}
-            data-testid="button-refresh-pipelines"
-          >
-            Refresh
-          </Button>
-          <Button onClick={handleAddNew} data-testid="button-add-pipeline">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Pipeline
-          </Button>
+
+        <div className="flex justify-end mb-6">
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] })}
+              data-testid="button-refresh-pipelines"
+            >
+              Refresh
+            </Button>
+            <Button onClick={handleAddNew} data-testid="button-add-pipeline">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Pipeline
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Filters */}
       <Card>
@@ -372,6 +376,7 @@ export function Pipelines() {
           />
         </DialogContent>
       </Dialog>
+      </main>
     </div>
   );
 }
