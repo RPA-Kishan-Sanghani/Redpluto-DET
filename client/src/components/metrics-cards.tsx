@@ -14,11 +14,10 @@ interface MetricsData {
   runningRuns: number;
 }
 
+import { useDashboardMetrics } from "@/hooks/use-dashboard-data";
+
 export default function MetricsCards({ dateRange, refreshKey }: MetricsCardsProps) {
-  const { data: metrics, isLoading } = useQuery<MetricsData>({
-    queryKey: ['/api/dashboard/metrics', dateRange?.start?.toISOString(), dateRange?.end?.toISOString(), refreshKey],
-    enabled: true,
-  });
+  const { data: metrics, isLoading } = useDashboardMetrics(dateRange, refreshKey);
 
   const cards = [
     {

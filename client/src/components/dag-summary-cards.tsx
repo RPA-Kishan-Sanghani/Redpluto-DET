@@ -13,11 +13,10 @@ interface SummaryData {
   gold: { total: number; success: number; failed: number };
 }
 
+import { useDAGSummary } from "@/hooks/use-dashboard-data";
+
 export default function DagSummaryCards({ dateRange, refreshKey }: DagSummaryCardsProps) {
-  const { data: summary, isLoading } = useQuery<SummaryData>({
-    queryKey: ['/api/dashboard/dag-summary', dateRange?.start?.toISOString(), dateRange?.end?.toISOString(), refreshKey],
-    enabled: true,
-  });
+  const { data: summary, isLoading } = useDAGSummary(dateRange, refreshKey);
 
   const categories = [
     {

@@ -58,7 +58,6 @@ export default function Dashboard() {
                     <SelectItem value="Last 24 hours">Last 24 hours</SelectItem>
                     <SelectItem value="Last 7 days">Last 7 days</SelectItem>
                     <SelectItem value="Last 30 days">Last 30 days</SelectItem>
-                    <SelectItem value="Custom range">Custom range</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
