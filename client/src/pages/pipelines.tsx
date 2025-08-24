@@ -374,7 +374,7 @@ export function Pipelines() {
                   </CardContent>
                 </CollapsibleContent>
               </Collapsible>
-            </div>
+            </Card>
           ))}
           
           {allPipelines.length > 0 && (

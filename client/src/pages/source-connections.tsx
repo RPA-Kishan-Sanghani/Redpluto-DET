@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
 import type { SourceConnection } from "@shared/schema";
-import { ConnectionForm } from "@/components/connection-form";
+import ConnectionForm from "@/components/connection-form";
 import Header from "@/components/header";
 
 const CONNECTION_CATEGORIES = [

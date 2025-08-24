@@ -199,8 +199,11 @@ export function DataDictionary() {
               />
             </div>
 
-            {/* Entries List */}
-            <Card>
+          </CardContent>
+        </Card>
+
+        {/* Entries List */}
+        <Card>
               <div className="space-y-4">
                 {isLoading ? (
                   <div className="text-center py-8">
@@ -217,7 +220,7 @@ export function DataDictionary() {
                     </Button>
                   </CardContent>
                 ) : (
-                  <>
+                  <CardContent>
                     {entries.map((entry: DataDictionaryRecord) => (
                       <Collapsible
                         key={entry.dataDictionaryKey}
@@ -350,11 +353,10 @@ export function DataDictionary() {
                         canPrevPage={canPrevPage}
                       />
                     )}
-                  </>
+                  </CardContent>
                 )}
               </div>
             </Card>
-          </Card>
         </main>
 
         {/* Form Dialog */}
@@ -373,3 +375,5 @@ export function DataDictionary() {
           </DialogContent>
         </Dialog>
       </div>
+    );
+  }
