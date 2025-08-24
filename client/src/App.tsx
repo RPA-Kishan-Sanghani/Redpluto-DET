@@ -8,6 +8,7 @@ import SourceConnections from "@/pages/source-connections";
 import { Pipelines } from "@/pages/pipelines";
 import { DataDictionary } from "@/pages/data-dictionary";
 import { Reconciliation } from "@/pages/reconciliation";
+import { DataQuality } from "@/pages/data-quality";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/pipelines" component={Pipelines} />
       <Route path="/data-dictionary" component={DataDictionary} />
       <Route path="/reconciliation" component={Reconciliation} />
+      <Route path="/data-quality" component={DataQuality} />
       <Route component={NotFound} />
     </Switch>
   );

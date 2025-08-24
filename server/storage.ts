@@ -1,4 +1,4 @@
-import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type InsertDataQualityConfig, type UpdateDataQualityConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
 
@@ -133,6 +133,13 @@ export interface IStorage {
   createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
   updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
   deleteReconciliationConfig(id: number): Promise<boolean>;
+
+  // Data Quality Config methods
+  getDataQualityConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]>;
+  getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined>;
+  createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig>;
+  updateDataQualityConfig(id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined>;
+  deleteDataQualityConfig(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -968,6 +975,81 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(reconciliationConfigTable)
       .where(eq(reconciliationConfigTable.reconKey, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Data Quality Config implementations
+  async getDataQualityConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]> {
+    let query = db.select().from(dataQualityConfigTable);
+
+    const conditions = [];
+
+    if (filters?.search) {
+      conditions.push(
+        like(dataQualityConfigTable.tableName, `%${filters.search}%`)
+      );
+    }
+
+    if (filters?.executionLayer && filters.executionLayer !== 'all') {
+      conditions.push(
+        eq(dataQualityConfigTable.executionLayer, filters.executionLayer)
+      );
+    }
+
+    if (filters?.configKey) {
+      conditions.push(
+        eq(dataQualityConfigTable.configKey, filters.configKey)
+      );
+    }
+
+    if (filters?.validationType && filters.validationType !== 'all') {
+      conditions.push(
+        eq(dataQualityConfigTable.validationType, filters.validationType)
+      );
+    }
+
+    if (filters?.status && filters.status !== 'all') {
+      conditions.push(
+        eq(dataQualityConfigTable.activeFlag, filters.status)
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(dataQualityConfigTable.dataQualityKey));
+  }
+
+  async getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(dataQualityConfigTable)
+      .where(eq(dataQualityConfigTable.dataQualityKey, id));
+    return config || undefined;
+  }
+
+  async createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig> {
+    const [created] = await db
+      .insert(dataQualityConfigTable)
+      .values(config)
+      .returning();
+    return created;
+  }
+
+  async updateDataQualityConfig(id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined> {
+    const [updated] = await db
+      .update(dataQualityConfigTable)
+      .set(updates)
+      .where(eq(dataQualityConfigTable.dataQualityKey, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDataQualityConfig(id: number): Promise<boolean> {
+    const result = await db
+      .delete(dataQualityConfigTable)
+      .where(eq(dataQualityConfigTable.dataQualityKey, id));
     return (result.rowCount || 0) > 0;
   }
 }

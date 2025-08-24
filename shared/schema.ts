@@ -200,3 +200,30 @@ export const updateReconciliationConfigSchema = createInsertSchema(reconciliatio
 export type ReconciliationConfig = typeof reconciliationConfigTable.$inferSelect;
 export type InsertReconciliationConfig = z.infer<typeof insertReconciliationConfigSchema>;
 export type UpdateReconciliationConfig = z.infer<typeof updateReconciliationConfigSchema>;
+
+// Data Quality Config Table
+export const dataQualityConfigTable = pgTable("data_quality_config_table", {
+  dataQualityKey: serial("data_quality_key").primaryKey(),
+  configKey: integer("config_key").notNull(),
+  executionLayer: varchar("execution_layer", { length: 100 }).notNull(),
+  tableName: varchar("table_name", { length: 25 }).notNull(),
+  attributeName: varchar("attribute_name", { length: 250 }).notNull(),
+  validationType: varchar("validation_type", { length: 50 }).notNull(),
+  defaultValue: varchar("default_value", { length: 25 }),
+  errorTableTransferFlag: varchar("error_table_transfer_flag", { length: 5 }),
+  thresholdPercentage: integer("threshold_percentage"),
+  activeFlag: varchar("active_flag", { length: 5 }).default('Y'),
+  customQuery: varchar("custom_query", { length: 500 }),
+});
+
+export const insertDataQualityConfigSchema = createInsertSchema(dataQualityConfigTable).omit({
+  dataQualityKey: true,
+});
+
+export const updateDataQualityConfigSchema = createInsertSchema(dataQualityConfigTable).omit({
+  dataQualityKey: true,
+}).partial();
+
+export type DataQualityConfig = typeof dataQualityConfigTable.$inferSelect;
+export type InsertDataQualityConfig = z.infer<typeof insertDataQualityConfigSchema>;
+export type UpdateDataQualityConfig = z.infer<typeof updateDataQualityConfigSchema>;

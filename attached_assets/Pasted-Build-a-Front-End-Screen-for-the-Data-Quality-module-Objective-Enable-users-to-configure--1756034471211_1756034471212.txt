@@ -1,0 +1,172 @@
+Build a Front-End Screen for the “Data Quality ” module.
+
+
+
+Objective
+
+
+
+Enable users to configure, edit, and create Data Quality config entries.
+
+
+
+By default, show all existing data quality config entries in a table.
+
+
+
+Provide a button ➕ “Add New Entry” that opens a form for input.
+
+
+
+Form Fields
+
+
+
+Execution Layer → Dropdown (dynamic from Metadata registry; e.g., Bronze, Silver, Gold)
+
+
+
+Data Quality Key → Numeric input (auto-increment, read-only)
+
+
+
+Config Key → Numeric input (references config_key)
+
+
+
+Validation Type → Text input
+
+
+
+Attribute Name → Text input
+
+
+
+Default Value → Text input
+
+
+
+Error Table Transfer Flag → Dropdown (Y/N)
+
+
+
+Threshold Percentage → Numeric input
+
+
+
+Active Flag → Dropdown (Y/N)
+
+
+
+Custom Query → Multiline text area
+
+
+
+Reference Table Name → Text input
+
+
+
+Footer Actions
+
+
+
+Save → Saves all fields to the database (data_quality_config_table)
+
+
+
+Cancel → Cancels entry and closes the form
+
+
+
+Functional Requirements
+
+
+
+All dropdowns fetch dynamic values from Metadata Registry
+
+
+
+Form validation for required fields
+
+
+
+Tooltips/Help icons for complex fields (e.g., Validation Type, Threshold, Custom Query)
+
+
+
+Data grid/table view supports search, filter, edit, and delete
+
+
+
+Support keyboard navigation and accessibility
+
+
+
+Acceptance Criteria
+
+
+
+User can successfully input pipeline configuration and Save
+
+
+
+Source/Target sections allow multiple entries
+
+
+
+Metadata fields are pre-populated when Execution Layer is selected
+
+
+
+All buttons, inputs, and dropdowns are accessible & keyboard-navigable
+
+
+
+Database Schema
+
+
+
+Table: data_quality_config_table
+Purpose: Store configuration for data quality validation rules.
+
+
+
+CREATE TABLE data_quality_config_table (
+    data_quality_key SERIAL PRIMARY KEY, -- Auto-increment
+    config_key INT NOT NULL REFERENCES config_table(config_key),
+    execution_layer VARCHAR(100) NOT NULL,
+    table_name VARCHAR(25) NOT NULL,
+    attribute_name VARCHAR(250) NOT NULL,
+    validation_type VARCHAR(50) NOT NULL,
+    default_value VARCHAR(25),
+    error_table_transfer_flag VARCHAR(5),
+    threshold_percentage FLOAT,
+    active_flag VARCHAR(5) DEFAULT 'Y',
+    custom_query VARCHAR(500)
+);
+
+
+
+
+
+⚡ Expected Output from Replit AI:
+
+
+
+Front-End UI (React + Tailwind + shadcn/ui) with a form modal + data table
+
+
+
+Dynamic dropdown integration with Metadata Registry API
+
+
+
+CRUD operations wired to the data_quality_config_table
+
+
+
+Form validation + tooltips
+
+
+
+Table with search, filter, edit, delete, pagination

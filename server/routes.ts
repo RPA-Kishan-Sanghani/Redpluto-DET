@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema } from "@shared/schema";
+import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics endpoint
@@ -510,6 +510,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting reconciliation config:', error);
       res.status(500).json({ error: 'Failed to delete reconciliation config' });
+    }
+  });
+
+  // Data Quality Config routes
+  app.get("/api/data-quality-configs", async (req, res) => {
+    try {
+      const { search, executionLayer, configKey, validationType, status } = req.query;
+      
+      const filters = {
+        search: search as string,
+        executionLayer: executionLayer as string,
+        configKey: configKey ? parseInt(configKey as string) : undefined,
+        validationType: validationType as string,
+        status: status as string,
+      };
+
+      const configs = await storage.getDataQualityConfigs(filters);
+      res.json(configs);
+    } catch (error) {
+      console.error('Error fetching data quality configs:', error);
+      res.status(500).json({ error: 'Failed to fetch data quality configs' });
+    }
+  });
+
+  app.get("/api/data-quality-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const config = await storage.getDataQualityConfig(id);
+      
+      if (!config) {
+        return res.status(404).json({ error: 'Data quality config not found' });
+      }
+      
+      res.json(config);
+    } catch (error) {
+      console.error('Error fetching data quality config:', error);
+      res.status(500).json({ error: 'Failed to fetch data quality config' });
+    }
+  });
+
+  app.post("/api/data-quality-configs", async (req, res) => {
+    try {
+      const validatedData = insertDataQualityConfigSchema.parse(req.body);
+      const config = await storage.createDataQualityConfig(validatedData);
+      res.status(201).json(config);
+    } catch (error: any) {
+      console.error('Error creating data quality config:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid data quality config data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to create data quality config' });
+    }
+  });
+
+  app.put("/api/data-quality-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = updateDataQualityConfigSchema.parse(req.body);
+      const config = await storage.updateDataQualityConfig(id, validatedData);
+      
+      if (!config) {
+        return res.status(404).json({ error: 'Data quality config not found' });
+      }
+      
+      res.json(config);
+    } catch (error: any) {
+      console.error('Error updating data quality config:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid data quality config data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to update data quality config' });
+    }
+  });
+
+  app.delete("/api/data-quality-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDataQualityConfig(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Data quality config not found' });
+      }
+      
+      res.json({ success: true, message: 'Data quality config deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting data quality config:', error);
+      res.status(500).json({ error: 'Failed to delete data quality config' });
     }
   });
 
