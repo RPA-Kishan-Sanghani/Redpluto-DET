@@ -136,7 +136,7 @@ export function DataDictionary() {
 
         {/* Filters and Actions */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="bg-blue-50">
             <div className="flex justify-between items-center">
               <CardTitle>Data Dictionary Entries</CardTitle>
               <Button onClick={handleAdd} data-testid="button-add-entry">
