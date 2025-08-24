@@ -1,6 +1,6 @@
 import { users, auditTable, errorTable, type User, type InsertUser, type AuditRecord, type ErrorRecord } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, count, desc, asc, like, inArray } from "drizzle-orm";
+import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -220,7 +220,17 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (layer && layer !== 'all') {
-      conditions.push(eq(auditTable.layer, layer));
+      // Filter by layer using codeName pattern matching since there's no layer column
+      const layerPatterns = {
+        'Quality': '%quality%',
+        'Reconciliation': '%reconciliation%',
+        'Bronze': '%bronze%',
+        'Silver': '%silver%',
+        'Gold': '%gold%'
+      };
+      if (layerPatterns[layer as keyof typeof layerPatterns]) {
+        conditions.push(like(auditTable.codeName, layerPatterns[layer as keyof typeof layerPatterns]));
+      }
     }
 
     if (status && status !== 'all') {
@@ -228,7 +238,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (owner) {
-      conditions.push(like(auditTable.owner, `%${owner}%`));
+      // Filter by owner using sourceSystem since there's no owner column
+      conditions.push(like(auditTable.sourceSystem, `%${owner}%`));
     }
 
     if (dateRange) {
@@ -275,7 +286,7 @@ export class DatabaseStorage implements IStorage {
       layer: this.getLayerFromCodeName(row.pipelineName || ''),
       status: row.status || 'Unknown',
       lastRun: row.startTime || new Date(),
-      owner: row.owner || this.getOwnerFromSystem(row.sourceSystem || ''),
+      owner: this.getOwnerFromSystem(row.sourceSystem || ''),
       duration: row.endTime && row.startTime ?
         Math.round((row.endTime.getTime() - row.startTime.getTime()) / 1000) : undefined,
       errorMessage: row.errorMessage || undefined,

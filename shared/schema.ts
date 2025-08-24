@@ -48,7 +48,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertAuditSchema = createInsertSchema(auditTable).omit({
   auditKey: true,
-});
+} as const);
 
 export const insertErrorSchema = createInsertSchema(errorTable);
 
