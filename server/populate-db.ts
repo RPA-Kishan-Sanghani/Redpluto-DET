@@ -9,7 +9,7 @@ async function populateDatabase() {
     console.log('Starting database population...');
     
     // Read the SQL file
-    const sqlContent = readFileSync(join(process.cwd(), 'populate_dummy_data.sql'), 'utf-8');
+    const sqlContent = readFileSync(join(process.cwd(), '..', 'populate_dummy_data.sql'), 'utf-8');
     
     // Split by semicolons to get individual statements
     const statements = sqlContent
