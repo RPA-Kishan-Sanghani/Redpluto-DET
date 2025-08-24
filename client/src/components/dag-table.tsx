@@ -44,7 +44,7 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
 
   const { data: pipelineData, isLoading } = useQuery<PipelineData>({
     queryKey: [
-      '/api/dashboard/pipelines',
+      'pipeline-runs',
       page,
       search,
       sourceSystemFilter,
@@ -55,6 +55,24 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
       sortOrder,
       refreshKey,
     ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', '5');
+      if (search) params.append('search', search);
+      if (sourceSystemFilter && sourceSystemFilter !== 'all') params.append('sourceSystem', sourceSystemFilter);
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+      if (dateRange) {
+        params.append('startDate', dateRange.start.toISOString());
+        params.append('endDate', dateRange.end.toISOString());
+      }
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
+      
+      const response = await fetch(`/api/dashboard/pipelines?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch pipeline runs');
+      return response.json();
+    },
     enabled: true,
   });
 
