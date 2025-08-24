@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Database, File, Cloud, Wifi, Settings, TestTube2, Edit, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/header";
 import ConnectionForm from "@/components/connection-form";
-import type { SourceConnection, InsertSourceConnection, UpdateSourceConnection } from "@shared/schema";
+import type { SourceConnection } from "@shared/schema";
 
 const CONNECTION_CATEGORIES = [
   { id: 'all', label: 'All Connectors', icon: Settings },
@@ -63,7 +64,7 @@ export default function SourceConnections() {
   const queryClient = useQueryClient();
 
   // Fetch connections with filters
-  const { data: connections = [], isLoading } = useQuery({
+  const { data: connections = [], isLoading } = useQuery<SourceConnection[]>({
     queryKey: ['/api/connections', selectedCategory, searchQuery, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -73,7 +74,7 @@ export default function SourceConnections() {
       
       const response = await fetch(`/api/connections?${params}`);
       if (!response.ok) throw new Error('Failed to fetch connections');
-      return response.json() as SourceConnection[];
+      return response.json();
     },
   });
 
@@ -157,7 +158,9 @@ export default function SourceConnections() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      <Header />
+      
+      {/* Page Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
