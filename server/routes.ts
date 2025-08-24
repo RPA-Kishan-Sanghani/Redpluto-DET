@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema } from "@shared/schema";
+import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics endpoint
@@ -423,6 +423,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting data dictionary entry:', error);
       res.status(500).json({ error: 'Failed to delete data dictionary entry' });
+    }
+  });
+
+  // Reconciliation config routes
+  app.get("/api/reconciliation-configs", async (req, res) => {
+    try {
+      const { search, executionLayer, configKey, reconType, status } = req.query;
+      
+      const filters = {
+        search: search as string,
+        executionLayer: executionLayer as string,
+        configKey: configKey ? parseInt(configKey as string) : undefined,
+        reconType: reconType as string,
+        status: status as string,
+      };
+
+      const configs = await storage.getReconciliationConfigs(filters);
+      res.json(configs);
+    } catch (error) {
+      console.error('Error fetching reconciliation configs:', error);
+      res.status(500).json({ error: 'Failed to fetch reconciliation configs' });
+    }
+  });
+
+  app.get("/api/reconciliation-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const config = await storage.getReconciliationConfig(id);
+      
+      if (!config) {
+        return res.status(404).json({ error: 'Reconciliation config not found' });
+      }
+      
+      res.json(config);
+    } catch (error) {
+      console.error('Error fetching reconciliation config:', error);
+      res.status(500).json({ error: 'Failed to fetch reconciliation config' });
+    }
+  });
+
+  app.post("/api/reconciliation-configs", async (req, res) => {
+    try {
+      const validatedData = insertReconciliationConfigSchema.parse(req.body);
+      const config = await storage.createReconciliationConfig(validatedData);
+      res.status(201).json(config);
+    } catch (error: any) {
+      console.error('Error creating reconciliation config:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid reconciliation config data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to create reconciliation config' });
+    }
+  });
+
+  app.put("/api/reconciliation-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = updateReconciliationConfigSchema.parse(req.body);
+      const config = await storage.updateReconciliationConfig(id, validatedData);
+      
+      if (!config) {
+        return res.status(404).json({ error: 'Reconciliation config not found' });
+      }
+      
+      res.json(config);
+    } catch (error: any) {
+      console.error('Error updating reconciliation config:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid reconciliation config data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to update reconciliation config' });
+    }
+  });
+
+  app.delete("/api/reconciliation-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteReconciliationConfig(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Reconciliation config not found' });
+      }
+      
+      res.json({ success: true, message: 'Reconciliation config deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting reconciliation config:', error);
+      res.status(500).json({ error: 'Failed to delete reconciliation config' });
     }
   });
 

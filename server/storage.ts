@@ -1,4 +1,4 @@
-import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
 
@@ -126,6 +126,13 @@ export interface IStorage {
   createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
   updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
   deleteDataDictionaryEntry(id: number): Promise<boolean>;
+
+  // Reconciliation config methods
+  getReconciliationConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]>;
+  getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined>;
+  createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
+  updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
+  deleteReconciliationConfig(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -886,6 +893,81 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(dataDictionaryTable)
       .where(eq(dataDictionaryTable.dataDictionaryKey, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Reconciliation config methods implementation
+  async getReconciliationConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]> {
+    let query = db.select().from(reconciliationConfigTable);
+
+    const conditions = [];
+
+    if (filters?.search) {
+      conditions.push(
+        like(reconciliationConfigTable.sourceTable, `%${filters.search}%`)
+      );
+    }
+
+    if (filters?.executionLayer && filters.executionLayer !== 'all') {
+      conditions.push(
+        eq(reconciliationConfigTable.executionLayer, filters.executionLayer)
+      );
+    }
+
+    if (filters?.configKey) {
+      conditions.push(
+        eq(reconciliationConfigTable.configKey, filters.configKey)
+      );
+    }
+
+    if (filters?.reconType && filters.reconType !== 'all') {
+      conditions.push(
+        eq(reconciliationConfigTable.reconType, filters.reconType)
+      );
+    }
+
+    if (filters?.status && filters.status !== 'all') {
+      conditions.push(
+        eq(reconciliationConfigTable.activeFlag, filters.status)
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(reconciliationConfigTable.reconKey));
+  }
+
+  async getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(reconciliationConfigTable)
+      .where(eq(reconciliationConfigTable.reconKey, id));
+    return config || undefined;
+  }
+
+  async createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
+    const [created] = await db
+      .insert(reconciliationConfigTable)
+      .values(config)
+      .returning();
+    return created;
+  }
+
+  async updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined> {
+    const [updated] = await db
+      .update(reconciliationConfigTable)
+      .set(updates)
+      .where(eq(reconciliationConfigTable.reconKey, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteReconciliationConfig(id: number): Promise<boolean> {
+    const result = await db
+      .delete(reconciliationConfigTable)
+      .where(eq(reconciliationConfigTable.reconKey, id));
     return (result.rowCount || 0) > 0;
   }
 }

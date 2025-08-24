@@ -171,3 +171,32 @@ export const updateDataDictionarySchema = createInsertSchema(dataDictionaryTable
 export type DataDictionaryRecord = typeof dataDictionaryTable.$inferSelect;
 export type InsertDataDictionaryRecord = z.infer<typeof insertDataDictionarySchema>;
 export type UpdateDataDictionaryRecord = z.infer<typeof updateDataDictionarySchema>;
+
+// Reconciliation Config Table
+export const reconciliationConfigTable = pgTable("reconciliation_config", {
+  reconKey: serial("recon_key").primaryKey(),
+  configKey: integer("config_key").notNull(),
+  executionLayer: varchar("execution_layer", { length: 20 }).notNull(),
+  sourceSchema: varchar("source_schema", { length: 20 }),
+  sourceTable: varchar("source_table", { length: 50 }),
+  targetSchema: varchar("target_schema", { length: 50 }),
+  targetTable: varchar("target_table", { length: 50 }),
+  reconType: varchar("recon_type", { length: 50 }).notNull(),
+  attribute: varchar("attribute", { length: 20 }),
+  sourceQuery: text("source_query"),
+  targetQuery: text("target_query"),
+  thresholdPercentage: integer("threshold_percentage"),
+  activeFlag: varchar("active_flag", { length: 2 }).notNull().default('Y'),
+});
+
+export const insertReconciliationConfigSchema = createInsertSchema(reconciliationConfigTable).omit({
+  reconKey: true,
+});
+
+export const updateReconciliationConfigSchema = createInsertSchema(reconciliationConfigTable).omit({
+  reconKey: true,
+}).partial();
+
+export type ReconciliationConfig = typeof reconciliationConfigTable.$inferSelect;
+export type InsertReconciliationConfig = z.infer<typeof insertReconciliationConfigSchema>;
+export type UpdateReconciliationConfig = z.infer<typeof updateReconciliationConfigSchema>;
