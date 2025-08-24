@@ -342,7 +342,7 @@ export class DatabaseStorage implements IStorage {
     if (auditKeys.length > 0) {
       const errors = await db.select({
         auditKey: errorTable.auditKey,
-        errorMessage: errorTable.errorMessage
+        errorMessage: errorTable.errorDetails
       }).from(errorTable)
         .where(inArray(errorTable.auditKey, auditKeys));
 

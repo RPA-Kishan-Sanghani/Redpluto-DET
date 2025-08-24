@@ -23,7 +23,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { DataDictionaryForm } from "@/components/data-dictionary-form";
+import { DataDictionaryForm } from "../components/data-dictionary-form";
 import Header from "@/components/header";
 import type { DataDictionaryRecord } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -198,7 +198,7 @@ export function DataDictionary() {
                   </Button>
                 </div>
               ) : (
-                entries.map((entry) => (
+                entries.map((entry: DataDictionaryRecord) => (
                   <Collapsible 
                     key={entry.dataDictionaryKey}
                     open={openEntries.has(entry.dataDictionaryKey)}
