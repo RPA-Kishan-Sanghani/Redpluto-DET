@@ -1,0 +1,104 @@
+I am building a full-stack web application.  
+The stack should always be:  
+- Frontend: React + Tailwind  
+- Backend: Node.js + Express  
+- Database: PostgreSQL  
+
+Let’s work on Page 2: Dashboard.  
+
+Requirements:  
+
+1. **Header**  
+   - App name/logo on the left.  
+   - Right side:  
+     - User profile icon with dropdown (User, Logout).  
+     - Notification bell icon showing alerts (use error_table for failed jobs/DAGs).  
+   - Dropdown menu must be responsive.  
+   - Display buttons/links on the right for navigating to: Pipelines, Data Dictionary, Data Reconciliation, Data Quality Pipeline.  
+   - Left side: "Welcome back, {username}!".
+
+2. **Metrics Overview Cards (Top Row)**  
+   - Display 5 compact, color-coded cards with icons and metrics:  
+     - Total Pipelines Run (📈)  
+     - Successful Runs (✅)  
+     - Failed Runs (❌)  
+     - Scheduled Runs (⏰)  
+     - Running Runs (🕒)  
+   - Each card clickable → shows last 10 rows in DAG Table below.  
+   - Dynamic updates based on date range selection.  
+
+3. **DAG Summary Cards (Middle Row)**  
+   - Horizontal scroll/grid of cards showing category-level job stats:  
+     - Data Quality DAGs  
+     - Data Reconciliation DAGs  
+     - Bronze Layer DAGs  
+     - Silver Layer DAGs  
+     - Gold Layer DAGs  
+   - Example format: "Total: 15 / Success: 13 / Failed: 2".  
+   - Tabular styling with dark outlines.  
+
+4. **DAG Table View (Lower Section)**  
+   - Table columns: DAG Name, Layer, Status, Last Run, Owner.  
+   - Supports sorting + filtering by Layer, Status, Date Range, Owner.  
+   - Shows top 5 rows by default (pagination available).  
+   - Search + Export option.  
+   - Clicking row → opens DAG detail modal/page.  
+
+5. **Design & Layout**  
+   - Light background, clean UI.  
+   - Divide dashboard into 3 sections:  
+     - Top → Overview metrics cards.  
+     - Middle → DAG summary cards.  
+     - Bottom → Latest DAG table.  
+
+6. **Database Integration**  
+
+### Table: `audit_table`  
+**Purpose**: Execution audit and tracking for monitoring data pipeline runs.  
+
+**Fields**:  
+- `audit_key (INT)` → Primary key, auto-increment.  
+- `config_key (INT)` → Foreign key reference to config_table.  
+- `code_name (VARCHAR(60))` → Name of the process or code module executed.  
+- `run_id (VARCHAR(100))` → Unique identifier for each execution run (from Airflow).  
+- `source_system (VARCHAR(20))` → Source system processed.  
+- `schema_name (VARCHAR(30))` → Schema processed.  
+- `target_table_name (VARCHAR(30))` → Target table name.  
+- `source_file_name (VARCHAR(50))` → Source file processed (if applicable).  
+- `start_time (TIMESTAMP)` → Process start timestamp.  
+- `end_time (TIMESTAMP)` → Process end timestamp.  
+- `inserted_row_count (INT)` → Number of rows inserted.  
+- `updated_row_count (INT)` → Number of rows updated.  
+- `deleted_row_count (INT)` → Number of rows deleted or expired.  
+- `no_change_row_count (INT)` → Number of rows processed but unchanged.  
+- `status (VARCHAR(10))` → Execution status (SUCCESS, FAILED, etc.).  
+- `last_pulled_time (VARCHAR(40))` → Timestamp marker for last incremental processing.  
+
+---
+
+### Table: `error_table`  
+**Purpose**: Error logging and exception management.  
+
+**Fields**:  
+- `config_key (INT)` → Reference to config_table.  
+- `audit_key (INT)` → Reference to audit_table.  
+- `code_name (VARCHAR(60))` → Module where error occurred.  
+- `run_id (VARCHAR(100))` → Execution run identifier.  
+- `source_system (VARCHAR(20))` → Source system where error occurred.  
+- `schema_name (VARCHAR(30))` → Schema being processed.  
+- `target_table_name (VARCHAR(30))` → Target table being processed.  
+- `source_file_name (VARCHAR(50))` → Source file being processed.  
+- `execution_time (TIMESTAMP)` → Error timestamp.  
+- `error_details (TEXT)` → Detailed error message and stack trace.  
+
+---
+
+Deliverables:  
+1. React components for header, metrics cards, summary cards, and DAG table.  
+2. Express backend routes for:  
+   - `/dashboard/metrics` → return counts of runs (total, success, failed, scheduled, running).  
+   - `/dashboard/dags` → return list of DAG runs with filters.  
+   - `/dashboard/errors` → return job errors from error_table.  
+3. PostgreSQL queries using **audit_table** and **error_table** to support the metrics, cards, and table.  
+
+Keep the code modular, scalable, and production-ready.  
