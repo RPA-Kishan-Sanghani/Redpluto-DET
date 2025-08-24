@@ -1,18 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -20,9 +12,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { DataDictionaryForm } from "@/components/data-dictionary-form";
 import Header from "@/components/header";
 import type { DataDictionaryRecord } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface DataDictionaryFilters {
   search: string;
@@ -36,10 +40,12 @@ export function DataDictionary() {
     executionLayer: 'all',
     configKey: ''
   });
+  const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
   const [editingEntry, setEditingEntry] = useState<DataDictionaryRecord | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch data dictionary entries
   const { data: entries = [], isLoading, error } = useQuery({
@@ -73,6 +79,10 @@ export function DataDictionary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/data-dictionary'] });
+      toast({
+        title: 'Success',
+        description: 'Data dictionary entry deleted successfully',
+      });
     }
   });
 
@@ -85,6 +95,18 @@ export function DataDictionary() {
     if (confirm('Are you sure you want to delete this data dictionary entry?')) {
       await deleteEntryMutation.mutateAsync(id);
     }
+  };
+
+  const toggleEntry = (id: number) => {
+    setOpenEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const handleAdd = () => {
@@ -106,188 +128,217 @@ export function DataDictionary() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Main Content */}
-        <div className={`transition-all duration-300 ${isFormOpen ? 'w-1/2' : 'w-full'}`}>
-          <main className="h-full overflow-auto">
-            <div className="p-6">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Dictionary</h1>
-                <p className="text-gray-600">Manage metadata and schema information for all data pipelines</p>
-              </div>
-
-              {/* Filters and Actions */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Data Dictionary Entries</CardTitle>
-                    <Button onClick={handleAdd} data-testid="button-add-entry">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Entry
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4 mb-4">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Search by attribute name..."
-                        value={filters.search}
-                        onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="w-full"
-                        data-testid="input-search-entries"
-                      />
-                    </div>
-                    
-                    <Select 
-                      value={filters.executionLayer} 
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value }))}
-                    >
-                      <SelectTrigger data-testid="select-execution-layer">
-                        <SelectValue placeholder="Execution Layer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Layers</SelectItem>
-                        <SelectItem value="Bronze">Bronze</SelectItem>
-                        <SelectItem value="Silver">Silver</SelectItem>
-                        <SelectItem value="Gold">Gold</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Input
-                      placeholder="Config Key"
-                      value={filters.configKey}
-                      onChange={(e) => setFilters(prev => ({ ...prev, configKey: e.target.value }))}
-                      className="w-32"
-                      data-testid="input-config-key"
-                    />
-                  </div>
-
-                  {/* Data Table */}
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Key</TableHead>
-                          <TableHead>Config Key</TableHead>
-                          <TableHead>Execution Layer</TableHead>
-                          <TableHead>Schema</TableHead>
-                          <TableHead>Table</TableHead>
-                          <TableHead>Attribute</TableHead>
-                          <TableHead>Data Type</TableHead>
-                          <TableHead>Length</TableHead>
-                          <TableHead>Primary Key</TableHead>
-                          <TableHead>Not Null</TableHead>
-                          <TableHead>Active</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {isLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={12} className="text-center py-8">
-                              Loading data dictionary entries...
-                            </TableCell>
-                          </TableRow>
-                        ) : entries.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={12} className="text-center py-8">
-                              <div className="text-gray-500">
-                                <Search className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                                <p className="text-lg font-medium mb-1">No entries found</p>
-                                <p className="text-sm">Add your first data dictionary entry to get started.</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          entries.map((entry) => (
-                            <TableRow key={entry.dataDictionaryKey} data-testid={`row-entry-${entry.dataDictionaryKey}`}>
-                              <TableCell className="font-medium">{entry.dataDictionaryKey}</TableCell>
-                              <TableCell>{entry.configKey}</TableCell>
-                              <TableCell>
-                                <Badge variant={
-                                  entry.executionLayer === 'Bronze' ? 'secondary' :
-                                  entry.executionLayer === 'Silver' ? 'default' :
-                                  entry.executionLayer === 'Gold' ? 'outline' : 'secondary'
-                                }>
-                                  {entry.executionLayer}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{entry.schemaName || '-'}</TableCell>
-                              <TableCell>{entry.tableName || '-'}</TableCell>
-                              <TableCell className="font-medium">{entry.attributeName}</TableCell>
-                              <TableCell>{entry.dataType}</TableCell>
-                              <TableCell>{entry.length || '-'}</TableCell>
-                              <TableCell>
-                                <Badge variant={entry.isPrimaryKey ? 'default' : 'secondary'}>
-                                  {entry.isPrimaryKey ? 'Yes' : 'No'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={entry.isNotNull ? 'destructive' : 'secondary'}>
-                                  {entry.isNotNull ? 'Yes' : 'No'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={entry.activeFlag === 'Y' ? 'default' : 'secondary'}>
-                                  {entry.activeFlag}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEdit(entry)}
-                                    data-testid={`button-edit-${entry.dataDictionaryKey}`}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDelete(entry.dataDictionaryKey)}
-                                    data-testid={`button-delete-${entry.dataDictionaryKey}`}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Dictionary</h1>
+          <p className="text-gray-600">Manage metadata and schema information for all data pipelines</p>
         </div>
 
-        {/* Sidebar Form */}
-        {isFormOpen && (
-          <div className="w-1/2 border-l border-gray-200 bg-white shadow-lg">
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="text-lg font-semibold">
-                  {editingEntry ? 'Edit Entry' : 'Add New Entry'}
-                </h2>
-                <Button variant="ghost" size="sm" onClick={handleFormClose}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto">
-                <DataDictionaryForm
-                  entry={editingEntry}
-                  onSuccess={handleFormSuccess}
-                  onCancel={handleFormClose}
+        {/* Filters and Actions */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Data Dictionary Entries</CardTitle>
+              <Button onClick={handleAdd} data-testid="button-add-entry">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Entry
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search by attribute name..."
+                  value={filters.search}
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="w-full"
+                  data-testid="input-search-entries"
                 />
               </div>
+              
+              <Select 
+                value={filters.executionLayer} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}
+              >
+                <SelectTrigger data-testid="select-execution-layer">
+                  <SelectValue placeholder="Execution Layer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Layers</SelectItem>
+                  <SelectItem value="Bronze">Bronze</SelectItem>
+                  <SelectItem value="Silver">Silver</SelectItem>
+                  <SelectItem value="Gold">Gold</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                placeholder="Config Key"
+                value={filters.configKey}
+                onChange={(e) => setFilters(prev => ({ ...prev, configKey: e.target.value }))}
+                className="w-32"
+                data-testid="input-config-key"
+              />
             </div>
-          </div>
-        )}
-      </div>
+
+            {/* Data Dictionary List */}
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading data dictionary entries...</p>
+                </div>
+              ) : entries.length === 0 ? (
+                <div className="text-center py-12">
+                  <Search className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No entries found</h3>
+                  <p className="text-gray-500 mb-4">Add your first data dictionary entry to get started.</p>
+                  <Button onClick={handleAdd}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                  </Button>
+                </div>
+              ) : (
+                entries.map((entry) => (
+                  <Collapsible 
+                    key={entry.dataDictionaryKey}
+                    open={openEntries.has(entry.dataDictionaryKey)}
+                    onOpenChange={() => toggleEntry(entry.dataDictionaryKey)}
+                  >
+                    <Card>
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              {openEntries.has(entry.dataDictionaryKey) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                              <div>
+                                <h3 className="text-lg font-semibold">{entry.attributeName}</h3>
+                                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                  <span>Key: {entry.dataDictionaryKey}</span>
+                                  <span>Config: {entry.configKey}</span>
+                                  <Badge variant={
+                                    entry.executionLayer === 'Bronze' ? 'secondary' :
+                                    entry.executionLayer === 'Silver' ? 'default' :
+                                    entry.executionLayer === 'Gold' ? 'outline' : 'secondary'
+                                  }>
+                                    {entry.executionLayer}
+                                  </Badge>
+                                  <span>{entry.dataType}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={entry.activeFlag === 'Y' ? 'default' : 'secondary'}>
+                                {entry.activeFlag === 'Y' ? 'Active' : 'Inactive'}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(entry);
+                                }}
+                                data-testid={`button-edit-${entry.dataDictionaryKey}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(entry.dataDictionaryKey);
+                                }}
+                                data-testid={`button-delete-${entry.dataDictionaryKey}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                              <h4 className="font-medium text-gray-900 mb-2">Basic Information</h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="text-gray-500">Schema:</span> {entry.schemaName || 'N/A'}</div>
+                                <div><span className="text-gray-500">Table:</span> {entry.tableName || 'N/A'}</div>
+                                <div><span className="text-gray-500">Data Type:</span> {entry.dataType}</div>
+                                <div><span className="text-gray-500">Length:</span> {entry.length || 'N/A'}</div>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900 mb-2">Properties</h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="text-gray-500">Precision:</span> {entry.precisionValue || 'N/A'}</div>
+                                <div><span className="text-gray-500">Scale:</span> {entry.scale || 'N/A'}</div>
+                                <div>
+                                  <span className="text-gray-500">Primary Key:</span>{' '}
+                                  <Badge variant={entry.isPrimaryKey ? 'default' : 'secondary'} className="ml-1">
+                                    {entry.isPrimaryKey ? 'Yes' : 'No'}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Not Null:</span>{' '}
+                                  <Badge variant={entry.isNotNull ? 'destructive' : 'secondary'} className="ml-1">
+                                    {entry.isNotNull ? 'Yes' : 'No'}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Foreign Key:</span>{' '}
+                                  <Badge variant={entry.isForeignKey ? 'default' : 'secondary'} className="ml-1">
+                                    {entry.isForeignKey ? 'Yes' : 'No'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900 mb-2">Metadata</h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="text-gray-500">Created By:</span> {entry.createdBy || 'System'}</div>
+                                <div><span className="text-gray-500">Updated By:</span> {entry.updatedBy || 'System'}</div>
+                                <div><span className="text-gray-500">Created:</span> {entry.insertDate ? new Date(entry.insertDate).toLocaleDateString() : 'N/A'}</div>
+                                <div><span className="text-gray-500">Updated:</span> {entry.updateDate ? new Date(entry.updateDate).toLocaleDateString() : 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                          {entry.columnDescription && (
+                            <div className="mt-4">
+                              <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                              <p className="text-sm text-gray-600">{entry.columnDescription}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+
+      {/* Form Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingEntry ? 'Edit Data Dictionary Entry' : 'Add New Data Dictionary Entry'}
+            </DialogTitle>
+          </DialogHeader>
+          <DataDictionaryForm
+            entry={editingEntry}
+            onSuccess={handleFormSuccess}
+            onCancel={handleFormClose}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

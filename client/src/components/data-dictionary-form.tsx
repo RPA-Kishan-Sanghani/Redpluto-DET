@@ -189,9 +189,8 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
   };
 
   return (
-    <div className="p-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Left Section */}
           <Card>
             <CardHeader>
@@ -537,6 +536,5 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
           </div>
         </form>
       </Form>
-    </div>
   );
 }
