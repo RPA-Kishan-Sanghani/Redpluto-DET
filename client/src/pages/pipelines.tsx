@@ -24,9 +24,9 @@ interface PipelineFilters {
 export function Pipelines() {
   const [filters, setFilters] = useState<PipelineFilters>({
     search: '',
-    executionLayer: 'all',
-    sourceSystem: 'all',
-    status: 'all'
+    executionLayer: '',
+    sourceSystem: '',
+    status: ''
   });
   const [openPipelines, setOpenPipelines] = useState<Set<number>>(new Set());
   const [editingPipeline, setEditingPipeline] = useState<ConfigRecord | null>(null);
@@ -167,7 +167,7 @@ export function Pipelines() {
               />
             </div>
             
-            <Select value={filters.executionLayer} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
+            <Select value={filters.executionLayer || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
               <SelectTrigger data-testid="select-execution-layer">
                 <SelectValue placeholder="Execution Layer" />
               </SelectTrigger>
@@ -179,7 +179,7 @@ export function Pipelines() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.sourceSystem} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
+            <Select value={filters.sourceSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
               <SelectTrigger data-testid="select-source-system">
                 <SelectValue placeholder="Source System" />
               </SelectTrigger>
@@ -194,7 +194,7 @@ export function Pipelines() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === 'all' ? '' : value }))}>
+            <Select value={filters.status || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === 'all' ? '' : value }))}>
               <SelectTrigger data-testid="select-status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
