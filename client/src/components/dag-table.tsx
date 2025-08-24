@@ -14,15 +14,19 @@ interface PipelineTableProps {
 
 interface PipelineRun {
   auditKey: number;
-  pipelineName: string;
+  codeName: string;
   runId: string;
   sourceSystem: string;
-  status: string;
+  schemaName: string;
+  targetTableName: string;
+  sourceFileName: string;
   startTime: Date;
   endTime?: Date;
-  insertedRowCount?: number;
-  updatedRowCount?: number;
-  deletedRowCount?: number;
+  insertedRowCount: number;
+  updatedRowCount: number;
+  deletedRowCount: number;
+  noChangeRowCount: number;
+  status: string;
   errorDetails?: string;
   duration?: number;
 }
@@ -125,13 +129,7 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
     return `${minutes}m ${seconds}s`;
   };
 
-  const formatRowCounts = (inserted?: number, updated?: number, deleted?: number) => {
-    const counts = [];
-    if (inserted) counts.push(`+${inserted}`);
-    if (updated) counts.push(`~${updated}`);
-    if (deleted) counts.push(`-${deleted}`);
-    return counts.length > 0 ? counts.join(", ") : "N/A";
-  };
+  
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -196,10 +194,10 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
             <tr>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("pipelineName")}
+                onClick={() => handleSort("codeName")}
                 data-testid="button-sort-name"
               >
-                Pipeline Name <ArrowUpDown className="inline ml-1 h-3 w-3" />
+                Process Name <ArrowUpDown className="inline ml-1 h-3 w-3" />
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -207,6 +205,12 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                 data-testid="button-sort-source-system"
               >
                 Source System <ArrowUpDown className="inline ml-1 h-3 w-3" />
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Schema/Table
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Source File
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -226,10 +230,7 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                 Duration
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Row Changes
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Error Details
+                Row Counts
               </th>
             </tr>
           </thead>
@@ -244,6 +245,12 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                     <div className="h-6 bg-gray-200 rounded w-16"></div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="h-6 bg-gray-200 rounded w-20"></div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -253,16 +260,13 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                     <div className="h-4 bg-gray-200 rounded w-20"></div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="h-4 bg-gray-200 rounded w-16"></div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    <div className="h-16 bg-gray-200 rounded w-16"></div>
                   </td>
                 </tr>
               ))
             ) : pipelineData?.data?.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                   No pipeline runs found for the selected criteria.
                 </td>
               </tr>
@@ -276,17 +280,26 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div>
-                        <div className="text-sm font-medium text-gray-900" data-testid={`text-pipeline-name-${pipeline.auditKey}`}>
-                          {pipeline.pipelineName}
+                        <div className="text-sm font-medium text-gray-900" data-testid={`text-code-name-${pipeline.auditKey}`}>
+                          {pipeline.codeName}
                         </div>
                         <div className="text-sm text-gray-500" data-testid={`text-run-id-${pipeline.auditKey}`}>
-                          {pipeline.runId}
+                          Run ID: {pipeline.runId}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap" data-testid={`text-source-system-${pipeline.auditKey}`}>
                     <Badge variant="outline">{pipeline.sourceSystem}</Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-schema-table-${pipeline.auditKey}`}>
+                    <div>
+                      <div className="font-medium">{pipeline.schemaName}</div>
+                      <div className="text-gray-400">{pipeline.targetTableName}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-source-file-${pipeline.auditKey}`}>
+                    {pipeline.sourceFileName || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap" data-testid={`text-status-${pipeline.auditKey}`}>
                     {getStatusBadge(pipeline.status)}
@@ -297,17 +310,13 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-duration-${pipeline.auditKey}`}>
                     {formatDuration(pipeline.startTime, pipeline.endTime)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-row-changes-${pipeline.auditKey}`}>
-                    {formatRowCounts(pipeline.insertedRowCount, pipeline.updatedRowCount, pipeline.deletedRowCount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-error-details-${pipeline.auditKey}`}>
-                    {pipeline.errorDetails ? (
-                      <span className="text-red-600 truncate max-w-xs" title={pipeline.errorDetails}>
-                        {pipeline.errorDetails.length > 50 ? pipeline.errorDetails.substring(0, 50) + "..." : pipeline.errorDetails}
-                      </span>
-                    ) : (
-                      "None"
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-row-counts-${pipeline.auditKey}`}>
+                    <div className="space-y-1">
+                      <div>+{pipeline.insertedRowCount} inserted</div>
+                      <div>~{pipeline.updatedRowCount} updated</div>
+                      <div>-{pipeline.deletedRowCount} deleted</div>
+                      <div>={pipeline.noChangeRowCount} unchanged</div>
+                    </div>
                   </td>
                 </tr>
               ))

@@ -200,15 +200,19 @@ export class DatabaseStorage implements IStorage {
 
     let query = db.select({
       auditKey: auditTable.auditKey,
-      pipelineName: auditTable.codeName,
+      codeName: auditTable.codeName,
       runId: auditTable.runId,
-      status: auditTable.status,
+      sourceSystem: auditTable.sourceSystem,
+      schemaName: auditTable.schemaName,
+      targetTableName: auditTable.targetTableName,
+      sourceFileName: auditTable.sourceFileName,
       startTime: auditTable.startTime,
       endTime: auditTable.endTime,
-      sourceSystem: auditTable.sourceSystem,
       insertedRowCount: auditTable.insertedRowCount,
       updatedRowCount: auditTable.updatedRowCount,
       deletedRowCount: auditTable.deletedRowCount,
+      noChangeRowCount: auditTable.noChangeRowCount,
+      status: auditTable.status,
     }).from(auditTable);
 
     const conditions = [];
@@ -237,9 +241,10 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Add sorting
-    const sortColumn = sortBy === 'pipelineName' ? auditTable.codeName :
+    const sortColumn = sortBy === 'codeName' ? auditTable.codeName :
                       sortBy === 'status' ? auditTable.status :
                       sortBy === 'sourceSystem' ? auditTable.sourceSystem :
+                      sortBy === 'startTime' ? auditTable.startTime :
                       auditTable.startTime;
 
     if (sortOrder === 'desc') {
@@ -279,15 +284,19 @@ export class DatabaseStorage implements IStorage {
 
     const data = results.map(row => ({
       auditKey: row.auditKey,
-      pipelineName: row.pipelineName || 'Unknown Pipeline',
+      codeName: row.codeName || 'Unknown Process',
       runId: row.runId || '',
       sourceSystem: row.sourceSystem || 'Unknown',
-      status: row.status || 'Unknown',
+      schemaName: row.schemaName || '',
+      targetTableName: row.targetTableName || '',
+      sourceFileName: row.sourceFileName || '',
       startTime: row.startTime || new Date(),
       endTime: row.endTime,
-      insertedRowCount: row.insertedRowCount,
-      updatedRowCount: row.updatedRowCount,
-      deletedRowCount: row.deletedRowCount,
+      insertedRowCount: row.insertedRowCount || 0,
+      updatedRowCount: row.updatedRowCount || 0,
+      deletedRowCount: row.deletedRowCount || 0,
+      noChangeRowCount: row.noChangeRowCount || 0,
+      status: row.status || 'Unknown',
       errorDetails: errorDetails[row.auditKey] || undefined,
       duration: row.endTime && row.startTime ?
         Math.round((row.endTime.getTime() - row.startTime.getTime()) / 1000) : undefined,
