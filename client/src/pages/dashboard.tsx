@@ -1,6 +1,7 @@
 import Header from "@/components/header";
 import MetricsCards from "@/components/metrics-cards";
 import DagSummaryCards from "@/components/dag-summary-cards";
+import AllPipelinesTable from "@/components/all-pipelines-table";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export default function Dashboard() {
 
         <MetricsCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
         <DagSummaryCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
+        <AllPipelinesTable dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
       </main>
     </div>
   );

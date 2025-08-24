@@ -87,6 +87,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // All pipelines endpoint with filtering and pagination
+  app.get("/api/dashboard/all-pipelines", async (req, res) => {
+    try {
+      const {
+        page = "1",
+        limit = "20",
+        search,
+        sourceSystem,
+        status,
+        startDate,
+        endDate,
+        sortBy = "startTime",
+        sortOrder = "desc",
+      } = req.query;
+
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = {
+          start: new Date(startDate as string),
+          end: new Date(endDate as string),
+        };
+      }
+
+      const options = {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        search: search as string,
+        sourceSystem: sourceSystem as string,
+        status: status as string,
+        dateRange,
+        sortBy: sortBy as string,
+        sortOrder: sortOrder as 'asc' | 'desc',
+      };
+
+      const result = await storage.getAllPipelines(options);
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching all pipelines:', error);
+      res.status(500).json({ error: 'Failed to fetch all pipelines' });
+    }
+  });
+
   // Errors endpoint
   app.get("/api/dashboard/errors", async (req, res) => {
     try {
