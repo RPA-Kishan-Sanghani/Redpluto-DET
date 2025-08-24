@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertSourceConnectionSchema.parse(req.body);
       const connection = await storage.createConnection(validatedData);
       res.status(201).json(connection);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating connection:', error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: 'Invalid connection data', details: error.errors });
@@ -215,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(connection);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating connection:', error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: 'Invalid connection data', details: error.errors });

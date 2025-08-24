@@ -13,10 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { insertSourceConnectionSchema, type SourceConnection, type InsertSourceConnection } from "@shared/schema";
 import { z } from "zod";
 
-const connectionFormSchema = insertSourceConnectionSchema.extend({
-  connectionType: z.string().min(1, "Connection type is required"),
-  connectionName: z.string().min(1, "Connection name is required"),
-});
+const connectionFormSchema = insertSourceConnectionSchema;
 
 type ConnectionFormData = z.infer<typeof connectionFormSchema>;
 

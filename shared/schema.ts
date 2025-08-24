@@ -66,7 +66,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertAuditSchema = createInsertSchema(auditTable).omit({
   auditKey: true,
-} as const);
+});
 
 export const insertErrorSchema = createInsertSchema(errorTable);
 
@@ -74,12 +74,12 @@ export const insertSourceConnectionSchema = createInsertSchema(sourceConnectionT
   connectionId: true,
   createdAt: true,
   updatedAt: true,
-} as const);
+});
 
 export const updateSourceConnectionSchema = createInsertSchema(sourceConnectionTable).omit({
   connectionId: true,
   createdAt: true,
-} as const).partial();
+}).partial();
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;

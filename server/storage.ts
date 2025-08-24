@@ -536,10 +536,7 @@ export class DatabaseStorage implements IStorage {
   async createConnection(connection: InsertSourceConnection): Promise<SourceConnection> {
     const [created] = await db
       .insert(sourceConnectionTable)
-      .values({
-        ...connection,
-        updatedAt: new Date(),
-      })
+      .values(connection)
       .returning();
     return created;
   }
@@ -612,7 +609,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(sourceConnectionTable)
       .where(eq(sourceConnectionTable.connectionId, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async testConnection(connectionData: Partial<SourceConnection>): Promise<{
