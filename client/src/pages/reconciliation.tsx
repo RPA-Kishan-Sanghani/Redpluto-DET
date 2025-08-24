@@ -48,19 +48,14 @@ export function Reconciliation() {
       
       const response = await fetch(`/api/reconciliation-configs?${params}`);
       if (!response.ok) throw new Error('Failed to fetch reconciliation configs');
-      return response.json() as ReconciliationConfig[];
+      return (await response.json()) as ReconciliationConfig[];
     }
   });
 
   // Delete config mutation
   const deleteConfigMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/reconciliation-configs/${id}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete reconciliation config');
-      }
+      const response = await apiRequest('DELETE', `/api/reconciliation-configs/${id}`);
       return response.json();
     },
     onSuccess: () => {

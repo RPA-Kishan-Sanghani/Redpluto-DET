@@ -127,10 +127,7 @@ export function ReconciliationForm({
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: InsertReconciliationConfig) => {
-      const response = await apiRequest("/api/reconciliation-configs", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/reconciliation-configs", data);
       return response.json();
     },
     onSuccess: () => {
@@ -153,10 +150,7 @@ export function ReconciliationForm({
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest(`/api/reconciliation-configs/${config?.reconKey}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("PUT", `/api/reconciliation-configs/${config?.reconKey}`, data);
       return response.json();
     },
     onSuccess: () => {
