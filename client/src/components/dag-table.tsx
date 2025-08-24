@@ -141,11 +141,11 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Systems</SelectItem>
-                <SelectItem value="bronze">Bronze</SelectItem>
-                <SelectItem value="silver">Silver</SelectItem>
-                <SelectItem value="gold">Gold</SelectItem>
-                <SelectItem value="quality">Quality</SelectItem>
-                <SelectItem value="reconciliation">Reconciliation</SelectItem>
+                <SelectItem value="Bronze">Bronze</SelectItem>
+                <SelectItem value="Silver">Silver</SelectItem>
+                <SelectItem value="Gold">Gold</SelectItem>
+                <SelectItem value="Quality">Quality</SelectItem>
+                <SelectItem value="Reconciliation">Reconciliation</SelectItem>
               </SelectContent>
             </Select>
 
@@ -155,10 +155,10 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="running">Running</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="SUCCESS">Success</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
+                <SelectItem value="RUNNING">Running</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
               </SelectContent>
             </Select>
 
@@ -285,7 +285,7 @@ export default function PipelineTable({ dateRange, refreshKey }: PipelineTablePr
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-testid={`text-error-details-${pipeline.auditKey}`}>
                     {pipeline.errorDetails ? (
                       <span className="text-red-600 truncate max-w-xs" title={pipeline.errorDetails}>
-                        {pipeline.errorDetails.substring(0, 50)}...
+                        {pipeline.errorDetails.length > 50 ? pipeline.errorDetails.substring(0, 50) + "..." : pipeline.errorDetails}
                       </span>
                     ) : (
                       "None"

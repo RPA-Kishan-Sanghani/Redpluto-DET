@@ -181,9 +181,8 @@ export class DatabaseStorage implements IStorage {
     page?: number;
     limit?: number;
     search?: string;
-    layer?: string;
+    sourceSystem?: string;
     status?: string;
-    owner?: string;
     dateRange?: { start: Date; end: Date };
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -192,9 +191,8 @@ export class DatabaseStorage implements IStorage {
       page = 1,
       limit = 5,
       search,
-      layer,
+      sourceSystem,
       status,
-      owner,
       dateRange,
       sortBy = 'startTime',
       sortOrder = 'desc'
@@ -208,10 +206,10 @@ export class DatabaseStorage implements IStorage {
       startTime: auditTable.startTime,
       endTime: auditTable.endTime,
       sourceSystem: auditTable.sourceSystem,
-      errorMessage: sql<string>`MAX(${errorTable.errorMessage})`
-    }).from(auditTable)
-      .leftJoin(errorTable, eq(auditTable.auditKey, errorTable.auditKey));
-
+      insertedRowCount: auditTable.insertedRowCount,
+      updatedRowCount: auditTable.updatedRowCount,
+      deletedRowCount: auditTable.deletedRowCount,
+    }).from(auditTable);
 
     const conditions = [];
 
@@ -219,27 +217,12 @@ export class DatabaseStorage implements IStorage {
       conditions.push(like(auditTable.codeName, `%${search}%`));
     }
 
-    if (layer && layer !== 'all') {
-      // Filter by layer using codeName pattern matching since there's no layer column
-      const layerPatterns = {
-        'Quality': '%quality%',
-        'Reconciliation': '%reconciliation%',
-        'Bronze': '%bronze%',
-        'Silver': '%silver%',
-        'Gold': '%gold%'
-      };
-      if (layerPatterns[layer as keyof typeof layerPatterns]) {
-        conditions.push(like(auditTable.codeName, layerPatterns[layer as keyof typeof layerPatterns]));
-      }
+    if (sourceSystem && sourceSystem !== 'all') {
+      conditions.push(eq(auditTable.sourceSystem, sourceSystem));
     }
 
     if (status && status !== 'all') {
-      conditions.push(eq(auditTable.status, status.toUpperCase()));
-    }
-
-    if (owner) {
-      // Filter by owner using sourceSystem since there's no owner column
-      conditions.push(like(auditTable.sourceSystem, `%${owner}%`));
+      conditions.push(eq(auditTable.status, status));
     }
 
     if (dateRange) {
@@ -256,22 +239,19 @@ export class DatabaseStorage implements IStorage {
     // Add sorting
     const sortColumn = sortBy === 'pipelineName' ? auditTable.codeName :
                       sortBy === 'status' ? auditTable.status :
-                      sortBy === 'lastRun' ? auditTable.startTime :
+                      sortBy === 'sourceSystem' ? auditTable.sourceSystem :
                       auditTable.startTime;
 
     if (sortOrder === 'desc') {
       query = query.orderBy(desc(sortColumn));
     } else {
-      query = query.orderBy(sortColumn);
+      query = query.orderBy(asc(sortColumn));
     }
 
-    // Group by auditKey to get the latest error message per run
-    query = query.groupBy(auditTable.auditKey, auditTable.codeName, auditTable.runId, auditTable.status, auditTable.startTime, auditTable.endTime, auditTable.sourceSystem);
-
-    // Get total count
-    const countQuery = db.select({ count: count() }).from(auditTable);
+    // Get total count for pagination
+    let countQuery = db.select({ count: count() }).from(auditTable);
     if (conditions.length > 0) {
-      countQuery.where(and(...conditions));
+      countQuery = countQuery.where(and(...conditions));
     }
     const [{ count: total }] = await countQuery;
 
@@ -279,17 +259,38 @@ export class DatabaseStorage implements IStorage {
     const offset = (page - 1) * limit;
     const results = await query.limit(limit).offset(offset);
 
+    // Get error details for each audit record
+    const auditKeys = results.map(r => r.auditKey);
+    let errorDetails: Record<number, string> = {};
+    
+    if (auditKeys.length > 0) {
+      const errors = await db.select({
+        auditKey: errorTable.auditKey,
+        errorMessage: errorTable.errorMessage
+      }).from(errorTable)
+        .where(inArray(errorTable.auditKey, auditKeys));
+      
+      errors.forEach(error => {
+        if (!errorDetails[error.auditKey]) {
+          errorDetails[error.auditKey] = error.errorMessage || '';
+        }
+      });
+    }
+
     const data = results.map(row => ({
       auditKey: row.auditKey,
       pipelineName: row.pipelineName || 'Unknown Pipeline',
       runId: row.runId || '',
-      layer: this.getLayerFromCodeName(row.pipelineName || ''),
+      sourceSystem: row.sourceSystem || 'Unknown',
       status: row.status || 'Unknown',
-      lastRun: row.startTime || new Date(),
-      owner: this.getOwnerFromSystem(row.sourceSystem || ''),
+      startTime: row.startTime || new Date(),
+      endTime: row.endTime,
+      insertedRowCount: row.insertedRowCount,
+      updatedRowCount: row.updatedRowCount,
+      deletedRowCount: row.deletedRowCount,
+      errorDetails: errorDetails[row.auditKey] || undefined,
       duration: row.endTime && row.startTime ?
         Math.round((row.endTime.getTime() - row.startTime.getTime()) / 1000) : undefined,
-      errorMessage: row.errorMessage || undefined,
     }));
 
     return {
