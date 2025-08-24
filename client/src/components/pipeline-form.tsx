@@ -111,11 +111,11 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   // Create or update mutation
   const savePipelineMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const url = pipeline 
-        ? `/api/pipelines/${pipeline.configKey}` 
+      const url = pipeline
+        ? `/api/pipelines/${pipeline.configKey}`
         : '/api/pipelines';
       const method = pipeline ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -133,6 +133,10 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] });
+      queryClient.invalidateQueries({ queryKey: ['pipeline-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['all-pipelines'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['pipeline-summary'] });
       toast({
         title: 'Success',
         description: `Pipeline ${pipeline ? 'updated' : 'created'} successfully`
@@ -655,15 +659,15 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
           <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-pipeline">
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isLoading || savePipelineMutation.isPending}
             data-testid="button-save-pipeline"
           >
-            {isLoading || savePipelineMutation.isPending 
-              ? 'Saving...' 
-              : pipeline 
-                ? 'Update Pipeline' 
+            {isLoading || savePipelineMutation.isPending
+              ? 'Saving...'
+              : pipeline
+                ? 'Update Pipeline'
                 : 'Create Pipeline'
             }
           </Button>
