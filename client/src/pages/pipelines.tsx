@@ -10,6 +10,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Trash2, Edit, Plus, Search, Filter, ChevronDown, ChevronUp, Calendar, Database, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePagination } from '@/hooks/use-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { apiRequest } from '@/lib/queryClient';
 import type { ConfigRecord, InsertConfigRecord, UpdateConfigRecord } from '@shared/schema';
 import { PipelineForm } from '@/components/pipeline-form';
@@ -37,7 +39,7 @@ export function Pipelines() {
   const { toast } = useToast();
 
   // Fetch pipelines
-  const { data: pipelines = [], isLoading, error } = useQuery({
+  const { data: allPipelines = [], isLoading, error } = useQuery({
     queryKey: ['/api/pipelines', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -50,6 +52,22 @@ export function Pipelines() {
       if (!response.ok) throw new Error('Failed to fetch pipelines');
       return response.json() as ConfigRecord[];
     }
+  });
+
+  // Pagination
+  const {
+    currentData: pipelines,
+    currentPage,
+    totalPages,
+    totalItems,
+    setCurrentPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+  } = usePagination({
+    data: allPipelines,
+    itemsPerPage: 10,
   });
 
   // Delete pipeline mutation
@@ -213,20 +231,20 @@ export function Pipelines() {
       </Card>
 
       {/* Pipeline List */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="text-center py-8">
-            <p>Loading pipelines...</p>
-          </div>
-        ) : pipelines.length === 0 ? (
-          <Card>
+      <Card>
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p>Loading pipelines...</p>
+            </div>
+          ) : allPipelines.length === 0 ? (
             <CardContent className="text-center py-8">
               <Database className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-500">No pipelines found. Create your first pipeline configuration.</p>
             </CardContent>
-          </Card>
-        ) : (
-          pipelines.map((pipeline) => (
+          ) : (
+            <>
+              {pipelines.map((pipeline) => (
             <Card key={pipeline.configKey} className="overflow-hidden">
               <Collapsible
                 open={openPipelines.has(pipeline.configKey)}
@@ -356,10 +374,24 @@ export function Pipelines() {
                   </CardContent>
                 </CollapsibleContent>
               </Collapsible>
-            </Card>
-          ))
-        )}
-      </div>
+            </div>
+          ))}
+          
+          {allPipelines.length > 0 && (
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={10}
+              onPageChange={setCurrentPage}
+              canNextPage={canNextPage}
+              canPrevPage={canPrevPage}
+            />
+          )}
+        </>
+      )}
+    </div>
+  </Card>
 
       {/* Pipeline Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

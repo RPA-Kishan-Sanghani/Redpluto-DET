@@ -11,6 +11,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2, Edit, Plus, Search, Filter, ChevronDown, ChevronUp, Shield, Database, Settings, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { usePagination } from '@/hooks/use-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import type { DataQualityConfig, InsertDataQualityConfig, UpdateDataQualityConfig } from '@shared/schema';
 import { DataQualityForm } from '@/components/data-quality-form';
 import Header from '@/components/header';
@@ -32,12 +34,12 @@ export function DataQuality() {
   const [openConfigs, setOpenConfigs] = useState<Set<number>>(new Set());
   const [editingConfig, setEditingConfig] = useState<DataQualityConfig | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch data quality configs
-  const { data: configs = [], isLoading, error } = useQuery({
+  // Fetch data quality configurations
+  const { data: allConfigurations = [], isLoading, error } = useQuery({
     queryKey: ['/api/data-quality-configs', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -45,11 +47,27 @@ export function DataQuality() {
       if (filters.executionLayer) params.append('executionLayer', filters.executionLayer);
       if (filters.validationType) params.append('validationType', filters.validationType);
       if (filters.status) params.append('status', filters.status);
-      
+
       const response = await fetch(`/api/data-quality-configs?${params}`);
       if (!response.ok) throw new Error('Failed to fetch data quality configs');
       return (await response.json()) as DataQualityConfig[];
     }
+  });
+
+  // Pagination
+  const {
+    currentData: configurations,
+    currentPage,
+    totalPages,
+    totalItems,
+    setCurrentPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+  } = usePagination({
+    data: allConfigurations,
+    itemsPerPage: 10,
   });
 
   // Delete config mutation
@@ -116,7 +134,7 @@ export function DataQuality() {
       'FORMAT_CHECK': 'outline',
       'CUSTOM': 'destructive'
     };
-    
+
     return (
       <Badge variant={variants[validationType] || 'outline'}>
         {validationType.replace('_', ' ')}
@@ -137,7 +155,7 @@ export function DataQuality() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="heading-data-quality">
@@ -148,8 +166,8 @@ export function DataQuality() {
 
         <div className="flex justify-end mb-6">
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/data-quality-configs'] })}
               data-testid="button-refresh-configs"
             >
@@ -182,7 +200,7 @@ export function DataQuality() {
                   data-testid="input-search-data-quality"
                 />
               </div>
-              
+
               <Select value={filters.executionLayer || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
                 <SelectTrigger data-testid="select-execution-layer">
                   <SelectValue placeholder="Execution Layer" />
@@ -222,164 +240,178 @@ export function DataQuality() {
           </CardContent>
         </Card>
 
-        {/* Data Quality Config List */}
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p>Loading data quality configurations...</p>
-            </div>
-          ) : configs.length === 0 ? (
-            <Card>
+        {/* Configurations List */}
+        <Card>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p>Loading data quality configurations...</p>
+              </div>
+            ) : allConfigurations.length === 0 ? (
               <CardContent className="text-center py-8">
                 <Shield className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-500">No data quality configurations found. Create your first quality rule.</p>
               </CardContent>
-            </Card>
-          ) : (
-            configs.map((config) => (
-              <Card key={config.dataQualityKey} className="overflow-hidden">
-                <Collapsible
-                  open={openConfigs.has(config.dataQualityKey)}
-                  onOpenChange={() => toggleConfig(config.dataQualityKey)}
-                >
-                  <CollapsibleTrigger className="w-full">
-                    <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-left">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <CardTitle className="text-lg" data-testid={`text-config-name-${config.dataQualityKey}`}>
-                                {config.tableName}.{config.attributeName}
-                              </CardTitle>
-                              {getStatusBadge(config.activeFlag)}
-                              {getValidationTypeBadge(config.validationType)}
-                              {config.executionLayer && (
-                                <Badge variant="outline" className="capitalize">
-                                  {config.executionLayer}
-                                </Badge>
-                              )}
+            ) : (
+              <>
+                {configurations.map((config) => (
+                  <Card key={config.dataQualityKey} className="overflow-hidden">
+                    <Collapsible
+                      open={openConfigs.has(config.dataQualityKey)}
+                      onOpenChange={() => toggleConfig(config.dataQualityKey)}
+                    >
+                      <CollapsibleTrigger className="w-full">
+                        <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4 text-left">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <CardTitle className="text-lg" data-testid={`text-config-name-${config.dataQualityKey}`}>
+                                    {config.tableName}.{config.attributeName}
+                                  </CardTitle>
+                                  {getStatusBadge(config.activeFlag)}
+                                  {getValidationTypeBadge(config.validationType)}
+                                  {config.executionLayer && (
+                                    <Badge variant="outline" className="capitalize">
+                                      {config.executionLayer}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <CardDescription className="flex items-center space-x-4 mt-1">
+                                  <span className="flex items-center">
+                                    <Database className="h-3 w-3 mr-1" />
+                                    Config: {config.configKey}
+                                  </span>
+                                  {config.thresholdPercentage && (
+                                    <span className="flex items-center">
+                                      <BarChart3 className="h-3 w-3 mr-1" />
+                                      Threshold: {config.thresholdPercentage}%
+                                    </span>
+                                  )}
+                                  {config.defaultValue && (
+                                    <span className="flex items-center">
+                                      <Settings className="h-3 w-3 mr-1" />
+                                      Default: {config.defaultValue}
+                                    </span>
+                                  )}
+                                </CardDescription>
+                              </div>
                             </div>
-                            <CardDescription className="flex items-center space-x-4 mt-1">
-                              <span className="flex items-center">
-                                <Database className="h-3 w-3 mr-1" />
-                                Config: {config.configKey}
-                              </span>
-                              {config.thresholdPercentage && (
-                                <span className="flex items-center">
-                                  <BarChart3 className="h-3 w-3 mr-1" />
-                                  Threshold: {config.thresholdPercentage}%
-                                </span>
-                              )}
-                              {config.defaultValue && (
-                                <span className="flex items-center">
-                                  <Settings className="h-3 w-3 mr-1" />
-                                  Default: {config.defaultValue}
-                                </span>
-                              )}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(config);
-                            }}
-                            data-testid={`button-edit-${config.dataQualityKey}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                            <div className="flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => e.stopPropagation()}
-                                data-testid={`button-delete-${config.dataQualityKey}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(config);
+                                }}
+                                data-testid={`button-edit-${config.dataQualityKey}`}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Data Quality Configuration</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this data quality configuration? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(config.dataQualityKey)}
-                                  className="bg-red-500 hover:bg-red-600"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          {openConfigs.has(config.dataQualityKey) ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent>
-                    <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {/* Basic Information */}
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                            <Database className="h-3 w-3 mr-1" />
-                            Basic Information
-                          </h4>
-                          <div className="space-y-1 text-sm">
-                            <div><span className="font-medium">Table:</span> {config.tableName}</div>
-                            <div><span className="font-medium">Attribute:</span> {config.attributeName}</div>
-                            <div><span className="font-medium">Validation:</span> {config.validationType}</div>
-                            <div><span className="font-medium">Default Value:</span> {config.defaultValue || 'N/A'}</div>
-                          </div>
-                        </div>
-
-                        {/* Quality Settings */}
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Quality Settings
-                          </h4>
-                          <div className="space-y-1 text-sm">
-                            <div><span className="font-medium">Threshold:</span> {config.thresholdPercentage !== null ? `${config.thresholdPercentage}%` : 'N/A'}</div>
-                            <div><span className="font-medium">Error Transfer:</span> {config.errorTableTransferFlag === 'Y' ? 'Enabled' : 'Disabled'}</div>
-                            <div><span className="font-medium">Status:</span> {config.activeFlag === 'Y' ? 'Active' : 'Inactive'}</div>
-                          </div>
-                        </div>
-
-                        {/* Custom Query */}
-                        {config.customQuery && (
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                              <Settings className="h-3 w-3 mr-1" />
-                              Custom Query
-                            </h4>
-                            <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
-                              <pre className="whitespace-pre-wrap">{config.customQuery}</pre>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                    data-testid={`button-delete-${config.dataQualityKey}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Data Quality Configuration</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this data quality configuration? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDelete(config.dataQualityKey)}
+                                      className="bg-red-500 hover:bg-red-600"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                              {openConfigs.has(config.dataQualityKey) ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            ))
-          )}
-        </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent>
+                        <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                            {/* Basic Information */}
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                                <Database className="h-3 w-3 mr-1" />
+                                Basic Information
+                              </h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="font-medium">Table:</span> {config.tableName}</div>
+                                <div><span className="font-medium">Attribute:</span> {config.attributeName}</div>
+                                <div><span className="font-medium">Validation:</span> {config.validationType}</div>
+                                <div><span className="font-medium">Default Value:</span> {config.defaultValue || 'N/A'}</div>
+                              </div>
+                            </div>
+
+                            {/* Quality Settings */}
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                                <Shield className="h-3 w-3 mr-1" />
+                                Quality Settings
+                              </h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="font-medium">Threshold:</span> {config.thresholdPercentage !== null ? `${config.thresholdPercentage}%` : 'N/A'}</div>
+                                <div><span className="font-medium">Error Transfer:</span> {config.errorTableTransferFlag === 'Y' ? 'Enabled' : 'Disabled'}</div>
+                                <div><span className="font-medium">Status:</span> {config.activeFlag === 'Y' ? 'Active' : 'Inactive'}</div>
+                              </div>
+                            </div>
+
+                            {/* Custom Query */}
+                            {config.customQuery && (
+                              <div className="space-y-2">
+                                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                                  <Settings className="h-3 w-3 mr-1" />
+                                  Custom Query
+                                </h4>
+                                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
+                                  <pre className="whitespace-pre-wrap">{config.customQuery}</pre>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                ))}
+
+                {allConfigurations.length > 0 && (
+                  <DataPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={10}
+                    onPageChange={setCurrentPage}
+                    canNextPage={canNextPage}
+                    canPrevPage={canPrevPage}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </Card>
 
         {/* Data Quality Form Dialog */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

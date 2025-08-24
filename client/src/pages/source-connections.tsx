@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Database, File, Cloud, Wifi, Settings, TestTube2, Edit, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/header";
-import ConnectionForm from "@/components/connection-form";
+import { usePagination } from '@/hooks/use-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import type { SourceConnection } from "@shared/schema";
+import { ConnectionForm } from "@/components/connection-form";
+import Header from "@/components/header";
 
 const CONNECTION_CATEGORIES = [
   { id: 'all', label: 'All Connectors', icon: Settings },
@@ -63,19 +65,41 @@ export default function SourceConnections() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch connections with filters
-  const { data: connections = [], isLoading } = useQuery<SourceConnection[]>({
-    queryKey: ['/api/connections', selectedCategory, searchQuery, statusFilter],
+  const filters = {
+    category: selectedCategory,
+    search: searchQuery,
+    status: statusFilter,
+  };
+
+  // Fetch source connections
+  const { data: allConnections = [], isLoading, error } = useQuery({
+    queryKey: ['/api/connections', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
-      
+
       const response = await fetch(`/api/connections?${params}`);
       if (!response.ok) throw new Error('Failed to fetch connections');
-      return response.json();
+      return response.json() as SourceConnection[];
     },
+  });
+
+  // Pagination
+  const {
+    currentData: connections,
+    currentPage,
+    totalPages,
+    totalItems,
+    setCurrentPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+  } = usePagination({
+    data: allConnections,
+    itemsPerPage: 10,
   });
 
   // Test connection mutation
@@ -159,7 +183,7 @@ export default function SourceConnections() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -247,109 +271,103 @@ export default function SourceConnections() {
             </div>
 
             {/* Connections Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded mb-4 w-2/3"></div>
-                    <div className="flex justify-between">
-                      <div className="h-6 bg-gray-200 rounded w-16"></div>
-                      <div className="h-8 bg-gray-200 rounded w-20"></div>
-                    </div>
+            <Card>
+              <div className="space-y-4">
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p>Loading source connections...</p>
                   </div>
-                ))}
-              </div>
-            ) : connections.length === 0 ? (
-              <div className="text-center py-12">
-                <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No connections found</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchQuery || statusFilter !== 'all' || selectedCategory !== 'all'
-                    ? 'No connections match your current filters.'
-                    : 'Get started by creating your first data source connection.'}
-                </p>
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700"
-                  data-testid="button-create-first-connection"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Connection
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {connections.map((connection) => {
-                  const typeInfo = getConnectionTypeInfo(connection.connectionType);
-                  const statusInfo = getStatusInfo(connection.status);
-                  const TypeIcon = typeInfo.icon;
-                  const StatusIcon = statusInfo.Icon;
+                ) : allConnections.length === 0 ? (
+                  <CardContent className="text-center py-8">
+                    <Database className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-500">No source connections found. Create your first connection.</p>
+                  </CardContent>
+                ) : (
+                  <>
+                    {connections.map((connection) => {
+                      const typeInfo = getConnectionTypeInfo(connection.connectionType);
+                      const statusInfo = getStatusInfo(connection.status);
+                      const TypeIcon = typeInfo.icon;
+                      const StatusIcon = statusInfo.Icon;
 
-                  return (
-                    <Card key={connection.connectionId} className="hover:shadow-md transition-shadow" data-testid={`connection-card-${connection.connectionId}`}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center">
-                            <TypeIcon className="w-5 h-5 text-gray-600 mr-2" />
-                            <div>
-                              <CardTitle className="text-sm font-medium">{connection.connectionName}</CardTitle>
-                              <CardDescription className="text-xs">
-                                {connection.host && `${connection.host}${connection.port ? `:${connection.port}` : ''}`}
-                              </CardDescription>
+                      return (
+                        <Card key={connection.connectionId} className="hover:shadow-md transition-shadow" data-testid={`connection-card-${connection.connectionId}`}>
+                          <CardHeader className="pb-2">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center">
+                                <TypeIcon className="w-5 h-5 text-gray-600 mr-2" />
+                                <div>
+                                  <CardTitle className="text-sm font-medium">{connection.connectionName}</CardTitle>
+                                  <CardDescription className="text-xs">
+                                    {connection.host && `${connection.host}${connection.port ? `:${connection.port}` : ''}`}
+                                  </CardDescription>
+                                </div>
+                              </div>
+                              <Badge className={`text-xs ${typeInfo.color}`}>
+                                {connection.connectionType}
+                              </Badge>
                             </div>
-                          </div>
-                          <Badge className={`text-xs ${typeInfo.color}`}>
-                            {connection.connectionType}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className={`flex items-center text-sm ${statusInfo.color}`}>
-                            <StatusIcon className="w-4 h-4 mr-1" />
-                            {connection.status}
-                          </div>
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleTestConnection(connection)}
-                              disabled={testConnectionMutation.isPending}
-                              data-testid={`button-test-${connection.connectionId}`}
-                            >
-                              <TestTube2 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditConnection(connection)}
-                              data-testid={`button-edit-${connection.connectionId}`}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteConnection(connection)}
-                              className="text-red-600 hover:text-red-700"
-                              data-testid={`button-delete-${connection.connectionId}`}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        {connection.lastSync && (
-                          <div className="text-xs text-gray-500 mt-2">
-                            Last sync: {new Date(connection.lastSync).toLocaleDateString()}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between">
+                              <div className={`flex items-center text-sm ${statusInfo.color}`}>
+                                <StatusIcon className="w-4 h-4 mr-1" />
+                                {connection.status}
+                              </div>
+                              <div className="flex space-x-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleTestConnection(connection)}
+                                  disabled={testConnectionMutation.isPending}
+                                  data-testid={`button-test-${connection.connectionId}`}
+                                >
+                                  <TestTube2 className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditConnection(connection)}
+                                  data-testid={`button-edit-${connection.connectionId}`}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteConnection(connection)}
+                                  className="text-red-600 hover:text-red-700"
+                                  data-testid={`button-delete-${connection.connectionId}`}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            {connection.lastSync && (
+                              <div className="text-xs text-gray-500 mt-2">
+                                Last sync: {new Date(connection.lastSync).toLocaleDateString()}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+
+                    {allConnections.length > 0 && (
+                      <DataPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        itemsPerPage={10}
+                        onPageChange={setCurrentPage}
+                        canNextPage={canNextPage}
+                        canPrevPage={canPrevPage}
+                      />
+                    )}
+                  </>
+                )}
               </div>
-            )}
+            </Card>
           </div>
         </div>
       </div>

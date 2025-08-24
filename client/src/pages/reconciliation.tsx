@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Trash2, Edit, Plus, Search, Filter, ChevronDown, ChevronUp, Database, Settings, Target, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { usePagination } from '@/hooks/use-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import type { ReconciliationConfig, InsertReconciliationConfig, UpdateReconciliationConfig } from '@shared/schema';
 import { ReconciliationForm } from '@/components/reconciliation-form';
 import Header from '@/components/header';
@@ -32,12 +33,12 @@ export function Reconciliation() {
   const [openConfigs, setOpenConfigs] = useState<Set<number>>(new Set());
   const [editingConfig, setEditingConfig] = useState<ReconciliationConfig | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch reconciliation configs
-  const { data: configs = [], isLoading, error } = useQuery({
+  // Fetch reconciliation configurations
+  const { data: allReconciliations = [], isLoading, error } = useQuery({
     queryKey: ['/api/reconciliation-configs', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -45,11 +46,27 @@ export function Reconciliation() {
       if (filters.executionLayer) params.append('executionLayer', filters.executionLayer);
       if (filters.reconType) params.append('reconType', filters.reconType);
       if (filters.status) params.append('status', filters.status);
-      
+
       const response = await fetch(`/api/reconciliation-configs?${params}`);
       if (!response.ok) throw new Error('Failed to fetch reconciliation configs');
       return (await response.json()) as ReconciliationConfig[];
     }
+  });
+
+  // Pagination
+  const {
+    currentData: reconciliations,
+    currentPage,
+    totalPages,
+    totalItems,
+    setCurrentPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+  } = usePagination({
+    data: allReconciliations,
+    itemsPerPage: 10,
   });
 
   // Delete config mutation
@@ -116,14 +133,14 @@ export function Reconciliation() {
       'sum_check': 'outline',
       'data_check': 'destructive'
     };
-    
+
     const displayNames: Record<string, string> = {
       'count_check': 'Count Check',
       'amount_check': 'Amount Check',
       'sum_check': 'Sum Check',
       'data_check': 'Data Check'
     };
-    
+
     return (
       <Badge variant={variants[reconType] || 'outline'}>
         {displayNames[reconType] || reconType}
@@ -144,7 +161,7 @@ export function Reconciliation() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="heading-reconciliation">
@@ -189,7 +206,7 @@ export function Reconciliation() {
                   data-testid="input-search-reconciliation"
                 />
               </div>
-              
+
               <Select value={filters.executionLayer || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
                 <SelectTrigger data-testid="select-execution-layer">
                   <SelectValue placeholder="Execution Layer" />
@@ -230,176 +247,190 @@ export function Reconciliation() {
         </Card>
 
         {/* Reconciliation Config List */}
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p>Loading reconciliation configurations...</p>
-            </div>
-          ) : configs.length === 0 ? (
-            <Card>
+        <Card>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p>Loading reconciliation configurations...</p>
+              </div>
+            ) : allReconciliations.length === 0 ? (
               <CardContent className="text-center py-8">
                 <BarChart3 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-500">No reconciliation configurations found. Create your first reconciliation config.</p>
               </CardContent>
-            </Card>
-          ) : (
-            configs.map((config) => (
-              <Card key={config.reconKey} className="overflow-hidden">
-                <Collapsible
-                  open={openConfigs.has(config.reconKey)}
-                  onOpenChange={() => toggleConfig(config.reconKey)}
-                >
-                  <CollapsibleTrigger className="w-full">
-                    <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-left">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <CardTitle className="text-lg" data-testid={`text-config-name-${config.reconKey}`}>
-                                {config.sourceTable && config.targetTable 
-                                  ? `${config.sourceTable} → ${config.targetTable}`
-                                  : `Reconciliation ${config.reconKey}`
-                                }
-                              </CardTitle>
-                              {getStatusBadge(config.activeFlag)}
-                              {getReconTypeBadge(config.reconType)}
-                              {config.executionLayer && (
-                                <Badge variant="outline" className="capitalize">
-                                  {config.executionLayer}
-                                </Badge>
-                              )}
+            ) : (
+              <>
+                {reconciliations.map((config) => (
+                  <Card key={config.reconKey} className="overflow-hidden">
+                    <Collapsible
+                      open={openConfigs.has(config.reconKey)}
+                      onOpenChange={() => toggleConfig(config.reconKey)}
+                    >
+                      <CollapsibleTrigger className="w-full">
+                        <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4 text-left">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <CardTitle className="text-lg" data-testid={`text-config-name-${config.reconKey}`}>
+                                    {config.sourceTable && config.targetTable
+                                      ? `${config.sourceTable} → ${config.targetTable}`
+                                      : `Reconciliation ${config.reconKey}`
+                                    }
+                                  </CardTitle>
+                                  {getStatusBadge(config.activeFlag)}
+                                  {getReconTypeBadge(config.reconType)}
+                                  {config.executionLayer && (
+                                    <Badge variant="outline" className="capitalize">
+                                      {config.executionLayer}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <CardDescription className="flex items-center space-x-4 mt-1">
+                                  <span className="flex items-center">
+                                    <Database className="h-3 w-3 mr-1" />
+                                    Config: {config.configKey}
+                                  </span>
+                                  {config.thresholdPercentage && (
+                                    <span className="flex items-center">
+                                      <BarChart3 className="h-3 w-3 mr-1" />
+                                      Threshold: {config.thresholdPercentage}%
+                                    </span>
+                                  )}
+                                  {config.attribute && (
+                                    <span className="flex items-center">
+                                      <Settings className="h-3 w-3 mr-1" />
+                                      Attribute: {config.attribute}
+                                    </span>
+                                  )}
+                                </CardDescription>
+                              </div>
                             </div>
-                            <CardDescription className="flex items-center space-x-4 mt-1">
-                              <span className="flex items-center">
-                                <Database className="h-3 w-3 mr-1" />
-                                Config: {config.configKey}
-                              </span>
-                              {config.thresholdPercentage && (
-                                <span className="flex items-center">
-                                  <BarChart3 className="h-3 w-3 mr-1" />
-                                  Threshold: {config.thresholdPercentage}%
-                                </span>
-                              )}
-                              {config.attribute && (
-                                <span className="flex items-center">
-                                  <Settings className="h-3 w-3 mr-1" />
-                                  Attribute: {config.attribute}
-                                </span>
-                              )}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(config);
-                            }}
-                            data-testid={`button-edit-${config.reconKey}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                            <div className="flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => e.stopPropagation()}
-                                data-testid={`button-delete-${config.reconKey}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(config);
+                                }}
+                                data-testid={`button-edit-${config.reconKey}`}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Reconciliation Configuration</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this reconciliation configuration? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(config.reconKey)}
-                                  className="bg-red-500 hover:bg-red-600"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          {openConfigs.has(config.reconKey) ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent>
-                    <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {/* Source Configuration */}
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                            <Database className="h-3 w-3 mr-1" />
-                            Source Configuration
-                          </h4>
-                          <div className="space-y-1 text-sm">
-                            <div><span className="font-medium">Schema:</span> {config.sourceSchema || 'N/A'}</div>
-                            <div><span className="font-medium">Table:</span> {config.sourceTable || 'N/A'}</div>
-                            {config.sourceQuery && (
-                              <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
-                                <span className="font-medium">Query:</span>
-                                <pre className="mt-1 whitespace-pre-wrap">{config.sourceQuery}</pre>
-                              </div>
-                            )}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                    data-testid={`button-delete-${config.reconKey}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Reconciliation Configuration</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this reconciliation configuration? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDelete(config.reconKey)}
+                                      className="bg-red-500 hover:bg-red-600"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                              {openConfigs.has(config.reconKey) ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
 
-                        {/* Target Configuration */}
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                            <Target className="h-3 w-3 mr-1" />
-                            Target Configuration
-                          </h4>
-                          <div className="space-y-1 text-sm">
-                            <div><span className="font-medium">Schema:</span> {config.targetSchema || 'N/A'}</div>
-                            <div><span className="font-medium">Table:</span> {config.targetTable || 'N/A'}</div>
-                            {config.targetQuery && (
-                              <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
-                                <span className="font-medium">Query:</span>
-                                <pre className="mt-1 whitespace-pre-wrap">{config.targetQuery}</pre>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                            {/* Source Configuration */}
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                                <Database className="h-3 w-3 mr-1" />
+                                Source Configuration
+                              </h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="font-medium">Schema:</span> {config.sourceSchema || 'N/A'}</div>
+                                <div><span className="font-medium">Table:</span> {config.sourceTable || 'N/A'}</div>
+                                {config.sourceQuery && (
+                                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
+                                    <span className="font-medium">Query:</span>
+                                    <pre className="mt-1 whitespace-pre-wrap">{config.sourceQuery}</pre>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </div>
+                            </div>
 
-                        {/* Parameters */}
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                            <Settings className="h-3 w-3 mr-1" />
-                            Parameters
-                          </h4>
-                          <div className="space-y-1 text-sm">
-                            <div><span className="font-medium">Type:</span> {getReconTypeBadge(config.reconType)}</div>
-                            <div><span className="font-medium">Attribute:</span> {config.attribute || 'N/A'}</div>
-                            <div><span className="font-medium">Threshold:</span> {config.thresholdPercentage !== null ? `${config.thresholdPercentage}%` : 'N/A'}</div>
-                            <div><span className="font-medium">Config Key:</span> {config.configKey}</div>
+                            {/* Target Configuration */}
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                                <Target className="h-3 w-3 mr-1" />
+                                Target Configuration
+                              </h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="font-medium">Schema:</span> {config.targetSchema || 'N/A'}</div>
+                                <div><span className="font-medium">Table:</span> {config.targetTable || 'N/A'}</div>
+                                {config.targetQuery && (
+                                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
+                                    <span className="font-medium">Query:</span>
+                                    <pre className="mt-1 whitespace-pre-wrap">{config.targetQuery}</pre>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Parameters */}
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                                <Settings className="h-3 w-3 mr-1" />
+                                Parameters
+                              </h4>
+                              <div className="space-y-1 text-sm">
+                                <div><span className="font-medium">Type:</span> {getReconTypeBadge(config.reconType)}</div>
+                                <div><span className="font-medium">Attribute:</span> {config.attribute || 'N/A'}</div>
+                                <div><span className="font-medium">Threshold:</span> {config.thresholdPercentage !== null ? `${config.thresholdPercentage}%` : 'N/A'}</div>
+                                <div><span className="font-medium">Config Key:</span> {config.configKey}</div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            ))
-          )}
-        </div>
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                ))}
+
+                {allReconciliations.length > 0 && (
+                  <DataPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={10}
+                    onPageChange={setCurrentPage}
+                    canNextPage={canNextPage}
+                    canPrevPage={canPrevPage}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </Card>
 
         {/* Reconciliation Form Dialog */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
