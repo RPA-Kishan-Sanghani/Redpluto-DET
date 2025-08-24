@@ -1,0 +1,116 @@
+Data Reconciliation (Create Pipeline)
+ 
+Objective
+Build a front-end screen for Data Reconciliation – Create Pipeline module that enables users to configure, view, modify, and delete reconciliation configurations with layered execution logic, source/target mapping, and metadata enrichment.
+ 
+Frontend (React + Tailwind + shadcn/ui)
+ 
+Layout
+ 
+Form with Source Section and Target Section fields.
+ 
+Footer with Save and Cancel buttons.
+ 
+List/table view for existing reconciliation configurations with edit/delete actions.
+ 
+Form Fields – Add Reconciliation Config
+ 
+General Section
+ 
+Execution Layer → Dropdown (dynamic from Metadata Registry, e.g., Bronze, Silver, Gold)
+ 
+Reconciliation Key → Numeric input (auto-increment, read-only)
+ 
+Config Key → Numeric input (linked to config_table)
+ 
+Source Section
+4. Source Schema Name → Text input
+5. Source Table Name → Text input
+6. Source Query → Multiline text input
+ 
+Target Section
+7. Target Schema Name → Text input
+8. Target Table Name → Text input
+9. Target Query → Multiline text input
+ 
+Reconciliation Parameters
+10. Reconciliation Type → Dropdown (Count, Amount, Sum, etc.)
+11. Attribute → Text input (column for value-based reconciliation)
+12. Threshold Percentage → Numeric input (acceptable variance %)
+13. Active Flag → Dropdown (Yes/No)
+ 
+Footer Actions
+ 
+Save Button → Saves all form fields to the database (reconciliation_config table).
+ 
+Cancel Button → Cancels changes and exits the form.
+ 
+Functional Requirements
+ 
+All dropdowns fetch dynamic values from Metadata Registry.
+ 
+Required fields must have form validation.
+ 
+Provide tooltips/help icons for complex fields like Execution Layer, Reconciliation Type, and Threshold.
+ 
+Support multiple entries for Source and Target sections.
+ 
+Display an interactive CRUD table below the form to manage reconciliation configs.
+ 
+Acceptance Criteria
+ 
+User can input pipeline configuration and save successfully.
+ 
+Source and Target sections allow multiple entries.
+ 
+Metadata fields are pre-populated based on selected Execution Layer.
+ 
+User can modify and delete existing reconciliation configurations.
+ 
+All buttons and dropdowns are accessible and keyboard-navigable.
+ 
+Database (PostgreSQL)
+ 
+Table: reconciliation_config
+ 
+CREATE TABLE reconciliation_config (
+    recon_key SERIAL PRIMARY KEY,
+    config_key INT NOT NULL REFERENCES config_table(config_key),
+    execution_layer VARCHAR(20) NOT NULL,
+    source_schema VARCHAR(20),
+    source_table VARCHAR(50),
+    target_schema VARCHAR(50),
+    target_table VARCHAR(50),
+    recon_type VARCHAR(50) NOT NULL, -- e.g., count_check, amount_check
+    attribute VARCHAR(20),
+    source_query TEXT,
+    target_query TEXT,
+    threshold_percentage INT,
+    active_flag VARCHAR(2) DEFAULT 'Y'
+);
+ 
+ 
+Table: reconciliation_config
+Purpose: Configuration for data reconciliation between source and target
+Fields:  
+recon_key (INT): Primary key
+config_key (INT): Reference to config_table
+execution_layer (VARCHAR(20)): Layer where reconciliation occurs
+source_schema (VARCHAR(20)): Source schema name
+source_table (VARCHAR(50)): Source table name
+target_schema (VARCHAR(50)): Target schema name
+target_table (VARCHAR(50)): Target table name
+recon_type (VARCHAR(50)): Type of reconciliation (count, sum, etc.)
+attribute (VARCHAR(20)): Column for value-based reconciliation
+source_query (TEXT): Query to execute against source
+target_query (TEXT): Query to execute against target
+threshold_percentage (INT): Acceptable variance percentage
+active_flag (VARCHAR(2)): Active indicator
+ 
+⚡ With this prompt, Replit AI will scaffold:
+ 
+A React front-end form with CRUD operations
+ 
+Dynamic dropdowns from Metadata Registry
+ 
+PostgreSQL schema for reconciliation config
