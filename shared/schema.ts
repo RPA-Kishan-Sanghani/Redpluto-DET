@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -133,3 +133,41 @@ export type UpdateSourceConnection = z.infer<typeof updateSourceConnectionSchema
 export type ConfigRecord = typeof configTable.$inferSelect;
 export type InsertConfigRecord = z.infer<typeof insertConfigSchema>;
 export type UpdateConfigRecord = z.infer<typeof updateConfigSchema>;
+
+// Data Dictionary Table
+export const dataDictionaryTable = pgTable("data_dictionary_table", {
+  dataDictionaryKey: serial("data_dictionary_key").primaryKey(),
+  configKey: integer("config_key").notNull(),
+  executionLayer: varchar("execution_layer", { length: 50 }).notNull(),
+  schemaName: varchar("schema_name", { length: 100 }),
+  tableName: varchar("table_name", { length: 100 }),
+  attributeName: varchar("attribute_name", { length: 100 }).notNull(),
+  dataType: varchar("data_type", { length: 50 }).notNull(),
+  length: integer("length"),
+  precisionValue: integer("precision_value"),
+  scale: integer("scale"),
+  isNotNull: boolean("is_not_null"),
+  isPrimaryKey: boolean("is_primary_key"),
+  isForeignKey: boolean("is_foreign_key"),
+  activeFlag: varchar("active_flag", { length: 10 }),
+  insertDate: timestamp("insert_date").defaultNow(),
+  updateDate: timestamp("update_date").defaultNow(),
+  columnDescription: varchar("column_description", { length: 150 }),
+  createdBy: varchar("created_by", { length: 100 }),
+  updatedBy: varchar("updated_by", { length: 100 }),
+});
+
+export const insertDataDictionarySchema = createInsertSchema(dataDictionaryTable).omit({
+  dataDictionaryKey: true,
+  insertDate: true,
+  updateDate: true,
+});
+
+export const updateDataDictionarySchema = createInsertSchema(dataDictionaryTable).omit({
+  dataDictionaryKey: true,
+  insertDate: true,
+}).partial();
+
+export type DataDictionaryRecord = typeof dataDictionaryTable.$inferSelect;
+export type InsertDataDictionaryRecord = z.infer<typeof insertDataDictionarySchema>;
+export type UpdateDataDictionaryRecord = z.infer<typeof updateDataDictionarySchema>;

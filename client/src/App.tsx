@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import SourceConnections from "@/pages/source-connections";
 import { Pipelines } from "@/pages/pipelines";
+import { DataDictionary } from "@/pages/data-dictionary";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/source-connections" component={SourceConnections} />
       <Route path="/pipelines" component={Pipelines} />
+      <Route path="/data-dictionary" component={DataDictionary} />
       <Route component={NotFound} />
     </Switch>
   );

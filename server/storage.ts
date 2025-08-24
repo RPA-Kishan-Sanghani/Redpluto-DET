@@ -1,4 +1,4 @@
-import { users, auditTable, errorTable, sourceConnectionTable, configTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
 
@@ -119,6 +119,13 @@ export interface IStorage {
   
   // Metadata methods for dropdowns
   getMetadata(type: string): Promise<string[]>;
+
+  // Data dictionary methods
+  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; configKey?: number }): Promise<DataDictionaryRecord[]>;
+  getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined>;
+  createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
+  updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
+  deleteDataDictionaryEntry(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -799,10 +806,87 @@ export class DatabaseStorage implements IStorage {
       'dynamic_schema': ['Y', 'N'],
       'full_refresh_flag': ['Y', 'N'],
       'execution_sequence': ['Pre', 'Post'],
-      'effective_date': ['created_at', 'updated_at', 'last_modified', 'effective_date']
+      'effective_date': ['created_at', 'updated_at', 'last_modified', 'effective_date'],
+      'data_type': ['int', 'bigint', 'varchar', 'text', 'char', 'decimal', 'float', 'double', 'boolean', 'date', 'datetime', 'timestamp', 'json', 'blob'],
+      'is_not_null': ['Yes', 'No'],
+      'is_primary_key': ['Yes', 'No'],
+      'is_foreign_key': ['Yes', 'No']
     };
     
     return metadataMap[type] || [];
+  }
+
+  // Data dictionary implementation
+  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; configKey?: number }): Promise<DataDictionaryRecord[]> {
+    let query = db.select().from(dataDictionaryTable);
+
+    const conditions = [];
+
+    if (filters?.search) {
+      conditions.push(
+        like(dataDictionaryTable.attributeName, `%${filters.search}%`)
+      );
+    }
+
+    if (filters?.executionLayer && filters.executionLayer !== 'all') {
+      conditions.push(
+        eq(dataDictionaryTable.executionLayer, filters.executionLayer)
+      );
+    }
+
+    if (filters?.configKey) {
+      conditions.push(
+        eq(dataDictionaryTable.configKey, filters.configKey)
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(dataDictionaryTable.insertDate));
+  }
+
+  async getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined> {
+    const [entry] = await db
+      .select()
+      .from(dataDictionaryTable)
+      .where(eq(dataDictionaryTable.dataDictionaryKey, id));
+    return entry || undefined;
+  }
+
+  async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
+    const [created] = await db
+      .insert(dataDictionaryTable)
+      .values({
+        ...entry,
+        createdBy: entry.createdBy || 'System',
+        updatedBy: entry.updatedBy || 'System',
+        insertDate: new Date(),
+        updateDate: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
+    const [updated] = await db
+      .update(dataDictionaryTable)
+      .set({
+        ...updates,
+        updatedBy: updates.updatedBy || 'System',
+        updateDate: new Date(),
+      })
+      .where(eq(dataDictionaryTable.dataDictionaryKey, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDataDictionaryEntry(id: number): Promise<boolean> {
+    const result = await db
+      .delete(dataDictionaryTable)
+      .where(eq(dataDictionaryTable.dataDictionaryKey, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 

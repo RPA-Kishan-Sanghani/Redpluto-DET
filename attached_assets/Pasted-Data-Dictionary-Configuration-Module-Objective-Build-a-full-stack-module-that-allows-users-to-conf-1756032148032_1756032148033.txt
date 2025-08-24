@@ -1,0 +1,157 @@
+Data Dictionary Configuration Module
+ 
+Objective
+Build a full-stack module that allows users to configure and manage Data Dictionary entries for all pipelines.
+ 
+Frontend (React + Tailwind + shadcn/ui)
+ 
+Layout:
+ 
+Sidebar form with Left Section and Right Section fields.
+ 
+Footer with Save and Cancel buttons.
+ 
+CRUD list/table view for all Data Dictionary entries (with edit/delete actions).
+ 
+Form Fields
+ 
+Left Section
+ 
+Execution Layer → Dropdown (dynamic from Metadata Registry, e.g., Bronze)
+ 
+Data Dictionary Key → Numeric input (Auto-increment, read-only)
+ 
+config_key → Numeric input
+ 
+Schema name → Text input
+ 
+Table name → Text input
+ 
+Attribute name → Text input
+ 
+Data type → Dropdown (all supported data types: int, string, float, etc.)
+ 
+Length → Numeric input
+ 
+Precision Value → Numeric input
+ 
+Right Section
+10. Scale → Numeric input
+11. Is not null → Dropdown
+12. Is primary key → Dropdown 
+13. Is foreign key → Dropdown
+14. Active flag → Dropdown (Yes/No, from Metadata Registry)
+15. Insert date → Auto-filled date (read-only, default current date)
+16. Update date → Auto-filled date (updates on modification)
+17. Column Description → Multiline text input
+18. Created by → Auto-filled from logged-in user
+19. Updated by → Auto-filled on modification
+ 
+Footer Actions
+ 
+Save button → Validates required fields & persists record to database
+ 
+Cancel button → Exits form without saving
+ 
+Backend (Node.js + Express)
+ 
+API Endpoints:
+ 
+POST /data-dictionary → Save new Data Dictionary entry
+ 
+GET /data-dictionary → Fetch all entries
+ 
+PUT /data-dictionary/:id → Update entry
+ 
+DELETE /data-dictionary/:id → Delete entry
+ 
+GET /metadata → Fetch dropdown values from Metadata Registry
+ 
+Validation Rules:
+ 
+Required: execution_layer, config_key, attribute_name, data_type
+ 
+Auto-increment data_dictionary_key
+ 
+Auto-fill insert_date, update_date, created_by, updated_by
+ 
+Database (PostgreSQL)
+ 
+Create table: data_dictionary_table
+ 
+CREATE TABLE data_dictionary_table (
+    data_dictionary_key SERIAL PRIMARY KEY,
+    config_key INT NOT NULL,
+    execution_layer VARCHAR(50) NOT NULL,
+    schema_name VARCHAR(100),
+    table_name VARCHAR(100),
+    attribute_name VARCHAR(100) NOT NULL,
+    data_type VARCHAR(50) NOT NULL,
+    length INT,
+    precision_value INT,
+    scale INT,
+    is_not_null BOOLEAN,
+    is_primary_key BOOLEAN,
+    is_foreign_key BOOLEAN,
+    active_flag VARCHAR(10),
+    insert_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    column_description VARCHAR(150),
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100)
+);
+ 
+ 
+Functional Requirements
+ 
+Dropdowns fetch dynamic values from Metadata Registry.
+ 
+Form validation for all required fields.
+ 
+Tooltips/help icons for execution_layer, data_type, config_key.
+ 
+CRUD operations available in UI (View, Add, Update, Delete).
+ 
+Multiple entries supported in Source and Target sections.
+ 
+Acceptance Criteria
+ 
+User can input Data Dictionary configuration and save successfully.
+ 
+Source and Target sections support multiple entries.
+ 
+Metadata fields are pre-populated based on Execution Layer.
+ 
+UI matches other modules (consistent typography, colors, layout).
+ 
+All buttons & dropdowns are accessible and keyboard-navigable.
+ 
+⚡ Use this prompt in Replit AI and it will scaffold:
+ 
+A React sidebar form with validation + CRUD table view.
+ 
+A Node.js/Express API for persistence.
+ 
+A PostgreSQL schema for Data Dictionary.
+ 
+Table: data_dictionary_table
+Purpose: Metadata repository for data dictionary and schema information
+Fields:  
+data_dictionary_key (INT): Primary key, auto-increment
+config_key (INT): Reference to config_key table
+execution_layer (VARCHAR(50)): Processing layer (Bronze, Silver, Gold)
+schema_name (VARCHAR(50)): Schema name
+table_name (VARCHAR(50)): Table name
+attribute_name (VARCHAR(100)): Column name
+data_type (VARCHAR(50)): Data type
+length (INT): Field length
+precision_value (INT): Precision for numeric fields
+scale (INT): Scale for numeric fields
+is_primary_key (CHAR(1)): Primary key indicator
+is_foreign_key (CHAR(1)): Foreign key indicator
+is_not_null (CHAR(1)): Not null constraint indicator
+column_description (VARCHAR(150)): Business description of the field
+active_flag (CHAR(1)): Active indicator
+created_by (VARCHAR(100)): Creator username
+insert_date (DATETIME): Creation date
+updated_by (VARCHAR(100)): Last modifier username

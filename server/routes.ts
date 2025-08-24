@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema } from "@shared/schema";
+import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics endpoint
@@ -344,6 +344,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting pipeline:', error);
       res.status(500).json({ error: 'Failed to delete pipeline' });
+    }
+  });
+
+  // Data Dictionary routes
+  app.get("/api/data-dictionary", async (req, res) => {
+    try {
+      const { search, executionLayer, configKey } = req.query;
+      
+      const filters = {
+        search: search as string,
+        executionLayer: executionLayer as string,
+        configKey: configKey ? parseInt(configKey as string) : undefined,
+      };
+
+      const entries = await storage.getDataDictionaryEntries(filters);
+      res.json(entries);
+    } catch (error) {
+      console.error('Error fetching data dictionary entries:', error);
+      res.status(500).json({ error: 'Failed to fetch data dictionary entries' });
+    }
+  });
+
+  app.get("/api/data-dictionary/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const entry = await storage.getDataDictionaryEntry(id);
+      
+      if (!entry) {
+        return res.status(404).json({ error: 'Data dictionary entry not found' });
+      }
+      
+      res.json(entry);
+    } catch (error) {
+      console.error('Error fetching data dictionary entry:', error);
+      res.status(500).json({ error: 'Failed to fetch data dictionary entry' });
+    }
+  });
+
+  app.post("/api/data-dictionary", async (req, res) => {
+    try {
+      const validatedData = insertDataDictionarySchema.parse(req.body);
+      const entry = await storage.createDataDictionaryEntry(validatedData);
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error('Error creating data dictionary entry:', error);
+      res.status(500).json({ error: 'Failed to create data dictionary entry' });
+    }
+  });
+
+  app.put("/api/data-dictionary/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = updateDataDictionarySchema.parse(req.body);
+      const entry = await storage.updateDataDictionaryEntry(id, validatedData);
+      
+      if (!entry) {
+        return res.status(404).json({ error: 'Data dictionary entry not found' });
+      }
+      
+      res.json(entry);
+    } catch (error) {
+      console.error('Error updating data dictionary entry:', error);
+      res.status(500).json({ error: 'Failed to update data dictionary entry' });
+    }
+  });
+
+  app.delete("/api/data-dictionary/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDataDictionaryEntry(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Data dictionary entry not found' });
+      }
+      
+      res.json({ success: true, message: 'Data dictionary entry deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting data dictionary entry:', error);
+      res.status(500).json({ error: 'Failed to delete data dictionary entry' });
     }
   });
 
