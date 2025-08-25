@@ -261,7 +261,7 @@ export default function SourceConnections() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="Active">Active</SelectItem>
                     <SelectItem value="Failed">Failed</SelectItem>
                     <SelectItem value="Pending">Pending</SelectItem>
