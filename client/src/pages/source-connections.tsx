@@ -194,7 +194,7 @@ export default function SourceConnections() {
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-connect-data-source">
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 Connect Data Source
               </Button>
             </DialogTrigger>
