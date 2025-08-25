@@ -678,6 +678,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
           </Button>
           <Button
             type="submit"
+            className="bg-blue-600 hover:bg-blue-700"
             disabled={isLoading || savePipelineMutation.isPending}
             data-testid="button-save-pipeline"
           >
