@@ -161,9 +161,8 @@ export function Pipelines() {
             >
               Refresh
             </Button>
-            <Button onClick={handleAddNew} data-testid="button-add-pipeline">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Pipeline
+            <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-pipeline">
+              <Plus className="h-4 w-4" />Add Pipeline
             </Button>
           </div>
         </div>
