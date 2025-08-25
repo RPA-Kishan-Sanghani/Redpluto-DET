@@ -65,7 +65,7 @@ export default function Header() {
               }`}
               data-testid="link-pipelines"
             >
-              Pipelines
+              Data Pipelines
             </button>
             <button
               onClick={() => setLocation('/data-dictionary')}
