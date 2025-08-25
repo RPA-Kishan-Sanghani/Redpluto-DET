@@ -606,13 +606,13 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         <FormLabel>Active Status</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
-                            <SelectTrigger data-testid="select-active-flag">
+                            <SelectTrigger data-testid="select-active-status">
                               <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Y">Active</SelectItem>
-                            <SelectItem value="N">Inactive</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -633,8 +633,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Y">Enabled</SelectItem>
-                            <SelectItem value="N">Disabled</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -655,8 +655,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Y">Enabled</SelectItem>
-                            <SelectItem value="N">Disabled</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
