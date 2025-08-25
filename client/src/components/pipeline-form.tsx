@@ -108,6 +108,14 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     }
   });
 
+  const { data: executionSequences = [] } = useQuery({
+    queryKey: ['/api/metadata/execution_sequence'],
+    queryFn: async () => {
+      const response = await fetch('/api/metadata/execution_sequence');
+      return response.json() as string[];
+    }
+  });
+
   // Create or update mutation
   const savePipelineMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -546,9 +554,18 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Execution Sequence</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter execution sequence" {...field} data-testid="input-execution-sequence" />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-execution-sequence">
+                              <SelectValue placeholder="Select execution sequence" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {executionSequences.map((sequence) => (
+                              <SelectItem key={sequence} value={sequence}>{sequence}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

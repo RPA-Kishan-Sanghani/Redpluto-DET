@@ -819,7 +819,7 @@ export class DatabaseStorage implements IStorage {
       'active_flag': ['Y', 'N'],
       'dynamic_schema': ['Y', 'N'],
       'full_refresh_flag': ['Y', 'N'],
-      'execution_sequence': ['Pre', 'Post'],
+      'execution_sequence': ['Pre', 'Post', 'NA'],
       'effective_date': ['created_at', 'updated_at', 'last_modified', 'effective_date'],
       'data_type': ['int', 'bigint', 'varchar', 'text', 'char', 'decimal', 'float', 'double', 'boolean', 'date', 'datetime', 'timestamp', 'json', 'blob'],
       'is_not_null': ['Yes', 'No'],
