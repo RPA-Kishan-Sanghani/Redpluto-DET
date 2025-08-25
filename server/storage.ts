@@ -116,7 +116,7 @@ export interface IStorage {
   createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord>;
   updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined>;
   deletePipeline(id: number): Promise<boolean>;
-  
+
   // Metadata methods for dropdowns
   getMetadata(type: string): Promise<string[]>;
 
@@ -757,29 +757,29 @@ export class DatabaseStorage implements IStorage {
   // Pipeline configuration methods
   async getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
     let query = db.select().from(configTable);
-    
+
     const conditions = [];
-    
+
     if (filters?.search) {
       conditions.push(like(configTable.sourceTableName, `%${filters.search}%`));
     }
-    
+
     if (filters?.executionLayer) {
       conditions.push(eq(configTable.executionLayer, filters.executionLayer));
     }
-    
+
     if (filters?.sourceSystem) {
       conditions.push(eq(configTable.sourceSystem, filters.sourceSystem));
     }
-    
+
     if (filters?.status) {
       conditions.push(eq(configTable.activeFlag, filters.status));
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
-    
+
     return await query.orderBy(desc(configTable.createdAt));
   }
 
@@ -815,7 +815,7 @@ export class DatabaseStorage implements IStorage {
       'source_system': ['MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'CSV', 'JSON', 'Parquet', 'Excel', 'API'],
       'source_type': ['Table', 'File', 'API'],
       'target_type': ['Table', 'File'],
-      'file_delimiter': [',', ';', '|', '\t'],
+      'file_delimiter': [',', ';', '|', '\t', 'NA'],
       'active_flag': ['Y', 'N'],
       'dynamic_schema': ['Y', 'N'],
       'full_refresh_flag': ['Y', 'N'],
@@ -826,7 +826,7 @@ export class DatabaseStorage implements IStorage {
       'is_primary_key': ['Yes', 'No'],
       'is_foreign_key': ['Yes', 'No']
     };
-    
+
     return metadataMap[type] || [];
   }
 
