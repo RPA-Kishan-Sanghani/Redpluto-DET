@@ -285,8 +285,6 @@ export function ReconciliationForm({
                           <SelectContent>
                             <SelectItem value="count_check">Count Check</SelectItem>
                             <SelectItem value="amount_check">Amount Check</SelectItem>
-                            <SelectItem value="sum_check">Sum Check</SelectItem>
-                            <SelectItem value="data_check">Data Check</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
