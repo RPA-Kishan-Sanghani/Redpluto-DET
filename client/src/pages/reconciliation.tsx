@@ -180,9 +180,8 @@ export function Reconciliation() {
             >
               Refresh
             </Button>
-            <Button onClick={handleAddNew} data-testid="button-add-reconciliation">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Reconciliation Config
+            <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-reconciliation">
+              <Plus className="h-4 w-4" />Add Reconciliation Config
             </Button>
           </div>
         </div>
