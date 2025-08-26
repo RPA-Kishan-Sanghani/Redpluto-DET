@@ -310,8 +310,8 @@ export function ReconciliationForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Y">Yes</SelectItem>
-                            <SelectItem value="N">No</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
