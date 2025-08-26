@@ -60,6 +60,7 @@ const dataQualityFormSchema = z.object({
   tableName: z.string().min(1, "Table name is required"),
   attributeName: z.string().min(1, "Attribute name is required"),
   validationType: z.string().min(1, "Validation type is required"),
+  referenceTableName: z.string().optional(),
   defaultValue: z.string().optional(),
   errorTableTransferFlag: z.string().default("N"),
   thresholdPercentage: z.number().min(0).max(100).optional(),
@@ -103,6 +104,13 @@ export function DataQualityForm({
     queryFn: () => fetch("/api/pipelines").then((res) => res.json()) as Promise<any[]>,
   });
 
+  // Fetch reference table names
+  const { data: referenceTableNames = [] } = useQuery({
+    queryKey: ["/api/metadata/reference_tables"],
+    queryFn: () =>
+      fetch("/api/metadata/reference_tables").then((res) => res.json()) as Promise<string[]>,
+  });
+
   // Initialize form with default values or existing config values
   const form = useForm<FormData>({
     resolver: zodResolver(dataQualityFormSchema),
@@ -112,6 +120,7 @@ export function DataQualityForm({
       tableName: config?.tableName || "",
       attributeName: config?.attributeName || "",
       validationType: config?.validationType || "",
+      referenceTableName: config?.referenceTableName || "",
       defaultValue: config?.defaultValue || "",
       errorTableTransferFlag: config?.errorTableTransferFlag || "N",
       thresholdPercentage: config?.thresholdPercentage || undefined,
@@ -312,30 +321,61 @@ export function DataQualityForm({
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="activeFlag"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Active Flag</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || "Y"}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-active-flag">
-                            <SelectValue placeholder="Select active flag" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Y">Y</SelectItem>
-                          <SelectItem value="N">N</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="referenceTableName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reference Table Name</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-reference-table">
+                              <SelectValue placeholder="Select reference table" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="NA">NA</SelectItem>
+                            {referenceTableNames.map((tableName) => (
+                              <SelectItem key={tableName} value={tableName}>
+                                {tableName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="activeFlag"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Active Flag</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || "Y"}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-active-flag">
+                              <SelectValue placeholder="Select active flag" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
