@@ -258,6 +258,9 @@ export function Pipelines() {
                             <CardTitle className="text-lg" data-testid={`text-pipeline-name-${pipeline.configKey}`}>
                               {pipeline.sourceTableName || `Pipeline ${pipeline.configKey}`}
                             </CardTitle>
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              Config Key: {pipeline.configKey}
+                            </Badge>
                             {getStatusBadge(pipeline.activeFlag)}
                             {pipeline.executionLayer && (
                               <Badge variant="outline" className="capitalize">
