@@ -152,16 +152,30 @@ export function DataDictionary() {
           <p className="text-gray-600">Manage metadata and schema information for all data pipelines</p>
         </div>
 
-        {/* Filters and Actions */}
+        {/* Add Entry Button */}
+        <div className="flex justify-end mb-6">
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/data-dictionary'] })}
+              data-testid="button-refresh-entries"
+            >
+              Refresh
+            </Button>
+            <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-entry">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Entry
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters */}
         <Card className="mb-6">
-          <CardHeader className="bg-blue-50">
-            <div className="flex justify-between items-center">
-              <CardTitle>Data Dictionary Entries</CardTitle>
-              <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-entry">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Entry
-              </Button>
-            </div>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Filter className="h-5 w-5 mr-2" />
+              Filters
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
