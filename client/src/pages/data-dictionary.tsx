@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,29 +157,27 @@ export function DataDictionary() {
           <CardHeader className="bg-blue-50">
             <div className="flex justify-between items-center">
               <CardTitle>Data Dictionary Entries</CardTitle>
-              <Button onClick={handleAdd} data-testid="button-add-entry">
+              <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-entry">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Entry
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4 mb-6">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search by attribute name..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full"
+                  className="pl-10"
                   data-testid="input-search-entries"
                 />
               </div>
 
-              <Select
-                value={filters.executionLayer}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}
-              >
-                <SelectTrigger data-testid="select-execution-layer">
+              <Select value={filters.executionLayer || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
+                <SelectTrigger data-testid="select-execution-layer-filter">
                   <SelectValue placeholder="Execution Layer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,14 +189,23 @@ export function DataDictionary() {
               </Select>
 
               <Input
-                placeholder="Config Key"
+                placeholder="Config Key..."
                 value={filters.configKey}
                 onChange={(e) => setFilters(prev => ({ ...prev, configKey: e.target.value }))}
-                className="w-32"
-                data-testid="input-config-key"
+                data-testid="input-config-key-filter"
               />
-            </div>
 
+              <Select value="all" onValueChange={() => {}}>
+                <SelectTrigger data-testid="select-status-filter">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Y">Active</SelectItem>
+                  <SelectItem value="N">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 
