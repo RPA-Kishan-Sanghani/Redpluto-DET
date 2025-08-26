@@ -162,19 +162,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDashboardMetrics(dateRange?: { start: Date; end: Date }) {
-    let query = db.select({
+    let queryBuilder = db.select({
       status: auditTable.status,
       count: count()
     }).from(auditTable);
 
     if (dateRange) {
-      query = query.where(and(
+      queryBuilder = queryBuilder.where(and(
         gte(auditTable.startTime, dateRange.start),
         lte(auditTable.startTime, dateRange.end)
       ));
     }
 
-    const results = await query.groupBy(auditTable.status);
+    const results = await queryBuilder.groupBy(auditTable.status);
 
     const metrics = {
       totalPipelines: 0,
@@ -205,20 +205,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPipelineSummary(dateRange?: { start: Date; end: Date }) {
-    let query = db.select({
+    let queryBuilder = db.select({
       codeName: auditTable.codeName,
       status: auditTable.status,
       count: count()
     }).from(auditTable);
 
     if (dateRange) {
-      query = query.where(and(
+      queryBuilder = queryBuilder.where(and(
         gte(auditTable.startTime, dateRange.start),
         lte(auditTable.startTime, dateRange.end)
       ));
     }
 
-    const results = await query.groupBy(auditTable.codeName, auditTable.status);
+    const results = await queryBuilder.groupBy(auditTable.codeName, auditTable.status);
 
     const summary = {
       dataQuality: { total: 0, success: 0, failed: 0 },
@@ -283,7 +283,7 @@ export class DatabaseStorage implements IStorage {
       sortOrder = 'desc'
     } = options;
 
-    let query = db.select({
+    let queryBuilder = db.select({
       auditKey: auditTable.auditKey,
       codeName: auditTable.codeName,
       runId: auditTable.runId,
@@ -322,7 +322,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      queryBuilder = queryBuilder.where(and(...conditions));
     }
 
     // Add sorting
@@ -333,9 +333,9 @@ export class DatabaseStorage implements IStorage {
                       auditTable.startTime;
 
     if (sortOrder === 'desc') {
-      query = query.orderBy(desc(sortColumn));
+      queryBuilder = queryBuilder.orderBy(desc(sortColumn));
     } else {
-      query = query.orderBy(asc(sortColumn));
+      queryBuilder = queryBuilder.orderBy(asc(sortColumn));
     }
 
     // Get total count for pagination
@@ -347,7 +347,7 @@ export class DatabaseStorage implements IStorage {
 
     // Apply pagination
     const offset = (page - 1) * limit;
-    const results = await query.limit(limit).offset(offset);
+    const results = await queryBuilder.limit(limit).offset(offset);
 
     // Get error details for each audit record
     const auditKeys = results.map(r => r.auditKey);
@@ -438,13 +438,13 @@ export class DatabaseStorage implements IStorage {
     if (search) {
       // Search across multiple fields for flexibility
       conditions.push(
-        and(
-          like(auditTable.codeName, `%${search}%`),
-          like(auditTable.runId, `%${search}%`),
-          like(auditTable.sourceSystem, `%${search}%`),
-          like(auditTable.targetTableName, `%${search}%`),
-          like(auditTable.sourceFileName, `%${search}%`)
-        )
+        sql`(
+          ${auditTable.codeName} ILIKE ${`%${search}%`} OR
+          ${auditTable.runId} ILIKE ${`%${search}%`} OR
+          ${auditTable.sourceSystem} ILIKE ${`%${search}%`} OR
+          ${auditTable.targetTableName} ILIKE ${`%${search}%`} OR
+          ${auditTable.sourceFileName} ILIKE ${`%${search}%`}
+        )`
       );
     }
 
