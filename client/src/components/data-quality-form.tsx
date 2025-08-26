@@ -509,6 +509,7 @@ export function DataQualityForm({
           </Button>
           <Button
             type="submit"
+            className="bg-blue-600 hover:bg-blue-700"
             disabled={isLoading}
             data-testid="button-save-quality"
           >
