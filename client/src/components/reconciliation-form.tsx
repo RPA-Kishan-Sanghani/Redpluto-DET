@@ -251,23 +251,15 @@ export function ReconciliationForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Config Key *</FormLabel>
-                        <Select
-                          onValueChange={(value) => field.onChange(parseInt(value))}
-                          defaultValue={field.value?.toString() || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-config-key">
-                              <SelectValue placeholder="Select config key" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {configs.map((config) => (
-                              <SelectItem key={config.configKey} value={config.configKey.toString()}>
-                                {config.sourceTableName || `Config ${config.configKey}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Enter config key"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                            data-testid="input-config-key"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
