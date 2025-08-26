@@ -173,9 +173,8 @@ export function DataQuality() {
             >
               Refresh
             </Button>
-            <Button onClick={handleAddNew} data-testid="button-add-data-quality">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Quality Config
+            <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-data-quality">
+              <Plus className="h-4 w-4" />Add Quality Config
             </Button>
           </div>
         </div>
