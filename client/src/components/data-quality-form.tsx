@@ -354,16 +354,26 @@ export function DataQualityForm({
                     name="validationType"
                     render={({ field }) => (
                       <FormItem>
-                        <TooltipField tooltip="Type of validation rule to apply (e.g., NOT_NULL, RANGE_CHECK, FORMAT_CHECK)">
+                        <TooltipField tooltip="Type of validation rule to apply">
                           <FormLabel>Validation Type *</FormLabel>
                         </TooltipField>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., NOT_NULL, RANGE_CHECK"
-                            {...field}
-                            data-testid="input-validation-type"
-                          />
-                        </FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-validation-type">
+                              <SelectValue placeholder="Select validation type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="List Value Check">List Value Check</SelectItem>
+                            <SelectItem value="Duplicate Check">Duplicate Check</SelectItem>
+                            <SelectItem value="Custom Query Check">Custom Query Check</SelectItem>
+                            <SelectItem value="File Format Check">File Format Check</SelectItem>
+                            <SelectItem value="Referential Integrity Check">Referential Integrity Check</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
