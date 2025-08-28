@@ -126,12 +126,11 @@ export default function LoginPage() {
           </div>
         </div>
       </nav>
-
       {/* Main Content */}
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
         <div className="w-full max-w-md">
           {/* Logo Section */}
-          <div className="text-center mb-8">
+          <div className="bg-[#f2f0f003] mt-[20px] mb-[20px] pl-[0px] pr-[0px] pt-[0px] pb-[0px] text-[16px] font-normal text-center">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
               <span className="text-white font-bold text-2xl">RP</span>
             </div>
