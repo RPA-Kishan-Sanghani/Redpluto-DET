@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Database, Bell, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthState } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,9 +13,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Header() {
-  const [username] = useState("John Doe");
+  const { user, logout } = useAuthState();
+  const { toast } = useToast();
   const [errorCount] = useState(3);
   const [location, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    setLocation('/login');
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -27,7 +39,7 @@ export default function Header() {
             </div>
             <div className="hidden md:block">
               <span className="text-sm text-gray-600">
-                Welcome back, <span className="font-medium text-gray-900" data-testid="text-username">{username}</span>!
+                Welcome back, <span className="font-medium text-gray-900" data-testid="text-username">{user?.firstName || user?.username || 'User'}</span>!
               </span>
             </div>
           </div>
@@ -144,7 +156,7 @@ export default function Header() {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem data-testid="button-logout">
+                <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
                   <LogOut className="mr-3 h-4 w-4 text-gray-400" />
                   Sign out
                 </DropdownMenuItem>

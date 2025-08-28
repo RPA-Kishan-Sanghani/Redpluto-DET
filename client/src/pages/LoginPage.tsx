@@ -5,12 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthState } from '@/hooks/useAuth';
 import { Eye, EyeOff, HelpCircle, Info } from 'lucide-react';
 import plutoBackground from '@assets/generated_images/Pluto_space_background_34495b16.png';
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login, isAuthenticated } = useAuthState();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,6 +24,12 @@ export default function LoginPage() {
     username: '',
     password: ''
   });
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    setLocation('/');
+    return null;
+  }
 
   const validateForm = () => {
     const newErrors = {
@@ -53,26 +61,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual authentication API call
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      await login(formData.username, formData.password, formData.rememberMe);
       
-      // For demo purposes, accept any credentials
-      if (formData.username && formData.password) {
-        toast({
-          title: "Login successful",
-          description: "Welcome to Redpluto Analytics!",
-        });
-        
-        // Store session if remember me is checked
-        if (formData.rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        }
-        
-        // Redirect to dashboard
-        setLocation('/');
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      toast({
+        title: "Login successful",
+        description: "Welcome to Redpluto Analytics!",
+      });
+      
+      // Redirect to dashboard
+      setLocation('/');
     } catch (error) {
       toast({
         title: "Login failed",
