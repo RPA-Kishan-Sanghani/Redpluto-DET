@@ -450,20 +450,29 @@ export function DataQualityForm({
                         <TooltipField tooltip="Acceptable percentage of failed validations before triggering alerts (0-100)">
                           <FormLabel>Threshold Percentage</FormLabel>
                         </TooltipField>
+                        <FormDescription>
+                          Acceptable variance percentage (0-100)
+                        </FormDescription>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            placeholder="Enter threshold percentage"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value ? parseInt(e.target.value) : undefined
-                              )
-                            }
-                            data-testid="input-threshold"
-                          />
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              placeholder="Enter threshold percentage"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : undefined
+                                )
+                              }
+                              data-testid="input-threshold"
+                              className="pr-8"
+                            />
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              %
+                            </span>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

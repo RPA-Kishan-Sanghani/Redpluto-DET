@@ -1,0 +1,70 @@
+Login Feature:
+
+I am designing a Welcome/Login screen in React with TailwindCSS.
+Please generate clean, modern, and responsive code with the following requirements:
+
+Layout & Structure
+
+Minimalist design with clear hierarchy, light background, and ample white space.
+
+A top navigation bar with Redpluto Analytics logo and links to Help and About.
+
+Login form centered vertically & horizontally on the page.
+
+Balanced spacing and padding around form elements.
+
+Two input fields: Username and Password (light black borders, slightly darker gray background).
+
+A “Remember me” checkbox with a “Forgot password?” link beside it.
+
+A bold blue “Log In” button with white text.
+
+A “Sign up” link at the bottom of the form.
+
+Branding & Styling
+
+Use lighter brand colors for background and contrasting colors for buttons/highlights.
+
+Show company logo above the login form.
+
+Apply modern sans-serif typography with clear distinction between headings, labels, and inputs.
+
+Ensure accessibility (sufficient contrast, legible fonts).
+
+Visual Enhancements (Optional)
+
+Add a subtle Pluto-themed background (image or slow animation) with a dark overlay/blur effect.
+
+Include small micro-interactions like hover effects on the button and animated input focus.
+
+Core Login Features
+
+Input fields with labels & placeholders.
+
+Password field with toggle visibility (eye icon).
+
+Basic client-side validation for empty fields.
+
+Authentication Enhancements
+
+Placeholder hooks for secure backend authentication (bcrypt, HTTPS).
+
+“Remember Me” stores session token securely.
+
+Support session timeout after 15 hours with warning before expiry.
+
+Error Handling
+
+Show inline validation errors (e.g., empty fields, invalid credentials).
+
+Add toast notifications for broader errors (e.g., account locked, retry limit exceeded).
+
+Brute Force Protection (Optional for backend integration)
+
+Limit login attempts to 5.
+
+Show countdown for retry availability.
+
+Display “Contact Admin for reset” if max attempts exceeded.
+
+Keep the UI minimal, elegant, and responsive. Focus on front-end structure with hooks/placeholders for backend features like authentication, MFA, brute-force protection.
