@@ -48,12 +48,12 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/help" component={HelpPage} />
       <Route path="/about" component={AboutPage} />
-      <Route path="/" component={Dashboard} />
-      <Route path="/source-connections" component={SourceConnections} />
-      <Route path="/pipelines" component={Pipelines} />
-      <Route path="/data-dictionary" component={DataDictionary} />
-      <Route path="/reconciliation" component={Reconciliation} />
-      <Route path="/data-quality" component={DataQuality} />
+      <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/source-connections" component={() => <ProtectedRoute component={SourceConnections} />} />
+      <Route path="/pipelines" component={() => <ProtectedRoute component={Pipelines} />} />
+      <Route path="/data-dictionary" component={() => <ProtectedRoute component={DataDictionary} />} />
+      <Route path="/reconciliation" component={() => <ProtectedRoute component={Reconciliation} />} />
+      <Route path="/data-quality" component={() => <ProtectedRoute component={DataQuality} />} />
       <Route component={NotFound} />
     </Switch>
   );
