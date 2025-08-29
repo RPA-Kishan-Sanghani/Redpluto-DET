@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -224,7 +224,8 @@ export function DataDictionary() {
 
         {/* Entries List */}
         <Card>
-              <div className="space-y-4">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
                 {isLoading ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">Loading data dictionary entries...</p>
@@ -241,7 +242,7 @@ export function DataDictionary() {
                   </CardContent>
                 ) : (
                   <div className="space-y-4">
-                    {entries.map((entry: DataDictionaryRecord) => (
+                    {(entries as DataDictionaryRecord[]).map((entry: DataDictionaryRecord) => (
                       <Card key={entry.dataDictionaryKey} className="overflow-hidden">
                         <Collapsible
                           open={openEntries.has(entry.dataDictionaryKey)}
@@ -374,22 +375,22 @@ export function DataDictionary() {
                       </Card>
                     ))}
 
-                    </div>
-
-                  {allEntries.length > 0 && (
-                    <DataPagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      totalItems={totalItems}
-                      itemsPerPage={10}
-                      onPageChange={setCurrentPage}
-                      canNextPage={canNextPage}
-                      canPrevPage={canPrevPage}
-                    />
-                  )}
+                    {allEntries.length > 0 && (
+                      <DataPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        itemsPerPage={10}
+                        onPageChange={setCurrentPage}
+                        canNextPage={canNextPage}
+                        canPrevPage={canPrevPage}
+                      />
+                    )}
+                  </div>
                 )}
-              </div>
-            </Card>
+            </div>
+          </CardContent>
+        </Card>
         </main>
 
         {/* Form Dialog */}
