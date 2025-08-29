@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -242,41 +242,58 @@ export function DataDictionary() {
                 ) : (
                   <CardContent>
                     {entries.map((entry: DataDictionaryRecord) => (
-                      <Collapsible
-                        key={entry.dataDictionaryKey}
-                        open={openEntries.has(entry.dataDictionaryKey)}
-                        onOpenChange={() => toggleEntry(entry.dataDictionaryKey)}
-                      >
-                        <Card>
-                          <CollapsibleTrigger asChild>
-                            <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                      <Card key={entry.dataDictionaryKey} className="overflow-hidden">
+                        <Collapsible
+                          open={openEntries.has(entry.dataDictionaryKey)}
+                          onOpenChange={() => toggleEntry(entry.dataDictionaryKey)}
+                        >
+                          <CollapsibleTrigger className="w-full">
+                            <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4">
-                                  {openEntries.has(entry.dataDictionaryKey) ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                  <div>
-                                    <h3 className="text-lg font-semibold">{entry.attributeName}</h3>
-                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                      <span>Key: {entry.dataDictionaryKey}</span>
-                                      <span>Config: {entry.configKey}</span>
-                                      <Badge variant={
-                                        entry.executionLayer === 'Bronze' ? 'secondary' :
-                                        entry.executionLayer === 'Silver' ? 'default' :
-                                        entry.executionLayer === 'Gold' ? 'outline' : 'secondary'
-                                      }>
-                                        {entry.executionLayer}
+                                <div className="flex items-center space-x-4 text-left">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2">
+                                      <CardTitle className="text-lg" data-testid={`text-entry-name-${entry.dataDictionaryKey}`}>
+                                        {entry.attributeName}
+                                      </CardTitle>
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                        Dictionary Key: {entry.dataDictionaryKey}
                                       </Badge>
-                                      <span>{entry.dataType}</span>
+                                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                        Config Key: {entry.configKey}
+                                      </Badge>
+                                      <Badge variant={entry.activeFlag === 'Y' ? 'default' : 'secondary'}>
+                                        {entry.activeFlag === 'Y' ? 'Active' : 'Inactive'}
+                                      </Badge>
+                                      {entry.executionLayer && (
+                                        <Badge variant="outline" className="capitalize">
+                                          {entry.executionLayer}
+                                        </Badge>
+                                      )}
                                     </div>
+                                    <CardDescription className="flex items-center space-x-4 mt-1">
+                                      <span className="flex items-center">
+                                        Data Type: {entry.dataType}
+                                      </span>
+                                      {entry.length && (
+                                        <span className="flex items-center">
+                                          Length: {entry.length}
+                                        </span>
+                                      )}
+                                      {entry.schemaName && (
+                                        <span className="flex items-center">
+                                          Schema: {entry.schemaName}
+                                        </span>
+                                      )}
+                                      {entry.tableName && (
+                                        <span className="flex items-center">
+                                          Table: {entry.tableName}
+                                        </span>
+                                      )}
+                                    </CardDescription>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  <Badge variant={entry.activeFlag === 'Y' ? 'default' : 'secondary'}>
-                                    {entry.activeFlag === 'Y' ? 'Active' : 'Inactive'}
-                                  </Badge>
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -299,67 +316,62 @@ export function DataDictionary() {
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
+                                  {openEntries.has(entry.dataDictionaryKey) ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
                                 </div>
                               </div>
                             </CardHeader>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
-                            <CardContent className="pt-0">
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div>
-                                  <h4 className="font-medium text-gray-900 mb-2">Basic Information</h4>
+                            <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                                {/* Basic Information */}
+                                <div className="space-y-2">
+                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Basic Information</h4>
                                   <div className="space-y-1 text-sm">
-                                    <div><span className="text-gray-500">Schema:</span> {entry.schemaName || 'N/A'}</div>
-                                    <div><span className="text-gray-500">Table:</span> {entry.tableName || 'N/A'}</div>
-                                    <div><span className="text-gray-500">Data Type:</span> {entry.dataType}</div>
-                                    <div><span className="text-gray-500">Length:</span> {entry.length || 'N/A'}</div>
+                                    <div><span className="font-medium">Schema:</span> {entry.schemaName || 'N/A'}</div>
+                                    <div><span className="font-medium">Table:</span> {entry.tableName || 'N/A'}</div>
+                                    <div><span className="font-medium">Data Type:</span> {entry.dataType}</div>
+                                    <div><span className="font-medium">Length:</span> {entry.length || 'N/A'}</div>
                                   </div>
                                 </div>
-                                <div>
-                                  <h4 className="font-medium text-gray-900 mb-2">Properties</h4>
+
+                                {/* Properties */}
+                                <div className="space-y-2">
+                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Properties</h4>
                                   <div className="space-y-1 text-sm">
-                                    <div><span className="text-gray-500">Precision:</span> {entry.precisionValue || 'N/A'}</div>
-                                    <div><span className="text-gray-500">Scale:</span> {entry.scale || 'N/A'}</div>
-                                    <div>
-                                      <span className="text-gray-500">Primary Key:</span>{' '}
-                                      <Badge variant={entry.isPrimaryKey ? 'default' : 'secondary'} className="ml-1">
-                                        {entry.isPrimaryKey ? 'Yes' : 'No'}
-                                      </Badge>
-                                    </div>
-                                    <div>
-                                      <span className="text-gray-500">Not Null:</span>{' '}
-                                      <Badge variant={entry.isNotNull ? 'destructive' : 'secondary'} className="ml-1">
-                                        {entry.isNotNull ? 'Yes' : 'No'}
-                                      </Badge>
-                                    </div>
-                                    <div>
-                                      <span className="text-gray-500">Foreign Key:</span>{' '}
-                                      <Badge variant={entry.isForeignKey ? 'default' : 'secondary'} className="ml-1">
-                                        {entry.isForeignKey ? 'Yes' : 'No'}
-                                      </Badge>
-                                    </div>
+                                    <div><span className="font-medium">Precision:</span> {entry.precisionValue || 'N/A'}</div>
+                                    <div><span className="font-medium">Scale:</span> {entry.scale || 'N/A'}</div>
+                                    <div><span className="font-medium">Primary Key:</span> {entry.isPrimaryKey ? 'Yes' : 'No'}</div>
+                                    <div><span className="font-medium">Not Null:</span> {entry.isNotNull ? 'Yes' : 'No'}</div>
+                                    <div><span className="font-medium">Foreign Key:</span> {entry.isForeignKey ? 'Yes' : 'No'}</div>
                                   </div>
                                 </div>
-                                <div>
-                                  <h4 className="font-medium text-gray-900 mb-2">Metadata</h4>
+
+                                {/* Metadata */}
+                                <div className="space-y-2">
+                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Metadata</h4>
                                   <div className="space-y-1 text-sm">
-                                    <div><span className="text-gray-500">Created By:</span> {entry.createdBy || 'System'}</div>
-                                    <div><span className="text-gray-500">Updated By:</span> {entry.updatedBy || 'System'}</div>
-                                    <div><span className="text-gray-500">Created:</span> {entry.insertDate ? new Date(entry.insertDate).toLocaleDateString() : 'N/A'}</div>
-                                    <div><span className="text-gray-500">Updated:</span> {entry.updateDate ? new Date(entry.updateDate).toLocaleDateString() : 'N/A'}</div>
+                                    <div><span className="font-medium">Created By:</span> {entry.createdBy || 'System'}</div>
+                                    <div><span className="font-medium">Updated By:</span> {entry.updatedBy || 'System'}</div>
+                                    <div><span className="font-medium">Created:</span> {entry.insertDate ? new Date(entry.insertDate).toLocaleDateString() : 'N/A'}</div>
+                                    <div><span className="font-medium">Updated:</span> {entry.updateDate ? new Date(entry.updateDate).toLocaleDateString() : 'N/A'}</div>
                                   </div>
                                 </div>
                               </div>
                               {entry.columnDescription && (
                                 <div className="mt-4">
-                                  <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">Description</h4>
                                   <p className="text-sm text-gray-600">{entry.columnDescription}</p>
                                 </div>
                               )}
                             </CardContent>
                           </CollapsibleContent>
-                        </Card>
-                      </Collapsible>
+                        </Collapsible>
+                      </Card>
                     ))}
 
                     {allEntries.length > 0 && (
