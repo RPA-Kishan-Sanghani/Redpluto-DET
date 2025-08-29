@@ -163,7 +163,7 @@ export function DataDictionary() {
               Refresh
             </Button>
             <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-entry">
-              <Plus className="h-4 w-4" />Add Entry
+              <Plus className="h-4 w-4" />Add Dictionary Config
             </Button>
           </div>
         </div>
