@@ -240,7 +240,7 @@ export function DataDictionary() {
                     </Button>
                   </CardContent>
                 ) : (
-                  <CardContent>
+                  <div className="space-y-4">
                     {entries.map((entry: DataDictionaryRecord) => (
                       <Card key={entry.dataDictionaryKey} className="overflow-hidden">
                         <Collapsible
@@ -374,18 +374,19 @@ export function DataDictionary() {
                       </Card>
                     ))}
 
-                    {allEntries.length > 0 && (
-                      <DataPagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItems}
-                        itemsPerPage={10}
-                        onPageChange={setCurrentPage}
-                        canNextPage={canNextPage}
-                        canPrevPage={canPrevPage}
-                      />
-                    )}
-                  </CardContent>
+                    </div>
+
+                  {allEntries.length > 0 && (
+                    <DataPagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={totalItems}
+                      itemsPerPage={10}
+                      onPageChange={setCurrentPage}
+                      canNextPage={canNextPage}
+                      canPrevPage={canPrevPage}
+                    />
+                  )}
                 )}
               </div>
             </Card>
