@@ -25,7 +25,7 @@ export default function AppSidebar() {
     <Sidebar side="left" variant="sidebar" collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center space-x-2 px-2">
-          <Database className="text-blue-600 h-6 w-6" />
+          <Database className="text-blue-600 h-6 w-6 flex-shrink-0" />
           <span className="font-bold text-gray-900 group-data-[collapsible=icon]:hidden">DataOps</span>
         </div>
       </SidebarHeader>
