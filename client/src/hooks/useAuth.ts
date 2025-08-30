@@ -71,8 +71,8 @@ export const useAuthState = () => {
         id: '1',
         username,
         email: `${username}@example.com`,
-        firstName: 'John',
-        lastName: 'Doe'
+        firstName: username.charAt(0).toUpperCase() + username.slice(1),
+        lastName: 'User'
       };
 
       setUser(mockUser);
