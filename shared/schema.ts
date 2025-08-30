@@ -98,33 +98,82 @@ export const configTable = pgTable("config_table", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
-export const insertAuditSchema = createInsertSchema(auditTable).omit({
-  auditKey: true,
+// Temporarily use basic schemas to bypass TypeScript issues
+export const insertAuditSchema = z.object({
+  configKey: z.number().optional(),
+  codeName: z.string().max(60).optional(),
+  runId: z.string().max(100).optional(),
+  sourceSystem: z.string().max(20).optional(),
+  schemaName: z.string().max(30).optional(),
+  targetTableName: z.string().max(30).optional(),
+  sourceFileName: z.string().max(50).optional(),
+  startTime: z.date().optional(),
+  endTime: z.date().optional(),
+  insertedRowCount: z.number().optional(),
+  updatedRowCount: z.number().optional(),
+  deletedRowCount: z.number().optional(),
+  noChangeRowCount: z.number().optional(),
+  status: z.string().max(10).optional(),
+  lastPulledTime: z.string().max(40).optional(),
 });
 
-export const insertErrorSchema = createInsertSchema(errorTable);
-
-export const insertSourceConnectionSchema = createInsertSchema(sourceConnectionTable).omit({
-  connectionId: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertErrorSchema = z.object({
+  configKey: z.number().optional(),
+  auditKey: z.number().optional(),
+  codeName: z.string().max(60).optional(),
+  runId: z.string().max(100).optional(),
+  sourceSystem: z.string().max(20).optional(),
+  schemaName: z.string().max(30).optional(),
+  targetTableName: z.string().max(30).optional(),
+  sourceFileName: z.string().max(50).optional(),
+  executionTime: z.date().optional(),
+  errorDetails: z.string().optional(),
 });
 
-export const updateSourceConnectionSchema = createInsertSchema(sourceConnectionTable).omit({
-  connectionId: true,
-  createdAt: true,
-}).partial();
-
-export const insertConfigSchema = createInsertSchema(configTable).omit({
-  configKey: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSourceConnectionSchema = z.object({
+  connectionName: z.string().max(100),
+  connectionType: z.string().max(50),
+  host: z.string().max(100).optional(),
+  port: z.number().optional(),
+  username: z.string().max(50).optional(),
+  password: z.string().max(200).optional(),
+  databaseName: z.string().max(50).optional(),
+  filePath: z.string().max(200).optional(),
+  apiKey: z.string().max(200).optional(),
+  cloudProvider: z.string().max(50).optional(),
+  lastSync: z.date().optional(),
+  status: z.string().max(20).default('Pending'),
 });
 
-export const updateConfigSchema = createInsertSchema(configTable).omit({
-  configKey: true,
-  createdAt: true,
-}).partial();
+export const updateSourceConnectionSchema = insertSourceConnectionSchema.partial();
+
+export const insertConfigSchema = z.object({
+  executionLayer: z.string().max(30).optional(),
+  sourceSystem: z.string().max(30).optional(),
+  sourceType: z.string().max(20).optional(),
+  sourceFilePath: z.string().max(100).optional(),
+  sourceFileName: z.string().max(50).optional(),
+  sourceFileDelimiter: z.string().max(2).optional(),
+  sourceSchemaName: z.string().max(30).optional(),
+  sourceTableName: z.string().max(30).optional(),
+  targetType: z.string().max(20).optional(),
+  targetFilePath: z.string().max(50).optional(),
+  targetFileDelimiter: z.string().max(2).optional(),
+  targetSchemaName: z.string().max(30).optional(),
+  temporaryTargetTable: z.string().max(30).optional(),
+  targetTableName: z.string().max(30).optional(),
+  loadType: z.string().max(20).optional(),
+  primaryKey: z.string().max(40).optional(),
+  effectiveDateColumn: z.string().max(30).optional(),
+  md5Columns: z.string().max(150).optional(),
+  customCode: z.string().max(150).optional(),
+  executionSequence: z.string().max(5).optional(),
+  enableDynamicSchema: z.string().max(1).optional(),
+  activeFlag: z.string().max(1).optional(),
+  fullDataRefreshFlag: z.string().max(1).optional(),
+});
+
+export const updateConfigSchema = insertConfigSchema.partial();
 
 export type AuditRecord = typeof auditTable.$inferSelect;
 export type InsertAuditRecord = z.infer<typeof insertAuditSchema>;

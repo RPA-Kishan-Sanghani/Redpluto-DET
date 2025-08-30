@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,13 @@ export default function LoginPage() {
   });
 
   // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/');
+    }
+  }, [isAuthenticated, setLocation]);
+
   if (isAuthenticated) {
-    setLocation('/');
     return null;
   }
 
