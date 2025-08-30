@@ -37,9 +37,9 @@ export default function Header() {
               <Database className="text-blue-600 text-2xl mr-3" />
               <h1 className="text-xl font-bold text-gray-900" data-testid="text-app-name">DataOps</h1>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:block max-w-xs lg:max-w-sm xl:max-w-md">
               <span className="text-sm text-gray-600">
-                Welcome back, <span className="font-medium text-gray-900" data-testid="text-username">
+                Welcome back, <span className="font-medium text-gray-900 truncate inline-block max-w-[150px] lg:max-w-[200px]" data-testid="text-username">
                   {user?.firstName && user?.lastName 
                     ? `${user.firstName} ${user.lastName}` 
                     : user?.firstName 
