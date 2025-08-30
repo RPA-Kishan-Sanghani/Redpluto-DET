@@ -39,7 +39,13 @@ export default function Header() {
             </div>
             <div className="hidden md:block">
               <span className="text-sm text-gray-600">
-                Welcome back, <span className="font-medium text-gray-900" data-testid="text-username">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || 'User'}</span>!
+                Welcome back, <span className="font-medium text-gray-900" data-testid="text-username">
+                  {user?.firstName && user?.lastName 
+                    ? `${user.firstName} ${user.lastName}` 
+                    : user?.firstName 
+                      ? user.firstName 
+                      : user?.username || 'User'}
+                </span>!
               </span>
             </div>
           </div>

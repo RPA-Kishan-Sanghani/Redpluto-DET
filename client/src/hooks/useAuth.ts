@@ -70,11 +70,12 @@ export const useAuthState = () => {
       const mockUser: User = {
         id: '1',
         username,
-        email: `${username}@example.com`,
+        email: `${username}@redplutoanalytics.com`,
         firstName: 'Kishan',
         lastName: 'Sanghani'
       };
 
+      console.log('Setting user:', mockUser); // Debug log
       setUser(mockUser);
       
       // Store session
