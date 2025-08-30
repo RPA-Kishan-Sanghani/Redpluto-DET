@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Filter, RotateCcw } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CalendarIcon, Filter, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default function DashboardFilterPanel({
 }: DashboardFilterPanelProps) {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleReset = () => {
     const resetFilters: DashboardFilters = {
@@ -73,37 +75,46 @@ export default function DashboardFilterPanel({
   };
 
   return (
-    <Card className="h-fit">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between text-sm">
-          <div className="flex items-center">
-            <Filter className="h-4 w-4 mr-1" />
-            Filters
-          </div>
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="text-xs px-2 py-1 h-7"
-              data-testid="button-reset-filters"
-            >
-              <RotateCcw className="h-3 w-3 mr-1" />
-              Reset
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={onRefresh}
-              className="text-xs px-2 py-1 h-7 bg-blue-600 hover:bg-blue-700"
-              data-testid="button-refresh-dashboard"
-            >
-              Refresh
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
+      <Card className="h-fit">
+        <CollapsibleTrigger asChild>
+          <CardHeader className="pb-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <CardTitle className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <Filter className="h-4 w-4 mr-1" />
+                Filters
+                {isCollapsed ? (
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 ml-2" />
+                )}
+              </div>
+              <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  className="text-xs px-2 py-1 h-7"
+                  data-testid="button-reset-filters"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Reset
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onRefresh}
+                  className="text-xs px-2 py-1 h-7 bg-blue-600 hover:bg-blue-700"
+                  data-testid="button-refresh-dashboard"
+                >
+                  Refresh
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-3">
         {/* Search */}
         <div>
           <label className="text-xs font-medium text-gray-700 mb-1 block">Search</label>
@@ -296,7 +307,9 @@ export default function DashboardFilterPanel({
             </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }
