@@ -67,12 +67,37 @@ export const useAuthState = () => {
     // TODO: Replace with actual authentication API call
     // For now, simulate authentication
     if (username && password) {
+      // Parse email to extract first and last name, or use defaults
+      let firstName = 'Kishan';
+      let lastName = 'Sanghani';
+      
+      // If username is an email, extract the name part
+      if (username.includes('@')) {
+        const namePart = username.split('@')[0];
+        // If the name part contains dots or underscores, split it
+        if (namePart.includes('.')) {
+          const parts = namePart.split('.');
+          firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+          if (parts.length > 1) {
+            lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+          }
+        } else if (namePart.includes('_')) {
+          const parts = namePart.split('_');
+          firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+          if (parts.length > 1) {
+            lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+          }
+        } else {
+          firstName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        }
+      }
+
       const mockUser: User = {
         id: '1',
         username,
-        email: `${username}@redplutoanalytics.com`,
-        firstName: 'Kishan',
-        lastName: 'Sanghani'
+        email: username.includes('@') ? username : `${username}@redplutoanalytics.com`,
+        firstName,
+        lastName
       };
 
       console.log('Setting user:', mockUser); // Debug log
