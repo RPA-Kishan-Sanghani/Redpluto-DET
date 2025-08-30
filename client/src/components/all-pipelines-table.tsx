@@ -1,22 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search, Download, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Download, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-
-// Assume DashboardFilters is defined in a separate file like ./dashboard-filter-panel
-// For this example, let's define a placeholder interface if it's not provided.
-interface DashboardFilters {
-  system: string;
-  layer: string;
-  date: { start: Date | null; end: Date | null };
-  status: string;
-  category: string;
-  targetTableName: string;
-  search: string; // Assuming search is also part of global filters
-}
+import { DashboardFilters } from "./dashboard-filter-panel";
+import { usePipelineRuns } from "@/hooks/use-dashboard-data";
 
 interface AllPipelinesTableProps {
   dateRange?: { start: Date; end: Date };
@@ -47,67 +34,6 @@ interface AllPipelinesData {
   page: number;
   limit: number;
 }
-
-// Mock usePipelineRuns hook as it's not provided
-const usePipelineRuns = ({
-  page,
-  limit,
-  dateRange,
-  sortBy,
-  sortOrder,
-  refreshKey,
-  filters,
-}: {
-  page: number;
-  limit: number;
-  dateRange?: { start: Date; end: Date };
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-  refreshKey: number;
-  filters: DashboardFilters;
-}) => {
-  // Dummy data and loading state for demonstration
-  const mockData: AllPipelinesData = {
-    data: [
-      {
-        auditKey: 1,
-        codeName: 'ETL_Process_A',
-        runId: 'run_001',
-        sourceSystem: 'Salesforce',
-        schemaName: 'Bronze',
-        targetTableName: 'stg_salesforce_account',
-        sourceFileName: 'account.csv',
-        startTime: new Date('2023-10-26T10:00:00Z'),
-        endTime: new Date('2023-10-26T10:05:00Z'),
-        insertedRowCount: 100,
-        updatedRowCount: 5,
-        deletedRowCount: 0,
-        noChangeRowCount: 95,
-        status: 'SUCCESS',
-      },
-      {
-        auditKey: 2,
-        codeName: 'Data_Cleanup_B',
-        runId: 'run_002',
-        sourceSystem: 'MySQL',
-        schemaName: 'Silver',
-        targetTableName: 'clean_users',
-        sourceFileName: 'users.sql',
-        startTime: new Date('2023-10-26T11:00:00Z'),
-        endTime: new Date('2023-10-26T11:02:30Z'),
-        insertedRowCount: 0,
-        updatedRowCount: 50,
-        deletedRowCount: 2,
-        noChangeRowCount: 0,
-        status: 'FAILED',
-      },
-    ],
-    total: 2,
-    page: 1,
-    limit: 10,
-  };
-  return { data: mockData, isLoading: false };
-};
 
 
 export default function AllPipelinesTable({ dateRange, refreshKey, filters }: AllPipelinesTableProps) {
@@ -175,55 +101,7 @@ export default function AllPipelinesTable({ dateRange, refreshKey, filters }: Al
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-semibold text-gray-900">All Pipelines</h3>
-          <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search pipelines..."
-                className="w-full sm:w-64 pl-10"
-                value={filters.search}
-                // onChange={(e) => setLocalFilters(prev => ({ ...prev, search: e.target.value }))} // Removed
-                data-testid="input-search-all-pipelines"
-              />
-            </div>
-
-            {/* Filters */}
-            <Select value={filters.sourceSystem || "all"} onValueChange={(value) => {
-              // Assuming filters are managed globally and this component receives them.
-              // If direct state update is needed here, it should be done via a callback from parent.
-              // For now, we'll simulate passing it up.
-              console.log("Source system filter changed to:", value);
-            }}>
-              <SelectTrigger className="w-40" data-testid="select-all-pipelines-source-filter">
-                <SelectValue placeholder="All Systems" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Systems</SelectItem>
-                <SelectItem value="Bronze">Bronze</SelectItem>
-                <SelectItem value="Silver">Silver</SelectItem>
-                <SelectItem value="Gold">Gold</SelectItem>
-                <SelectItem value="Quality">Quality</SelectItem>
-                <SelectItem value="Reconciliation">Reconciliation</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.status || "all"} onValueChange={(value) => {
-              console.log("Status filter changed to:", value);
-            }}>
-              <SelectTrigger className="w-32" data-testid="select-all-pipelines-status-filter">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="SUCCESS">Success</SelectItem>
-                <SelectItem value="FAILED">Failed</SelectItem>
-                <SelectItem value="RUNNING">Running</SelectItem>
-                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-              </SelectContent>
-            </Select>
-
+          <div className="mt-4 sm:mt-0">
             {/* Export Button */}
             <Button variant="outline" size="sm" data-testid="button-export-all-pipelines">
               <Download className="w-4 h-4 mr-2" />
@@ -303,7 +181,7 @@ export default function AllPipelinesTable({ dateRange, refreshKey, filters }: Al
                 </td>
               </tr>
             ) : (
-              pipelinesData?.data?.map((pipeline) => (
+              pipelinesData?.data?.map((pipeline: PipelineRecord) => (
                 <tr
                   key={pipeline.auditKey}
                   className="hover:bg-gray-50 cursor-pointer"

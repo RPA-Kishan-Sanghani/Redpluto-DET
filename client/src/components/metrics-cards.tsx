@@ -24,7 +24,7 @@ interface MetricsData {
 import { useDashboardMetrics } from "@/hooks/use-dashboard-data";
 
 export default function MetricsCards({ dateRange, refreshKey, filters }: MetricsCardsProps) {
-  const { data: metrics, isLoading } = useDashboardMetrics(dateRange, refreshKey);
+  const { data: metrics, isLoading } = useDashboardMetrics(dateRange, refreshKey, filters);
 
   const cards = [
     {
