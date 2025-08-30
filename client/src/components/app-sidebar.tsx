@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 
 const navigationItems = [
@@ -49,6 +50,7 @@ export default function AppSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarRail />
     </Sidebar>
   );
 }
