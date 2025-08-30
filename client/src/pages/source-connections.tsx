@@ -220,11 +220,7 @@ export default function SourceConnections() {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
-                    selectedCategory === category.id
-                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors bg-blue-100 text-blue-700 border border-blue-200 text-[14px]"
                   data-testid={`category-${category.id}`}
                 >
                   <Icon className="w-4 h-4 mr-3" />
