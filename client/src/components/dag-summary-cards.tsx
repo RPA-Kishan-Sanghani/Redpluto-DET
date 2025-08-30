@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { DashboardFilters } from "./dashboard-filter-panel";
 
 interface PipelineSummaryCardsProps {
   dateRange?: { start: Date; end: Date };
   refreshKey: number;
+  filters: DashboardFilters;
 }
 
 interface PipelineSummary {
@@ -15,8 +17,8 @@ interface PipelineSummary {
 
 import { usePipelineSummary } from "@/hooks/use-dashboard-data";
 
-export default function PipelineSummaryCards({ dateRange, refreshKey }: PipelineSummaryCardsProps) {
-  const { data: summary, isLoading } = usePipelineSummary(dateRange, refreshKey);
+export default function PipelineSummaryCards({ dateRange, refreshKey, filters }: PipelineSummaryCardsProps) {
+  const { data: summary, isLoading } = usePipelineSummary(dateRange, refreshKey, filters);
 
   const categories = [
     {

@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, CheckCircle, XCircle, Clock, Play } from "lucide-react";
+import { DashboardFilters } from "./dashboard-filter-panel";
+
+interface DateRange {
+  start: Date;
+  end: Date;
+}
 
 interface MetricsCardsProps {
-  dateRange?: { start: Date; end: Date };
+  dateRange?: DateRange;
   refreshKey: number;
+  filters: DashboardFilters;
 }
 
 interface MetricsData {
@@ -16,7 +23,7 @@ interface MetricsData {
 
 import { useDashboardMetrics } from "@/hooks/use-dashboard-data";
 
-export default function MetricsCards({ dateRange, refreshKey }: MetricsCardsProps) {
+export default function MetricsCards({ dateRange, refreshKey, filters }: MetricsCardsProps) {
   const { data: metrics, isLoading } = useDashboardMetrics(dateRange, refreshKey);
 
   const cards = [

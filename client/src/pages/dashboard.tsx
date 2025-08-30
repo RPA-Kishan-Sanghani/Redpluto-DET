@@ -1,15 +1,24 @@
+
 import Header from "@/components/header";
 import MetricsCards from "@/components/metrics-cards";
 import DagSummaryCards from "@/components/dag-summary-cards";
 import AllPipelinesTable from "@/components/all-pipelines-table";
+import DashboardFilterPanel, { DashboardFilters } from "@/components/dashboard-filter-panel";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 
 export default function Dashboard() {
-  const [dateRange, setDateRange] = useState("Last 24 hours");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filters, setFilters] = useState<DashboardFilters>({
+    search: '',
+    system: '',
+    layer: '',
+    status: '',
+    category: '',
+    targetTable: '',
+    dateRange: 'Last 24 hours',
+    customStartDate: undefined,
+    customEndDate: undefined,
+  });
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -17,7 +26,15 @@ export default function Dashboard() {
 
   const getDateRangeFilter = () => {
     const now = new Date();
-    switch (dateRange) {
+    
+    if (filters.dateRange === 'custom' && filters.customStartDate && filters.customEndDate) {
+      return {
+        start: filters.customStartDate,
+        end: filters.customEndDate,
+      };
+    }
+    
+    switch (filters.dateRange) {
       case "Last 24 hours":
         return {
           start: new Date(now.getTime() - 24 * 60 * 60 * 1000),
@@ -42,43 +59,46 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Date Range Filter */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">Pipeline Dashboard</h2>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm text-gray-600">Date Range:</label>
-                <Select value={dateRange} onValueChange={setDateRange}>
-                  <SelectTrigger className="w-40" data-testid="select-date-range">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Last 24 hours">Last 24 hours</SelectItem>
-                    <SelectItem value="Last 7 days">Last 7 days</SelectItem>
-                    <SelectItem value="Last 30 days">Last 30 days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button 
-                onClick={handleRefresh}
-                variant="default"
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
-                data-testid="button-refresh"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex gap-6">
+          {/* Left Sidebar - Filter Panel */}
+          <div className="w-80 flex-shrink-0">
+            <DashboardFilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              onRefresh={handleRefresh}
+            />
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Pipeline Dashboard</h1>
+              <p className="text-gray-600">Monitor and manage your data pipeline operations</p>
+            </div>
+
+            <div className="space-y-6">
+              <MetricsCards 
+                dateRange={getDateRangeFilter()} 
+                refreshKey={refreshKey}
+                filters={filters}
+              />
+              
+              <DagSummaryCards 
+                dateRange={getDateRangeFilter()} 
+                refreshKey={refreshKey}
+                filters={filters}
+              />
+              
+              <AllPipelinesTable 
+                dateRange={getDateRangeFilter()} 
+                refreshKey={refreshKey}
+                filters={filters}
+              />
             </div>
           </div>
         </div>
-
-        <MetricsCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
-        <DagSummaryCards dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
-        <AllPipelinesTable dateRange={getDateRangeFilter()} refreshKey={refreshKey} />
-      </main>
+      </div>
     </div>
   );
 }
