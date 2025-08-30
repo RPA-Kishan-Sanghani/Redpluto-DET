@@ -75,45 +75,57 @@ export default function DashboardFilterPanel({
   };
 
   return (
-    <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
+    <div className={cn(
+      "transition-all duration-300 ease-in-out",
+      isCollapsed ? "w-12" : "w-64"
+    )}>
       <Card className="h-fit">
-        <CollapsibleTrigger asChild>
-          <CardHeader className="pb-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <CardTitle className="flex items-center justify-between text-sm">
-              <div className="flex items-center">
-                <Filter className="h-4 w-4 mr-1" />
-                Filters
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center justify-between text-sm">
+            <div className="flex items-center">
+              <Filter className="h-4 w-4 mr-1" />
+              {!isCollapsed && "Filters"}
+            </div>
+            <div className="flex items-center space-x-1">
+              {!isCollapsed && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    className="text-xs px-2 py-1 h-7"
+                    data-testid="button-reset-filters"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Reset
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={onRefresh}
+                    className="text-xs px-2 py-1 h-7 bg-blue-600 hover:bg-blue-700"
+                    data-testid="button-refresh-dashboard"
+                  >
+                    Refresh
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-xs px-2 py-1 h-7"
+              >
                 {isCollapsed ? (
-                  <ChevronDown className="h-4 w-4 ml-2" />
+                  <ChevronDown className="h-3 w-3 rotate-90" />
                 ) : (
-                  <ChevronUp className="h-4 w-4 ml-2" />
+                  <ChevronUp className="h-3 w-3 rotate-90" />
                 )}
-              </div>
-              <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  className="text-xs px-2 py-1 h-7"
-                  data-testid="button-reset-filters"
-                >
-                  <RotateCcw className="h-3 w-3 mr-1" />
-                  Reset
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={onRefresh}
-                  className="text-xs px-2 py-1 h-7 bg-blue-600 hover:bg-blue-700"
-                  data-testid="button-refresh-dashboard"
-                >
-                  Refresh
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        {!isCollapsed && (
           <CardContent className="space-y-3">
         {/* Search */}
         <div>
@@ -308,8 +320,8 @@ export default function DashboardFilterPanel({
           </div>
         )}
           </CardContent>
-        </CollapsibleContent>
+        )}
       </Card>
-    </Collapsible>
+    </div>
   );
 }
