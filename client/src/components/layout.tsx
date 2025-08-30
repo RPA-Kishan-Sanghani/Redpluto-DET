@@ -1,12 +1,10 @@
-import Header from "@/components/header";
-import AppSidebar from "@/components/app-sidebar";
-import {
-  SidebarProvider,
-  SidebarInset
-} from "@/components/ui/sidebar";
+import { ReactNode } from 'react';
+import AppSidebar from './app-sidebar';
+import Header from './header';
+import { SidebarProvider, SidebarInset } from './ui/sidebar';
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
@@ -15,7 +13,7 @@ export default function Layout({ children }: LayoutProps) {
       <AppSidebar />
       <SidebarInset>
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 overflow-auto p-6">
           {children}
         </main>
       </SidebarInset>
