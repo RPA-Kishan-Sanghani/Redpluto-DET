@@ -182,7 +182,7 @@ export default function SourceConnections() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="border-b border-gray-200 px-6 py-4 text-[14px] bg-[#ffffff]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Source Connections</h1>
@@ -209,7 +209,6 @@ export default function SourceConnections() {
           </Dialog>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex gap-6">
           {/* Left Sidebar - Categories */}
@@ -367,7 +366,6 @@ export default function SourceConnections() {
           </div>
         </div>
       </div>
-
       {/* Edit Connection Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
