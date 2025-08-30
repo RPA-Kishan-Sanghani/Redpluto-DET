@@ -1,12 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
-import Header from "@/components/header";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      
       <div className="w-full flex items-center justify-center" style={{ minHeight: 'calc(100vh - 64px)' }}>
         <Card className="w-full max-w-md mx-4">
         <CardContent className="pt-6">

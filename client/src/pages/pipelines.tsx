@@ -15,7 +15,6 @@ import { DataPagination } from '@/components/ui/data-pagination';
 import { apiRequest } from '@/lib/queryClient';
 import type { ConfigRecord, InsertConfigRecord, UpdateConfigRecord } from '@shared/schema';
 import { PipelineForm } from '@/components/pipeline-form';
-import Header from '@/components/header';
 
 interface PipelineFilters {
   search: string;
@@ -144,8 +143,6 @@ export function Pipelines() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>

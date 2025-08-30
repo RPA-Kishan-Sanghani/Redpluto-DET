@@ -15,7 +15,6 @@ import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
 import type { ReconciliationConfig, InsertReconciliationConfig, UpdateReconciliationConfig } from '@shared/schema';
 import { ReconciliationForm } from '@/components/reconciliation-form';
-import Header from '@/components/header';
 
 interface ReconciliationFilters {
   search: string;
@@ -161,8 +160,6 @@ export function Reconciliation() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>

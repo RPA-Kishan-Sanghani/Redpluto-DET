@@ -12,7 +12,6 @@ import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
 import type { SourceConnection } from "@shared/schema";
 import ConnectionForm from "@/components/connection-form";
-import Header from "@/components/header";
 
 const CONNECTION_CATEGORIES = [
   { id: 'all', label: 'All Connectors', icon: Settings },
@@ -182,8 +181,6 @@ export default function SourceConnections() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

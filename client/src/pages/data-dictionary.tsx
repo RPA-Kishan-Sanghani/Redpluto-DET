@@ -24,7 +24,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DataDictionaryForm } from "../components/data-dictionary-form";
-import Header from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -144,8 +143,6 @@ export function DataDictionary() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>

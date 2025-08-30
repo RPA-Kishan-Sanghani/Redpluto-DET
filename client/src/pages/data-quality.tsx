@@ -15,7 +15,6 @@ import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
 import type { DataQualityConfig, InsertDataQualityConfig, UpdateDataQualityConfig } from '@shared/schema';
 import { DataQualityForm } from '@/components/data-quality-form';
-import Header from '@/components/header';
 
 interface DataQualityFilters {
   search: string;
@@ -154,8 +153,6 @@ export function DataQuality() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>

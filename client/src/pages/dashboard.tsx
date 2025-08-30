@@ -1,5 +1,4 @@
 
-import Header from "@/components/header";
 import MetricsCards from "@/components/metrics-cards";
 import DagSummaryCards from "@/components/dag-summary-cards";
 import AllPipelinesTable from "@/components/all-pipelines-table";
@@ -57,8 +56,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       <div className="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4">
           {/* Main Content */}
