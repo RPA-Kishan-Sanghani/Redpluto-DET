@@ -74,18 +74,18 @@ export default function DashboardFilterPanel({
 
   return (
     <Card className="h-fit">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center justify-between text-sm">
           <div className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
+            <Filter className="h-4 w-4 mr-1" />
             Filters
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <Button
               variant="outline"
               size="sm"
               onClick={handleReset}
-              className="text-xs"
+              className="text-xs px-2 py-1 h-7"
               data-testid="button-reset-filters"
             >
               <RotateCcw className="h-3 w-3 mr-1" />
@@ -95,7 +95,7 @@ export default function DashboardFilterPanel({
               variant="default"
               size="sm"
               onClick={onRefresh}
-              className="text-xs bg-blue-600 hover:bg-blue-700"
+              className="text-xs px-2 py-1 h-7 bg-blue-600 hover:bg-blue-700"
               data-testid="button-refresh-dashboard"
             >
               Refresh
@@ -103,12 +103,13 @@ export default function DashboardFilterPanel({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {/* Search */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Search</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Search</label>
           <Input
-            placeholder="Search pipelines, tables..."
+            placeholder="Search..." 
+            className="text-sm"
             value={filters.search}
             onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
             data-testid="input-global-search"
@@ -117,7 +118,7 @@ export default function DashboardFilterPanel({
 
         {/* System */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Source System</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Source System</label>
           <Select 
             value={filters.system || "all"} 
             onValueChange={(value) => onFiltersChange({ ...filters, system: value === 'all' ? '' : value })}
@@ -139,7 +140,7 @@ export default function DashboardFilterPanel({
 
         {/* Execution Layer */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Execution Layer</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Layer</label>
           <Select 
             value={filters.layer || "all"} 
             onValueChange={(value) => onFiltersChange({ ...filters, layer: value === 'all' ? '' : value })}
@@ -158,7 +159,7 @@ export default function DashboardFilterPanel({
 
         {/* Status */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Status</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Status</label>
           <Select 
             value={filters.status || "all"} 
             onValueChange={(value) => onFiltersChange({ ...filters, status: value === 'all' ? '' : value })}
@@ -178,7 +179,7 @@ export default function DashboardFilterPanel({
 
         {/* Category */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Category</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Category</label>
           <Select 
             value={filters.category || "all"} 
             onValueChange={(value) => onFiltersChange({ ...filters, category: value === 'all' ? '' : value })}
@@ -198,9 +199,10 @@ export default function DashboardFilterPanel({
 
         {/* Target Table */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Target Table</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Target Table</label>
           <Input
-            placeholder="Enter table name..."
+            placeholder="Table name..." 
+            className="text-sm"
             value={filters.targetTable}
             onChange={(e) => onFiltersChange({ ...filters, targetTable: e.target.value })}
             data-testid="input-target-table-filter"
@@ -209,7 +211,7 @@ export default function DashboardFilterPanel({
 
         {/* Date Range */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Date Range</label>
+          <label className="text-xs font-medium text-gray-700 mb-1 block">Date Range</label>
           <Select 
             value={filters.dateRange} 
             onValueChange={handleDateRangeChange}
@@ -230,7 +232,7 @@ export default function DashboardFilterPanel({
         {filters.dateRange === 'custom' && (
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Start Date</label>
+              <label className="text-xs font-medium text-gray-700 mb-1 block">Start Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -257,7 +259,7 @@ export default function DashboardFilterPanel({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">End Date</label>
+              <label className="text-xs font-medium text-gray-700 mb-1 block">End Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button

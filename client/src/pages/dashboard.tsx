@@ -60,16 +60,7 @@ export default function Dashboard() {
       <Header />
 
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-6">
-          {/* Left Sidebar - Filter Panel */}
-          <div className="w-80 flex-shrink-0">
-            <DashboardFilterPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              onRefresh={handleRefresh}
-            />
-          </div>
-
+        <div className="flex gap-4">
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             <div className="mb-6">
@@ -96,6 +87,15 @@ export default function Dashboard() {
                 filters={filters}
               />
             </div>
+          </div>
+
+          {/* Right Sidebar - Filter Panel */}
+          <div className="w-64 flex-shrink-0">
+            <DashboardFilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              onRefresh={handleRefresh}
+            />
           </div>
         </div>
       </div>
