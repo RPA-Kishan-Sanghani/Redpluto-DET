@@ -90,7 +90,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Sidebar - Filter Panel */}
-          <div className="w-64 flex-shrink-0">
+          <div className="flex-shrink-0">
             <DashboardFilterPanel
               filters={filters}
               onFiltersChange={setFilters}

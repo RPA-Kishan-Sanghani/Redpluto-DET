@@ -117,7 +117,7 @@ export default function DashboardFilterPanel({
                 className="text-xs px-2 py-1 h-7"
               >
                 {isCollapsed ? (
-                  <ChevronDown className="h-3 w-3 rotate-90" />
+                  <ChevronDown className="h-3 w-3 -rotate-90" />
                 ) : (
                   <ChevronUp className="h-3 w-3 rotate-90" />
                 )}
