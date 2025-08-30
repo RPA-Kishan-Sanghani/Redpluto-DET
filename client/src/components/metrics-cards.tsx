@@ -109,10 +109,10 @@ export default function MetricsCards({ dateRange, refreshKey, filters }: Metrics
                 </div>
               </div>
               <div className="ml-4 min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-500 truncate" data-testid={`text-${card.testId}-label`}>
+                <p className="text-sm font-medium text-gray-500 break-words" data-testid={`text-${card.testId}-label`}>
                   {card.title}
                 </p>
-                <p className={`text-2xl font-semibold ${card.textColor} truncate`} data-testid={`text-${card.testId}-value`}>
+                <p className={`text-xl lg:text-2xl font-semibold ${card.textColor} break-words`} data-testid={`text-${card.testId}-value`}>
                   {card.value}
                 </p>
               </div>
