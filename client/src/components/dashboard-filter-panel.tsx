@@ -83,6 +83,18 @@ export default function DashboardFilterPanel({
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-sm">
             <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-xs px-2 py-1 h-7 mr-1"
+              >
+                {isCollapsed ? (
+                  <ChevronDown className="h-3 w-3 -rotate-90" />
+                ) : (
+                  <ChevronUp className="h-3 w-3 rotate-90" />
+                )}
+              </Button>
               <Filter className="h-4 w-4 mr-1" />
               {!isCollapsed && "Filters"}
             </div>
@@ -110,18 +122,6 @@ export default function DashboardFilterPanel({
                   </Button>
                 </>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="text-xs px-2 py-1 h-7"
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="h-3 w-3 -rotate-90" />
-                ) : (
-                  <ChevronUp className="h-3 w-3 rotate-90" />
-                )}
-              </Button>
             </div>
           </CardTitle>
         </CardHeader>
