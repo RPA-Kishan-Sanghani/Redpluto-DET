@@ -15,13 +15,9 @@ import { DataPagination } from '@/components/ui/data-pagination';
 import { apiRequest } from '@/lib/queryClient';
 import type { ConfigRecord, InsertConfigRecord, UpdateConfigRecord } from '@shared/schema';
 import { PipelineForm } from '@/components/pipeline-form';
+import PipelinesFilterPanel, { PipelineFilters as FilterPanelFilters } from '@/components/pipelines-filter-panel';
 
-interface PipelineFilters {
-  search: string;
-  executionLayer: string;
-  sourceSystem: string;
-  status: string;
-}
+type PipelineFilters = FilterPanelFilters;
 
 export function Pipelines() {
   const [filters, setFilters] = useState<PipelineFilters>({
@@ -141,89 +137,25 @@ export function Pipelines() {
     );
   }
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="heading-pipelines">Pipeline Configuration</h1>
-            <p className="text-gray-600">Manage your data pipeline configurations</p>
-          </div>
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] })}
-              data-testid="button-refresh-pipelines"
-            >
-              Refresh
-            </Button>
-            <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-pipeline">
-              <Plus className="h-4 w-4" />Add Pipeline
-            </Button>
-          </div>
-        </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by table name..."
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                className="pl-10"
-                data-testid="input-search-pipelines"
-              />
+      <div className="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex gap-4">
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="heading-pipelines">Pipeline Configuration</h1>
+                <p className="text-gray-600">Manage your data pipeline configurations</p>
+              </div>
+              <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-pipeline">
+                <Plus className="h-4 w-4" />Add Pipeline
+              </Button>
             </div>
-            
-            <Select value={filters.executionLayer || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, executionLayer: value === 'all' ? '' : value }))}>
-              <SelectTrigger data-testid="select-execution-layer">
-                <SelectValue placeholder="Execution Layer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Layers</SelectItem>
-                <SelectItem value="Bronze">Bronze</SelectItem>
-                <SelectItem value="Silver">Silver</SelectItem>
-                <SelectItem value="Gold">Gold</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.sourceSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
-              <SelectTrigger data-testid="select-source-system">
-                <SelectValue placeholder="Source System" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Systems</SelectItem>
-                <SelectItem value="MySQL">MySQL</SelectItem>
-                <SelectItem value="PostgreSQL">PostgreSQL</SelectItem>
-                <SelectItem value="SQL Server">SQL Server</SelectItem>
-                <SelectItem value="Oracle">Oracle</SelectItem>
-                <SelectItem value="CSV">CSV</SelectItem>
-                <SelectItem value="JSON">JSON</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.status || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === 'all' ? '' : value }))}>
-              <SelectTrigger data-testid="select-status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Y">Active</SelectItem>
-                <SelectItem value="N">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Pipeline List */}
       <Card>
@@ -406,7 +338,18 @@ export function Pipelines() {
           />
         </DialogContent>
       </Dialog>
-      </main>
+          </div>
+
+          {/* Right Sidebar - Filter Panel */}
+          <div className="flex-shrink-0">
+            <PipelinesFilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              onRefresh={handleRefresh}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
