@@ -99,20 +99,36 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual user registration API call
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      
-      toast({
-        title: "Account created successfully",
-        description: "Welcome to Redpluto Analytics! You can now sign in.",
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+        }),
       });
-      
-      // Redirect to login page
-      setLocation('/login');
+
+      if (response.ok) {
+        toast({
+          title: "Account created successfully",
+          description: "Welcome to Redpluto Analytics! You can now sign in.",
+        });
+        
+        // Redirect to login page
+        setLocation('/login');
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Registration failed');
+      }
     } catch (error) {
       toast({
         title: "Registration failed",
-        description: "Failed to create account. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create account. Please try again.",
         variant: "destructive",
       });
     } finally {

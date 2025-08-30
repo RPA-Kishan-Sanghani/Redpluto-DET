@@ -64,58 +64,36 @@ export const useAuthState = () => {
   };
 
   const login = async (username: string, password: string, rememberMe = false) => {
-    // TODO: Replace with actual authentication API call
-    // For now, simulate authentication
-    if (username && password) {
-      // Parse email to extract first and last name, or use defaults
-      let firstName = 'Kishan';
-      let lastName = 'Sanghani';
-      
-      // If username is an email, extract the name part
-      if (username.includes('@')) {
-        const namePart = username.split('@')[0];
-        // If the name part contains dots or underscores, split it
-        if (namePart.includes('.')) {
-          const parts = namePart.split('.');
-          firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-          if (parts.length > 1) {
-            lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
-          }
-        } else if (namePart.includes('_')) {
-          const parts = namePart.split('_');
-          firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-          if (parts.length > 1) {
-            lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
-          }
-        } else {
-          firstName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        const { user } = await response.json();
+        setUser(user);
+        
+        // Store session
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Set session expiry (15 hours as specified in requirements)
+        const expiryTime = new Date();
+        expiryTime.setHours(expiryTime.getHours() + 15);
+        localStorage.setItem('sessionExpiry', expiryTime.toISOString());
+        
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
         }
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Invalid credentials');
       }
-
-      const mockUser: User = {
-        id: '1',
-        username,
-        email: username.includes('@') ? username : `${username}@redplutoanalytics.com`,
-        firstName,
-        lastName
-      };
-
-      console.log('Setting user:', mockUser); // Debug log
-      setUser(mockUser);
-      
-      // Store session
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      // Set session expiry (15 hours as specified in requirements)
-      const expiryTime = new Date();
-      expiryTime.setHours(expiryTime.getHours() + 15);
-      localStorage.setItem('sessionExpiry', expiryTime.toISOString());
-      
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      }
-    } else {
-      throw new Error('Invalid credentials');
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Login failed');
     }
   };
 

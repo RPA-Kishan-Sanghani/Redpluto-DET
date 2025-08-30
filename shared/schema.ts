@@ -7,7 +7,17 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  email: text("email"),
 });
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export const auditTable = pgTable("audit_table", {
   auditKey: integer("audit_key").primaryKey().generatedAlwaysAsIdentity(),
@@ -88,11 +98,6 @@ export const configTable = pgTable("config_table", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
 export const insertAuditSchema = createInsertSchema(auditTable).omit({
   auditKey: true,
 });
@@ -121,8 +126,6 @@ export const updateConfigSchema = createInsertSchema(configTable).omit({
   createdAt: true,
 }).partial();
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 export type AuditRecord = typeof auditTable.$inferSelect;
 export type InsertAuditRecord = z.infer<typeof insertAuditSchema>;
 export type ErrorRecord = typeof errorTable.$inferSelect;
