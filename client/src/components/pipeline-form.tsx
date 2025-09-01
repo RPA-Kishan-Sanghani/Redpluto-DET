@@ -122,6 +122,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedConnectionId = form.watch('connectionId');
   const selectedSchema = form.watch('sourceSchemaName');
   const selectedSourceType = form.watch('sourceType');
+  const selectedTargetType = form.watch('targetType');
 
   // Fetch connections filtered by source system
   const { data: connections = [] } = useQuery({
@@ -512,86 +513,96 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="targetSchemaName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Schema Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter target schema name" {...field} data-testid="input-target-schema" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Show schema and table fields only when target type is Table */}
+                  {selectedTargetType === 'Table' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="targetSchemaName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Target Schema Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter target schema name" {...field} data-testid="input-target-schema" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="targetTableName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Table Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter target table name" {...field} data-testid="input-target-table" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="targetTableName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Target Table Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter target table name" {...field} data-testid="input-target-table" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="temporaryTargetTable"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Temporary Target Table</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="temporaryTargetTable"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Temporary Target Table</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
 
-                  <FormField
-                    control={form.control}
-                    name="targetFilePath"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target File Path</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter target file path" {...field} data-testid="input-target-path" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Show file fields only when target type is File */}
+                  {selectedTargetType === 'File' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="targetFilePath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Target File Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter target file path" {...field} data-testid="input-target-path" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="targetFileDelimiter"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target File Delimiter</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-target-delimiter">
-                              <SelectValue placeholder="Select delimiter" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {delimiters.map((delimiter) => (
-                              <SelectItem key={delimiter} value={delimiter}>
-                                {delimiter === '\t' ? 'Tab' : delimiter === ',' ? 'Comma' : delimiter === ';' ? 'Semicolon' : delimiter === '|' ? 'Pipe' : delimiter}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="targetFileDelimiter"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Target File Delimiter</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-target-delimiter">
+                                  <SelectValue placeholder="Select delimiter" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {delimiters.map((delimiter) => (
+                                  <SelectItem key={delimiter} value={delimiter}>
+                                    {delimiter === '\t' ? 'Tab' : delimiter === ',' ? 'Comma' : delimiter === ';' ? 'Semicolon' : delimiter === '|' ? 'Pipe' : delimiter}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
