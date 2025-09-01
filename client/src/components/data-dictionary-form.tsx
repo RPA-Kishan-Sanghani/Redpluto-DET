@@ -173,6 +173,31 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
     enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
   });
 
+  // Fetch target schemas for selected target connection
+  const { data: targetSchemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId
+  });
+
+  // Watch target schema for tables
+  const selectedTargetSchema = form.watch('targetSchemaName');
+
+  // Fetch target tables for selected target connection and schema
+  const { data: targetTables = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
+  });
+
   // Reset form when entry changes
   useEffect(() => {
     if (entry) {
@@ -504,13 +529,26 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Target Schema *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter target schema name"
-                            {...field}
-                            data-testid="input-target-schema"
-                          />
-                        </FormControl>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset table when schema changes
+                            form.setValue('targetTableName', '');
+                          }}
+                          value={field.value || ''}
+                          disabled={!selectedTargetConnectionId}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-schema">
+                              <SelectValue placeholder={selectedTargetConnectionId ? "Select target schema" : "Select connection first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {targetSchemas.map((schema) => (
+                              <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -522,13 +560,22 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Target Table Name *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter target table name"
-                            {...field}
-                            data-testid="input-target-table"
-                          />
-                        </FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
+                          disabled={!selectedTargetConnectionId || !selectedTargetSchema}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-table">
+                              <SelectValue placeholder={selectedTargetConnectionId && selectedTargetSchema ? "Select target table" : "Select schema first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {targetTables.map((table) => (
+                              <SelectItem key={table} value={table}>{table}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
