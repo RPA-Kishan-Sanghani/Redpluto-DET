@@ -114,6 +114,8 @@ export default function SourceConnections() {
     },
     onSuccess: (result) => {
       if (result.success) {
+        // Refresh the connections list to show updated status
+        queryClient.invalidateQueries({ queryKey: ['/api/connections'] });
         toast({
           title: "Connection Test Successful",
           description: result.message,
