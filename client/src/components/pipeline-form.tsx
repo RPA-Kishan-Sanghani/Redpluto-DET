@@ -715,19 +715,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="temporaryTargetTable"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Temporary Target Table</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      
                     </>
                   )}
 
@@ -939,6 +927,20 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="temporaryTargetTable"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Temporary Target Table</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
