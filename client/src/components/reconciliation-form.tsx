@@ -155,6 +155,7 @@ export function ReconciliationForm({
   const selectedTargetSystem = form.watch('targetSystem');
   const selectedTargetConnectionId = form.watch('targetConnectionId');
   const selectedTargetSchema = form.watch('targetSchema');
+  const selectedTargetTable = form.watch('targetTable');
 
   // Fetch connections filtered by source system
   const { data: sourceConnections = [] } = useQuery({
@@ -247,6 +248,17 @@ export function ReconciliationForm({
       return response.json() as string[];
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
+  });
+
+  // Fetch target table columns for selected target table
+  const { data: targetColumns = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'columns'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
 
   // Create mutation
@@ -810,13 +822,30 @@ export function ReconciliationForm({
                         <FormDescription>
                           Column name for value-based reconciliation
                         </FormDescription>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter attribute/column name"
-                            {...field}
-                            data-testid="input-attribute"
-                          />
-                        </FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
+                          disabled={!selectedTargetTable || targetColumns.length === 0}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-attribute">
+                              <SelectValue placeholder={
+                                !selectedTargetTable 
+                                  ? "Select a target table first" 
+                                  : targetColumns.length === 0 
+                                    ? "Loading columns..." 
+                                    : "Select column for attribute"
+                              } />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {targetColumns.map((column) => (
+                              <SelectItem key={column} value={column}>
+                                {column}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
