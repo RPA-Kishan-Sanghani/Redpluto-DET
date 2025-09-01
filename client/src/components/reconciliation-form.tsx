@@ -114,6 +114,28 @@ export function ReconciliationForm({
       fetch("/api/metadata/source_type").then((res) => res.json()) as Promise<string[]>,
   });
 
+  // Initialize form with default values or existing config values
+  const form = useForm<FormData>({
+    resolver: zodResolver(reconciliationFormSchema),
+    defaultValues: {
+      configKey: config?.configKey || undefined,
+      executionLayer: config?.executionLayer || "",
+      sourceSystem: config?.sourceSystem || "",
+      sourceConnectionId: config?.sourceConnectionId || undefined,
+      sourceType: config?.sourceType || "",
+      sourceSchema: config?.sourceSchema || "",
+      sourceTable: config?.sourceTable || "",
+      targetSchema: config?.targetSchema || "",
+      targetTable: config?.targetTable || "",
+      reconType: config?.reconType || "",
+      attribute: config?.attribute || "",
+      sourceQuery: config?.sourceQuery || "",
+      targetQuery: config?.targetQuery || "",
+      thresholdPercentage: config?.thresholdPercentage || undefined,
+      activeFlag: config?.activeFlag || "Y",
+    },
+  });
+
   // Fetch pipeline configs for the dropdown
   const { data: configs = [] } = useQuery({
     queryKey: ["/api/pipelines"],
@@ -169,28 +191,6 @@ export function ReconciliationForm({
       return response.json() as string[];
     },
     enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
-  });
-
-  // Initialize form with default values or existing config values
-  const form = useForm<FormData>({
-    resolver: zodResolver(reconciliationFormSchema),
-    defaultValues: {
-      configKey: config?.configKey || undefined,
-      executionLayer: config?.executionLayer || "",
-      sourceSystem: config?.sourceSystem || "",
-      sourceConnectionId: config?.sourceConnectionId || undefined,
-      sourceType: config?.sourceType || "",
-      sourceSchema: config?.sourceSchema || "",
-      sourceTable: config?.sourceTable || "",
-      targetSchema: config?.targetSchema || "",
-      targetTable: config?.targetTable || "",
-      reconType: config?.reconType || "",
-      attribute: config?.attribute || "",
-      sourceQuery: config?.sourceQuery || "",
-      targetQuery: config?.targetQuery || "",
-      thresholdPercentage: config?.thresholdPercentage || undefined,
-      activeFlag: config?.activeFlag || "Y",
-    },
   });
 
   // Create mutation
