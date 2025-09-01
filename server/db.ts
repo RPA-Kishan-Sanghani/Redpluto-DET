@@ -11,5 +11,7 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+console.log('Database URL configured:', process.env.DATABASE_URL ? 'Yes' : 'No');
+
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
