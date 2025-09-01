@@ -125,11 +125,24 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
   // Fetch connections filtered by source system
   const { data: connections = [] } = useQuery({
-    queryKey: ['/api/connections', { category: selectedSourceSystem }],
+    queryKey: ['/api/connections', { sourceSystem: selectedSourceSystem }],
     queryFn: async () => {
       if (!selectedSourceSystem) return [];
-      const response = await fetch(`/api/connections?category=${selectedSourceSystem.toLowerCase()}`);
-      return response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+      const response = await fetch(`/api/connections`);
+      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+      
+      // Filter connections by matching connection type with selected source system
+      return allConnections.filter(conn => 
+        conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
+        (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+        (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+        (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+        (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+        (selectedSourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+        (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+        (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+        (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
+      );
     },
     enabled: !!selectedSourceSystem
   });
