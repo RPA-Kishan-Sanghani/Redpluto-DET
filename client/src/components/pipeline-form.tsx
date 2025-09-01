@@ -121,6 +121,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedSourceSystem = form.watch('sourceSystem');
   const selectedConnectionId = form.watch('connectionId');
   const selectedSchema = form.watch('sourceSchemaName');
+  const selectedSourceType = form.watch('sourceType');
 
   // Fetch connections filtered by source system
   const { data: connections = [] } = useQuery({
@@ -342,116 +343,126 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="sourceSchemaName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Source Schema Name</FormLabel>
-                        <Select 
-                          onValueChange={(value) => {
-                            field.onChange(value || undefined);
-                            // Reset table when schema changes
-                            form.setValue('sourceTableName', undefined);
-                          }} 
-                          value={field.value || ''}
-                          disabled={!selectedConnectionId}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-source-schema">
-                              <SelectValue placeholder={selectedConnectionId ? "Select schema" : "Select connection first"} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {schemas.map((schema) => (
-                              <SelectItem key={schema} value={schema}>{schema}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Show schema and table fields only when source type is Table */}
+                  {selectedSourceType === 'Table' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="sourceSchemaName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source Schema Name</FormLabel>
+                            <Select 
+                              onValueChange={(value) => {
+                                field.onChange(value || undefined);
+                                // Reset table when schema changes
+                                form.setValue('sourceTableName', undefined);
+                              }} 
+                              value={field.value || ''}
+                              disabled={!selectedConnectionId}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-source-schema">
+                                  <SelectValue placeholder={selectedConnectionId ? "Select schema" : "Select connection first"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {schemas.map((schema) => (
+                                  <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="sourceTableName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Source Table Name</FormLabel>
-                        <Select 
-                          onValueChange={(value) => field.onChange(value || undefined)} 
-                          value={field.value || ''}
-                          disabled={!selectedConnectionId || !selectedSchema}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-source-table">
-                              <SelectValue placeholder={selectedConnectionId && selectedSchema ? "Select table" : "Select schema first"} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {tables.map((table) => (
-                              <SelectItem key={table} value={table}>{table}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="sourceTableName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source Table Name</FormLabel>
+                            <Select 
+                              onValueChange={(value) => field.onChange(value || undefined)} 
+                              value={field.value || ''}
+                              disabled={!selectedConnectionId || !selectedSchema}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-source-table">
+                                  <SelectValue placeholder={selectedConnectionId && selectedSchema ? "Select table" : "Select schema first"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {tables.map((table) => (
+                                  <SelectItem key={table} value={table}>{table}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
 
-                  <FormField
-                    control={form.control}
-                    name="sourceFilePath"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Source File Path</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter source file path" {...field} data-testid="input-source-path" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Show file fields only when source type is File */}
+                  {selectedSourceType === 'File' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="sourceFilePath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source File Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter source file path" {...field} data-testid="input-source-path" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="sourceFileName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Source File Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter source file name" {...field} data-testid="input-source-filename" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="sourceFileName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source File Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter source file name" {...field} data-testid="input-source-filename" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="sourceFileDelimiter"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Source File Delimiter</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-source-delimiter">
-                              <SelectValue placeholder="Select delimiter" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {delimiters.map((delimiter) => (
-                              <SelectItem key={delimiter} value={delimiter}>
-                                {delimiter === '\t' ? 'Tab' : delimiter === ',' ? 'Comma' : delimiter === ';' ? 'Semicolon' : delimiter === '|' ? 'Pipe' : delimiter}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="sourceFileDelimiter"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source File Delimiter</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-source-delimiter">
+                                  <SelectValue placeholder="Select delimiter" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {delimiters.map((delimiter) => (
+                                  <SelectItem key={delimiter} value={delimiter}>
+                                    {delimiter === '\t' ? 'Tab' : delimiter === ',' ? 'Comma' : delimiter === ';' ? 'Semicolon' : delimiter === '|' ? 'Pipe' : delimiter}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
