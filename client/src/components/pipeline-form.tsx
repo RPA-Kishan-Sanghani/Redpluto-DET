@@ -10,12 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { insertConfigSchema } from '@shared/schema';
 import type { ConfigRecord, InsertConfigRecord } from '@shared/schema';
 import { z } from 'zod';
-import { Database, FileText, Settings, Target, Upload } from 'lucide-react';
+import { Database, FileText, Settings, Target, Upload, X } from 'lucide-react';
 
 type FormData = InsertConfigRecord;
 
@@ -223,6 +224,20 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       return response.json() as string[];
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
+  });
+
+  // Watch target table for columns
+  const selectedTargetTable = form.watch('targetTableName');
+
+  // Fetch columns for selected target table
+  const { data: targetColumns = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'columns'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
 
   // Create or update mutation
@@ -798,16 +813,83 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                   <FormField
                     control={form.control}
                     name="primaryKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Key</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter primary key columns" {...field} data-testid="input-primary-key" />
-                        </FormControl>
-                        <FormDescription>Comma-separated list of primary key columns</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const selectedColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                      
+                      const handleColumnToggle = (column: string) => {
+                        const currentColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                        if (currentColumns.includes(column)) {
+                          const newColumns = currentColumns.filter(col => col !== column);
+                          field.onChange(newColumns.join(','));
+                        } else {
+                          const newColumns = [...currentColumns, column];
+                          field.onChange(newColumns.join(','));
+                        }
+                      };
+
+                      const removeColumn = (column: string) => {
+                        const currentColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                        const newColumns = currentColumns.filter(col => col !== column);
+                        field.onChange(newColumns.join(','));
+                      };
+
+                      return (
+                        <FormItem>
+                          <FormLabel>Primary Key</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              {/* Selected columns display */}
+                              {selectedColumns.length > 0 && (
+                                <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
+                                  {selectedColumns.map((column) => (
+                                    <div key={column} className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
+                                      <span>{column}</span>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-4 w-4 p-0 hover:bg-primary-foreground/20"
+                                        onClick={() => removeColumn(column)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {/* Column selection dropdown */}
+                              <Select onValueChange={handleColumnToggle} disabled={!selectedTargetTable || targetColumns.length === 0}>
+                                <SelectTrigger data-testid="select-primary-key">
+                                  <SelectValue placeholder={
+                                    !selectedTargetTable 
+                                      ? "Select a target table first" 
+                                      : targetColumns.length === 0 
+                                        ? "Loading columns..." 
+                                        : "Select columns for primary key"
+                                  } />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {targetColumns.map((column) => (
+                                    <SelectItem key={column} value={column}>
+                                      <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={selectedColumns.includes(column)}
+                                          readOnly
+                                        />
+                                        <span>{column}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </FormControl>
+                          <FormDescription>Select one or more columns that form the primary key</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField

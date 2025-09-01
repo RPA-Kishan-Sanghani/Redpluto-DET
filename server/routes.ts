@@ -312,6 +312,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get database columns from a connection, schema, and table
+  app.get("/api/connections/:id/schemas/:schema/tables/:table/columns", async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const schemaName = req.params.schema;
+      const tableName = req.params.table;
+      const columns = await storage.getDatabaseColumns(connectionId, schemaName, tableName);
+      res.json(columns);
+    } catch (error) {
+      console.error('Error fetching database columns:', error);
+      res.status(500).json({ error: 'Failed to fetch database columns' });
+    }
+  });
+
   // Pipeline configuration endpoints
   // Get all pipelines with optional filtering
   app.get("/api/pipelines", async (req, res) => {
