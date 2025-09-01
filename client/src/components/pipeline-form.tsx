@@ -912,28 +912,30 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     />
                   )}
 
-                  <FormField
-                    control={form.control}
-                    name="executionSequence"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Execution Sequence</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-execution-sequence">
-                              <SelectValue placeholder="Select execution sequence" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {executionSequences.map((sequence) => (
-                              <SelectItem key={sequence} value={sequence}>{sequence}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {(selectedLoadType === 'SCD1' || selectedLoadType === 'SCD2') && (
+                    <FormField
+                      control={form.control}
+                      name="executionSequence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Execution Sequence</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-execution-sequence">
+                                <SelectValue placeholder="Select execution sequence" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {executionSequences.map((sequence) => (
+                                <SelectItem key={sequence} value={sequence}>{sequence}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   {selectedLoadType === 'SCD2' && (
                     <FormField
@@ -951,19 +953,21 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     />
                   )}
 
-                  <FormField
-                    control={form.control}
-                    name="customCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Custom Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter custom processing code" {...field} data-testid="input-custom-code" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {(selectedLoadType === 'SCD1' || selectedLoadType === 'SCD2') && (
+                    <FormField
+                      control={form.control}
+                      name="customCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Custom Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter custom processing code" {...field} data-testid="input-custom-code" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>
