@@ -475,7 +475,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
             <Card>
               <CardHeader>
                 <CardTitle>Processing Configuration</CardTitle>
-                <CardDescription>Configure data processing and loading settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -592,7 +591,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
             <Card>
               <CardHeader>
                 <CardTitle>Advanced Settings</CardTitle>
-                <CardDescription>Advanced pipeline configuration options</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
