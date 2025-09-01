@@ -73,6 +73,7 @@ export const configTable = pgTable("config_table", {
   configKey: integer("config_key").primaryKey().generatedAlwaysAsIdentity(),
   executionLayer: varchar("execution_layer", { length: 30 }),
   sourceSystem: varchar("source_system", { length: 30 }),
+  connectionId: integer("connection_id"),
   sourceType: varchar("source_type", { length: 20 }),
   sourceFilePath: varchar("source_file_path", { length: 100 }),
   sourceFileName: varchar("source_file_name", { length: 50 }),
@@ -150,6 +151,7 @@ export const updateSourceConnectionSchema = insertSourceConnectionSchema.partial
 export const insertConfigSchema = z.object({
   executionLayer: z.string().max(30).optional(),
   sourceSystem: z.string().max(30).optional(),
+  connectionId: z.number().optional(),
   sourceType: z.string().max(20).optional(),
   sourceFilePath: z.string().max(100).optional(),
   sourceFileName: z.string().max(50).optional(),

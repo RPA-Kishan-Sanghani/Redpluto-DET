@@ -287,6 +287,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get database schemas from a connection
+  app.get("/api/connections/:id/schemas", async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const schemas = await storage.getDatabaseSchemas(connectionId);
+      res.json(schemas);
+    } catch (error) {
+      console.error('Error fetching database schemas:', error);
+      res.status(500).json({ error: 'Failed to fetch database schemas' });
+    }
+  });
+
+  // Get database tables from a connection and schema
+  app.get("/api/connections/:id/schemas/:schema/tables", async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const schemaName = req.params.schema;
+      const tables = await storage.getDatabaseTables(connectionId, schemaName);
+      res.json(tables);
+    } catch (error) {
+      console.error('Error fetching database tables:', error);
+      res.status(500).json({ error: 'Failed to fetch database tables' });
+    }
+  });
+
   // Pipeline configuration endpoints
   // Get all pipelines with optional filtering
   app.get("/api/pipelines", async (req, res) => {

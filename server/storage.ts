@@ -754,6 +754,57 @@ export class DatabaseStorage implements IStorage {
     await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
   }
 
+  // Get database schemas from a connection
+  async getDatabaseSchemas(connectionId: number): Promise<string[]> {
+    // Get the connection details first
+    const connection = await this.getConnection(connectionId);
+    if (!connection) {
+      throw new Error('Connection not found');
+    }
+
+    // Simulate fetching schemas based on connection type
+    await this.simulateConnectionDelay();
+    
+    switch (connection.connectionType?.toLowerCase()) {
+      case 'mysql':
+        return ['information_schema', 'performance_schema', 'sys', 'mysql', 'sales_db', 'inventory_db'];
+      case 'postgresql':
+        return ['public', 'information_schema', 'pg_catalog', 'analytics', 'reporting'];
+      case 'sql server':
+        return ['dbo', 'sys', 'INFORMATION_SCHEMA', 'tempdb', 'model', 'msdb'];
+      case 'oracle':
+        return ['HR', 'OE', 'PM', 'IX', 'SH', 'BI'];
+      default:
+        return ['public', 'default'];
+    }
+  }
+
+  // Get database tables from a connection and schema
+  async getDatabaseTables(connectionId: number, schemaName: string): Promise<string[]> {
+    // Get the connection details first
+    const connection = await this.getConnection(connectionId);
+    if (!connection) {
+      throw new Error('Connection not found');
+    }
+
+    // Simulate fetching tables based on connection type and schema
+    await this.simulateConnectionDelay();
+    
+    // Return sample tables based on schema name
+    const sampleTables: Record<string, string[]> = {
+      'public': ['users', 'orders', 'products', 'customers', 'payments'],
+      'sales_db': ['sales_transactions', 'sales_reps', 'territories', 'quotas'],
+      'inventory_db': ['products', 'warehouses', 'stock_levels', 'suppliers'],
+      'analytics': ['user_events', 'page_views', 'conversion_funnel', 'cohort_analysis'],
+      'reporting': ['daily_summary', 'monthly_reports', 'kpi_metrics', 'dashboard_data'],
+      'dbo': ['Customers', 'Orders', 'Products', 'Employees', 'Categories'],
+      'HR': ['EMPLOYEES', 'DEPARTMENTS', 'JOBS', 'JOB_HISTORY', 'LOCATIONS'],
+      'default': ['table1', 'table2', 'table3', 'table4', 'table5']
+    };
+
+    return sampleTables[schemaName] || sampleTables['default'];
+  }
+
   // Pipeline configuration methods
   async getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
     let query = db.select().from(configTable);

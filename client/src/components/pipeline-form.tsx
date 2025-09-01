@@ -33,29 +33,30 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const form = useForm<FormData>({
     resolver: zodResolver(insertConfigSchema),
     defaultValues: {
-      executionLayer: pipeline?.executionLayer || null,
-      sourceSystem: pipeline?.sourceSystem || null,
-      sourceType: pipeline?.sourceType || null,
-      sourceFilePath: pipeline?.sourceFilePath || null,
-      sourceFileName: pipeline?.sourceFileName || null,
-      sourceFileDelimiter: pipeline?.sourceFileDelimiter || null,
-      sourceSchemaName: pipeline?.sourceSchemaName || null,
-      sourceTableName: pipeline?.sourceTableName || null,
-      targetType: pipeline?.targetType || null,
-      targetFilePath: pipeline?.targetFilePath || null,
-      targetFileDelimiter: pipeline?.targetFileDelimiter || null,
-      targetSchemaName: pipeline?.targetSchemaName || null,
-      temporaryTargetTable: pipeline?.temporaryTargetTable || null,
-      targetTableName: pipeline?.targetTableName || null,
-      loadType: pipeline?.loadType || null,
-      primaryKey: pipeline?.primaryKey || null,
-      effectiveDateColumn: pipeline?.effectiveDateColumn || null,
-      md5Columns: pipeline?.md5Columns || null,
-      customCode: pipeline?.customCode || null,
-      executionSequence: pipeline?.executionSequence || null,
-      enableDynamicSchema: pipeline?.enableDynamicSchema || null,
-      activeFlag: pipeline?.activeFlag || null,
-      fullDataRefreshFlag: pipeline?.fullDataRefreshFlag || null,
+      executionLayer: pipeline?.executionLayer || undefined,
+      sourceSystem: pipeline?.sourceSystem || undefined,
+      connectionId: pipeline?.connectionId || undefined,
+      sourceType: pipeline?.sourceType || undefined,
+      sourceFilePath: pipeline?.sourceFilePath || undefined,
+      sourceFileName: pipeline?.sourceFileName || undefined,
+      sourceFileDelimiter: pipeline?.sourceFileDelimiter || undefined,
+      sourceSchemaName: pipeline?.sourceSchemaName || undefined,
+      sourceTableName: pipeline?.sourceTableName || undefined,
+      targetType: pipeline?.targetType || undefined,
+      targetFilePath: pipeline?.targetFilePath || undefined,
+      targetFileDelimiter: pipeline?.targetFileDelimiter || undefined,
+      targetSchemaName: pipeline?.targetSchemaName || undefined,
+      temporaryTargetTable: pipeline?.temporaryTargetTable || undefined,
+      targetTableName: pipeline?.targetTableName || undefined,
+      loadType: pipeline?.loadType || undefined,
+      primaryKey: pipeline?.primaryKey || undefined,
+      effectiveDateColumn: pipeline?.effectiveDateColumn || undefined,
+      md5Columns: pipeline?.md5Columns || undefined,
+      customCode: pipeline?.customCode || undefined,
+      executionSequence: pipeline?.executionSequence || undefined,
+      enableDynamicSchema: pipeline?.enableDynamicSchema || undefined,
+      activeFlag: pipeline?.activeFlag || undefined,
+      fullDataRefreshFlag: pipeline?.fullDataRefreshFlag || undefined,
     }
   });
 
@@ -114,6 +115,44 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       const response = await fetch('/api/metadata/execution_sequence');
       return response.json() as string[];
     }
+  });
+
+  // Watch form values for dynamic dropdowns
+  const selectedSourceSystem = form.watch('sourceSystem');
+  const selectedConnectionId = form.watch('connectionId');
+  const selectedSchema = form.watch('sourceSchemaName');
+
+  // Fetch connections filtered by source system
+  const { data: connections = [] } = useQuery({
+    queryKey: ['/api/connections', { category: selectedSourceSystem }],
+    queryFn: async () => {
+      if (!selectedSourceSystem) return [];
+      const response = await fetch(`/api/connections?category=${selectedSourceSystem.toLowerCase()}`);
+      return response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+    },
+    enabled: !!selectedSourceSystem
+  });
+
+  // Fetch schemas for selected connection
+  const { data: schemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedConnectionId
+  });
+
+  // Fetch tables for selected connection and schema
+  const { data: tables = [] } = useQuery({
+    queryKey: ['/api/connections', selectedConnectionId, 'schemas', selectedSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedConnectionId || !selectedSchema) return [];
+      const response = await fetch(`/api/connections/${selectedConnectionId}/schemas/${selectedSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedConnectionId && !!selectedSchema
   });
 
   // Create or update mutation
@@ -248,6 +287,40 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
                   <FormField
                     control={form.control}
+                    name="connectionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Database Connection</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value ? parseInt(value) : undefined);
+                            // Reset schema and table when connection changes
+                            form.setValue('sourceSchemaName', undefined);
+                            form.setValue('sourceTableName', undefined);
+                          }} 
+                          value={field.value?.toString() || ''}
+                          disabled={!selectedSourceSystem}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-connection">
+                              <SelectValue placeholder={selectedSourceSystem ? "Select connection" : "Select source system first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {connections.map((connection) => (
+                              <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
+                                {connection.connectionName} ({connection.connectionType})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="sourceType"
                     render={({ field }) => (
                       <FormItem>
@@ -275,9 +348,26 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Source Schema Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter source schema name" {...field} data-testid="input-source-schema" />
-                        </FormControl>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value || undefined);
+                            // Reset table when schema changes
+                            form.setValue('sourceTableName', undefined);
+                          }} 
+                          value={field.value || ''}
+                          disabled={!selectedConnectionId}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-schema">
+                              <SelectValue placeholder={selectedConnectionId ? "Select schema" : "Select connection first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {schemas.map((schema) => (
+                              <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -289,9 +379,22 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Source Table Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter source table name" {...field} data-testid="input-source-table" />
-                        </FormControl>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value || undefined)} 
+                          value={field.value || ''}
+                          disabled={!selectedConnectionId || !selectedSchema}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-table">
+                              <SelectValue placeholder={selectedConnectionId && selectedSchema ? "Select table" : "Select schema first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {tables.map((table) => (
+                              <SelectItem key={table} value={table}>{table}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
