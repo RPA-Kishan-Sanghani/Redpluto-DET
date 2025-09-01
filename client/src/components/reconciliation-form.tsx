@@ -51,6 +51,9 @@ import {
 const reconciliationFormSchema = z.object({
   configKey: z.number().min(1, "Config key is required"),
   executionLayer: z.string().min(1, "Execution layer is required"),
+  sourceSystem: z.string().optional(),
+  sourceConnectionId: z.number().optional(),
+  sourceType: z.string().optional(),
   sourceSchema: z.string().optional(),
   sourceTable: z.string().optional(),
   targetSchema: z.string().optional(),
@@ -99,10 +102,73 @@ export function ReconciliationForm({
       fetch("/api/metadata/active_flag").then((res) => res.json()) as Promise<string[]>,
   });
 
+  const { data: sourceSystems = [] } = useQuery({
+    queryKey: ["/api/metadata/source_system"],
+    queryFn: () =>
+      fetch("/api/metadata/source_system").then((res) => res.json()) as Promise<string[]>,
+  });
+
+  const { data: sourceTypes = [] } = useQuery({
+    queryKey: ["/api/metadata/source_type"],
+    queryFn: () =>
+      fetch("/api/metadata/source_type").then((res) => res.json()) as Promise<string[]>,
+  });
+
   // Fetch pipeline configs for the dropdown
   const { data: configs = [] } = useQuery({
     queryKey: ["/api/pipelines"],
     queryFn: () => fetch("/api/pipelines").then((res) => res.json()) as Promise<any[]>,
+  });
+
+  // Watch form values for dynamic dropdowns
+  const selectedSourceSystem = form.watch('sourceSystem');
+  const selectedSourceConnectionId = form.watch('sourceConnectionId');
+  const selectedSourceSchema = form.watch('sourceSchema');
+
+  // Fetch connections filtered by source system
+  const { data: sourceConnections = [] } = useQuery({
+    queryKey: ['/api/connections', { sourceSystem: selectedSourceSystem }],
+    queryFn: async () => {
+      if (!selectedSourceSystem) return [];
+      const response = await fetch(`/api/connections`);
+      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+      
+      // Filter connections by matching connection type with selected source system
+      return allConnections.filter(conn => 
+        conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
+        (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+        (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+        (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+        (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+        (selectedSourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+        (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+        (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+        (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
+      );
+    },
+    enabled: !!selectedSourceSystem
+  });
+
+  // Fetch schemas for selected connection
+  const { data: sourceSchemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedSourceConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedSourceConnectionId
+  });
+
+  // Fetch tables for selected connection and schema
+  const { data: sourceTables = [] } = useQuery({
+    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas', selectedSourceSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
+      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
   });
 
   // Initialize form with default values or existing config values
@@ -111,6 +177,9 @@ export function ReconciliationForm({
     defaultValues: {
       configKey: config?.configKey || undefined,
       executionLayer: config?.executionLayer || "",
+      sourceSystem: config?.sourceSystem || "",
+      sourceConnectionId: config?.sourceConnectionId || undefined,
+      sourceType: config?.sourceType || "",
       sourceSchema: config?.sourceSchema || "",
       sourceTable: config?.sourceTable || "",
       targetSchema: config?.targetSchema || "",
@@ -332,17 +401,110 @@ export function ReconciliationForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
+                    name="sourceSystem"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Source System</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-system">
+                              <SelectValue placeholder="Select source system" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceSystems.map((system) => (
+                              <SelectItem key={system} value={system}>{system}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="sourceConnectionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Database Connection</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value ? parseInt(value) : undefined);
+                            // Reset schema and table when connection changes
+                            form.setValue('sourceSchema', '');
+                            form.setValue('sourceTable', '');
+                          }} 
+                          value={field.value?.toString() || ''}
+                          disabled={!selectedSourceSystem}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-connection">
+                              <SelectValue placeholder={selectedSourceSystem ? "Select connection" : "Select source system first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceConnections.map((connection) => (
+                              <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
+                                {connection.connectionName} ({connection.connectionType})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="sourceType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Source Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-type">
+                              <SelectValue placeholder="Select source type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceTypes.map((type) => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="sourceSchema"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Source Schema Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter source schema name"
-                            {...field}
-                            data-testid="input-source-schema"
-                          />
-                        </FormControl>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value || '');
+                            // Reset table when schema changes
+                            form.setValue('sourceTable', '');
+                          }} 
+                          value={field.value || ''}
+                          disabled={!selectedSourceConnectionId}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-schema">
+                              <SelectValue placeholder={selectedSourceConnectionId ? "Select schema" : "Select connection first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceSchemas.map((schema) => (
+                              <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -354,13 +516,22 @@ export function ReconciliationForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Source Table Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter source table name"
-                            {...field}
-                            data-testid="input-source-table"
-                          />
-                        </FormControl>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value || '')} 
+                          value={field.value || ''}
+                          disabled={!selectedSourceConnectionId || !selectedSourceSchema}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-table">
+                              <SelectValue placeholder={selectedSourceConnectionId && selectedSourceSchema ? "Select table" : "Select schema first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceTables.map((table) => (
+                              <SelectItem key={table} value={table}>{table}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
