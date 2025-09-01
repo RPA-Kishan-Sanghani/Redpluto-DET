@@ -762,22 +762,12 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Connection not found');
     }
 
-    console.log('Debug - Connection details:', {
-      connectionType: connection.connectionType,
-      connectionName: connection.connectionName,
-      host: connection.host,
-      databaseName: connection.databaseName,
-      username: connection.username
-    });
-
     // If this is a PostgreSQL connection to our own database, fetch real schemas
     const isRealDatabase = connection.connectionType?.toLowerCase() === 'postgresql' && 
         (connection.connectionName?.toLowerCase().includes('replit') || 
          connection.host?.includes('neon') ||
          connection.databaseName?.includes('neondb') ||
          connection.username?.includes('neondb_owner'));
-
-    console.log('Debug - Is real database:', isRealDatabase);
 
     if (isRealDatabase) {
       
@@ -828,8 +818,6 @@ export class DatabaseStorage implements IStorage {
          connection.host?.includes('neon') ||
          connection.databaseName?.includes('neondb') ||
          connection.username?.includes('neondb_owner'));
-
-    console.log('Debug - Table fetch for schema:', schemaName, 'Is real database:', isRealDatabase);
 
     // If this is a PostgreSQL connection to our own database, fetch real tables
     if (isRealDatabase) {

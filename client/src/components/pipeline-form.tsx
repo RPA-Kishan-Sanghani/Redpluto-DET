@@ -42,6 +42,9 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       sourceFileDelimiter: pipeline?.sourceFileDelimiter || undefined,
       sourceSchemaName: pipeline?.sourceSchemaName || undefined,
       sourceTableName: pipeline?.sourceTableName || undefined,
+      targetLayer: pipeline?.targetLayer || undefined,
+      targetSystem: pipeline?.targetSystem || undefined,
+      targetConnectionId: pipeline?.targetConnectionId || undefined,
       targetType: pipeline?.targetType || undefined,
       targetFilePath: pipeline?.targetFilePath || undefined,
       targetFileDelimiter: pipeline?.targetFileDelimiter || undefined,
@@ -123,6 +126,11 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedSchema = form.watch('sourceSchemaName');
   const selectedSourceType = form.watch('sourceType');
   const selectedTargetType = form.watch('targetType');
+  
+  // Watch target configuration values for dynamic dropdowns
+  const selectedTargetSystem = form.watch('targetSystem');
+  const selectedTargetConnectionId = form.watch('targetConnectionId');
+  const selectedTargetSchema = form.watch('targetSchemaName');
 
   // Fetch connections filtered by source system
   const { data: connections = [] } = useQuery({
@@ -168,6 +176,53 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       return response.json() as string[];
     },
     enabled: !!selectedConnectionId && !!selectedSchema
+  });
+
+  // Target configuration queries
+  // Fetch target connections filtered by target system
+  const { data: targetConnections = [] } = useQuery({
+    queryKey: ['/api/connections', { targetSystem: selectedTargetSystem }],
+    queryFn: async () => {
+      if (!selectedTargetSystem) return [];
+      const response = await fetch(`/api/connections`);
+      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+      
+      // Filter connections by matching connection type with selected target system
+      return allConnections.filter(conn => 
+        conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
+        (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+        (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+        (selectedTargetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+        (selectedTargetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+        (selectedTargetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+        (selectedTargetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+        (selectedTargetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+        (selectedTargetSystem === 'Salesforce' && conn.connectionType === 'API')
+      );
+    },
+    enabled: !!selectedTargetSystem
+  });
+
+  // Fetch target schemas for selected target connection
+  const { data: targetSchemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId
+  });
+
+  // Fetch target tables for selected target connection and schema
+  const { data: targetTables = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
 
   // Create or update mutation
@@ -492,6 +547,81 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
+                    name="targetLayer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Layer</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-layer">
+                              <SelectValue placeholder="Select target layer" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {executionLayers.map((layer) => (
+                              <SelectItem key={layer} value={layer}>{layer}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="targetSystem"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target System</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-system">
+                              <SelectValue placeholder="Select target system" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceSystems.map((system) => (
+                              <SelectItem key={system} value={system}>{system}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="targetConnectionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Database Connection</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(Number(value))} 
+                          defaultValue={field.value?.toString() || ''}
+                          disabled={!selectedTargetSystem}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-connection">
+                              <SelectValue placeholder="Select target connection" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {targetConnections.map((connection) => (
+                              <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
+                                {connection.connectionName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="targetType"
                     render={({ field }) => (
                       <FormItem>
@@ -521,10 +651,23 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="targetSchemaName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Target Schema Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter target schema name" {...field} data-testid="input-target-schema" />
-                            </FormControl>
+                            <FormLabel>Target Schema</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value || ''}
+                              disabled={!selectedTargetConnectionId}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-target-schema">
+                                  <SelectValue placeholder="Select target schema" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {targetSchemas.map((schema) => (
+                                  <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -535,10 +678,23 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="targetTableName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Target Table Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter target table name" {...field} data-testid="input-target-table" />
-                            </FormControl>
+                            <FormLabel>Target Table</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value || ''}
+                              disabled={!selectedTargetConnectionId || !selectedTargetSchema}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-target-table">
+                                  <SelectValue placeholder="Select target table" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {targetTables.map((table) => (
+                                  <SelectItem key={table} value={table}>{table}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
