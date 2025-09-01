@@ -127,6 +127,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedSchema = form.watch('sourceSchemaName');
   const selectedSourceType = form.watch('sourceType');
   const selectedTargetType = form.watch('targetType');
+  const selectedLoadType = form.watch('loadType');
   
   // Watch target configuration values for dynamic dropdowns
   const selectedTargetSystem = form.watch('targetSystem');
@@ -894,20 +895,22 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="md5Columns"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>MD5 Columns</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter MD5 hash columns" {...field} data-testid="input-md5-columns" />
-                        </FormControl>
-                        <FormDescription>Columns used for change detection</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {selectedLoadType === 'SCD2' && (
+                    <FormField
+                      control={form.control}
+                      name="md5Columns"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>MD5 Columns</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter MD5 hash columns" {...field} data-testid="input-md5-columns" />
+                          </FormControl>
+                          <FormDescription>Columns used for change detection</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}
@@ -932,19 +935,21 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="temporaryTargetTable"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Temporary Target Table</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {selectedLoadType === 'SCD2' && (
+                    <FormField
+                      control={form.control}
+                      name="temporaryTargetTable"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Temporary Target Table</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}
