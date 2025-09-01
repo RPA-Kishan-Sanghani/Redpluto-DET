@@ -76,7 +76,7 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
     queryFn: () => fetch('/api/metadata/source_system').then(res => res.json()) as Promise<string[]>
   });
 
-  const { data: connections = [] } = useQuery({
+  const { data: allConnections = [] } = useQuery({
     queryKey: ['/api/connections'],
     queryFn: () => fetch('/api/connections').then(res => res.json()) as Promise<any[]>
   });
@@ -117,16 +117,61 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
 
   // Watch form values for dynamic dropdowns
   const selectedSourceSystem = form.watch('sourceSystem');
+  const selectedSourceConnectionId = form.watch('sourceConnectionId');
   const selectedTargetSystem = form.watch('targetSystem');
+  const selectedTargetConnectionId = form.watch('targetConnectionId');
 
   // Filter connections based on selected systems
-  const sourceConnections = connections.filter(conn => 
-    !selectedSourceSystem || conn.databaseType === selectedSourceSystem
+  const sourceConnections = allConnections.filter(conn => 
+    !selectedSourceSystem || 
+    conn.connectionType?.toLowerCase() === selectedSourceSystem.toLowerCase() ||
+    (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+    (selectedSourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+    (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+    (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+    (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
   );
 
-  const targetConnections = connections.filter(conn => 
-    !selectedTargetSystem || conn.databaseType === selectedTargetSystem
+  const targetConnections = allConnections.filter(conn => 
+    !selectedTargetSystem || 
+    conn.connectionType?.toLowerCase() === selectedTargetSystem.toLowerCase() ||
+    (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (selectedTargetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (selectedTargetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+    (selectedTargetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+    (selectedTargetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+    (selectedTargetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+    (selectedTargetSystem === 'Salesforce' && conn.connectionType === 'API')
   );
+
+  // Fetch source schemas for selected source connection
+  const { data: sourceSchemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedSourceConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedSourceConnectionId
+  });
+
+  // Watch for source schema selection
+  const selectedSourceSchema = form.watch('sourceObject');
+
+  // Fetch source tables/objects for selected source connection and schema
+  const { data: sourceObjects = [] } = useQuery({
+    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas', selectedSourceSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
+      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
+  });
 
   // Reset form when entry changes
   useEffect(() => {
@@ -305,18 +350,23 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
                       <FormItem>
                         <FormLabel>Database Connection *</FormLabel>
                         <Select
-                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          onValueChange={(value) => {
+                            field.onChange(parseInt(value));
+                            // Reset dependent fields when connection changes
+                            form.setValue('sourceObject', '');
+                          }}
                           value={field.value?.toString() || ''}
+                          disabled={!selectedSourceSystem}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-source-connection">
-                              <SelectValue placeholder="Select database connection" />
+                              <SelectValue placeholder={selectedSourceSystem ? "Select database connection" : "Select source system first"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {sourceConnections.map((connection) => (
                               <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
-                                {connection.connectionName} ({connection.databaseType})
+                                {connection.connectionName} ({connection.connectionType})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -331,14 +381,54 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
                     name="sourceObject"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Source Object *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter source object name"
-                            {...field}
-                            data-testid="input-source-object"
-                          />
-                        </FormControl>
+                        <FormLabel>Source Schema Name *</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset table when schema changes
+                            form.setValue('targetTableName', '');
+                          }}
+                          value={field.value || ''}
+                          disabled={!selectedSourceConnectionId}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-schema">
+                              <SelectValue placeholder={selectedSourceConnectionId ? "Select source schema" : "Select connection first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceSchemas.map((schema) => (
+                              <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="targetTableName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Source Object Name *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
+                          disabled={!selectedSourceConnectionId || !selectedSourceSchema}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-object">
+                              <SelectValue placeholder={selectedSourceConnectionId && selectedSourceSchema ? "Select source object" : "Select schema first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceObjects.map((object) => (
+                              <SelectItem key={object} value={object}>{object}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -388,16 +478,17 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
                         <Select
                           onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString() || ''}
+                          disabled={!selectedTargetSystem}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-target-connection">
-                              <SelectValue placeholder="Select target connection" />
+                              <SelectValue placeholder={selectedTargetSystem ? "Select target connection" : "Select target system first"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {targetConnections.map((connection) => (
                               <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
-                                {connection.connectionName} ({connection.databaseType})
+                                {connection.connectionName} ({connection.connectionType})
                               </SelectItem>
                             ))}
                           </SelectContent>
