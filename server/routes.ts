@@ -276,6 +276,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/connections/test", async (req, res) => {
     try {
       const result = await storage.testConnection(req.body);
+      
+      // If test is successful and connectionId exists, update status to Active
+      if (result.success && req.body.connectionId) {
+        try {
+          await storage.updateConnection(req.body.connectionId, { 
+            status: 'Active', 
+            lastSync: new Date() 
+          });
+        } catch (updateError) {
+          console.error('Error updating connection status:', updateError);
+          // Don't fail the entire request if status update fails
+        }
+      }
+      
       res.json(result);
     } catch (error) {
       console.error('Error testing connection:', error);

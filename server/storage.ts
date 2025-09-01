@@ -831,7 +831,7 @@ export class DatabaseStorage implements IStorage {
           ORDER BY ordinal_position;
         `);
         
-        return result.map((row: any) => row.column_name);
+        return result.rows.map((row: any) => row.column_name);
       } catch (error) {
         console.error('Error fetching real columns:', error);
         // Fallback to mock data if real database query fails
