@@ -762,7 +762,30 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Connection not found');
     }
 
-    // Simulate fetching schemas based on connection type
+    // If this is a PostgreSQL connection to our own database, fetch real schemas
+    if (connection.connectionType?.toLowerCase() === 'postgresql' && 
+        (connection.connectionName?.toLowerCase().includes('replit') || 
+         connection.host?.includes('neon') ||
+         connection.databaseName?.includes('main'))) {
+      
+      try {
+        // Query actual schemas from the database
+        const result = await db.execute(sql`
+          SELECT schema_name 
+          FROM information_schema.schemata 
+          WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+          ORDER BY schema_name
+        `);
+        
+        return result.rows.map((row: any) => row.schema_name);
+      } catch (error) {
+        console.error('Error fetching real schemas:', error);
+        // Fallback to default if query fails
+        return ['public'];
+      }
+    }
+
+    // Simulate fetching schemas for other connection types
     await this.simulateConnectionDelay();
     
     switch (connection.connectionType?.toLowerCase()) {
@@ -787,7 +810,31 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Connection not found');
     }
 
-    // Simulate fetching tables based on connection type and schema
+    // If this is a PostgreSQL connection to our own database, fetch real tables
+    if (connection.connectionType?.toLowerCase() === 'postgresql' && 
+        (connection.connectionName?.toLowerCase().includes('replit') || 
+         connection.host?.includes('neon') ||
+         connection.databaseName?.includes('main'))) {
+      
+      try {
+        // Query actual tables from the database
+        const result = await db.execute(sql`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = ${schemaName}
+          AND table_type = 'BASE TABLE'
+          ORDER BY table_name
+        `);
+        
+        return result.rows.map((row: any) => row.table_name);
+      } catch (error) {
+        console.error('Error fetching real tables:', error);
+        // Fallback to sample data if query fails
+        return ['users', 'config_table', 'audit_table', 'error_table'];
+      }
+    }
+
+    // Simulate fetching tables for other connection types
     await this.simulateConnectionDelay();
     
     // Return sample tables based on schema name
