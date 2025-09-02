@@ -64,7 +64,7 @@ function Router() {
       <Route path="/source-connections" component={() => <ProtectedRoute component={SourceConnections} />} />
       <Route path="/pipelines" component={() => <ProtectedRoute component={Pipelines} />} />
       <Route path="/data-dictionary" component={() => <ProtectedRoute component={DataDictionary} />} />
-      <Route path="/data-dictionary/form" element={<DataDictionaryFormPage />} />
+      <Route path="/data-dictionary/form" component={() => <ProtectedRoute component={DataDictionaryFormPage} />} />
       <Route path="/data-quality" component={() => <ProtectedRoute component={DataQuality} />} />
       <Route path="/reconciliation" component={() => <ProtectedRoute component={Reconciliation} />} />
       <Route component={NotFound} />
