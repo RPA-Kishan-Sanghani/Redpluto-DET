@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -13,11 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -37,7 +40,6 @@ export function DataDictionary() {
     customField: 'all',
     customValue: ''
   });
-  const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
 
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -121,17 +123,7 @@ export function DataDictionary() {
     }
   };
 
-  const toggleEntry = (id: number) => {
-    setOpenEntries(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+  
 
   const handleAdd = () => {
     setLocation('/data-dictionary/form');
@@ -229,173 +221,140 @@ export function DataDictionary() {
           </CardContent>
         </Card>
 
-        {/* Entries List */}
+        {/* Entries Table */}
         <Card>
           <CardContent className="pt-6">
-            <div className="space-y-4">
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">Loading data dictionary entries...</p>
-                  </div>
-                ) : allEntries.length === 0 ? (
-                  <CardContent className="text-center py-8">
-                    <Search className="mx-auto h-12 w-12 mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No entries found</h3>
-                    <p className="text-gray-500 mb-4">Add your first data dictionary entry to get started.</p>
-                    <Button onClick={handleAdd}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Entry
-                    </Button>
-                  </CardContent>
-                ) : (
-                  <div className="space-y-4">
-                    {(entries as DataDictionaryRecord[]).map((entry: DataDictionaryRecord) => (
-                      <Card key={entry.dataDictionaryKey} className="overflow-hidden">
-                        <Collapsible
-                          open={openEntries.has(entry.dataDictionaryKey)}
-                          onOpenChange={() => toggleEntry(entry.dataDictionaryKey)}
-                        >
-                          <CollapsibleTrigger className="w-full">
-                            <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4 text-left">
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                      <CardTitle className="text-lg" data-testid={`text-entry-name-${entry.dataDictionaryKey}`}>
-                                        {entry.attributeName}
-                                      </CardTitle>
-                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                        Dictionary Key: {entry.dataDictionaryKey}
-                                      </Badge>
-                                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                        Config Key: {entry.configKey}
-                                      </Badge>
-                                      <Badge variant={entry.activeFlag === 'Y' ? 'default' : 'secondary'}>
-                                        {entry.activeFlag === 'Y' ? 'Active' : 'Inactive'}
-                                      </Badge>
-                                      {entry.executionLayer && (
-                                        <Badge variant="outline" className="capitalize">
-                                          {entry.executionLayer}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <CardDescription className="flex items-center space-x-4 mt-1">
-                                      <span className="flex items-center">
-                                        Data Type: {entry.dataType}
-                                      </span>
-                                      {entry.length && (
-                                        <span className="flex items-center">
-                                          Length: {entry.length}
-                                        </span>
-                                      )}
-                                      {entry.schemaName && (
-                                        <span className="flex items-center">
-                                          Schema: {entry.schemaName}
-                                        </span>
-                                      )}
-                                      {entry.tableName && (
-                                        <span className="flex items-center">
-                                          Table: {entry.tableName}
-                                        </span>
-                                      )}
-                                    </CardDescription>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEdit(entry);
-                                    }}
-                                    data-testid={`button-edit-${entry.dataDictionaryKey}`}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(entry.dataDictionaryKey);
-                                    }}
-                                    data-testid={`button-delete-${entry.dataDictionaryKey}`}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                  {openEntries.has(entry.dataDictionaryKey) ? (
-                                    <ChevronUp className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronDown className="h-4 w-4" />
-                                  )}
-                                </div>
-                              </div>
-                            </CardHeader>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                                {/* Basic Information */}
-                                <div className="space-y-2">
-                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Basic Information</h4>
-                                  <div className="space-y-1 text-sm">
-                                    <div><span className="font-medium">Schema:</span> {entry.schemaName || 'N/A'}</div>
-                                    <div><span className="font-medium">Table:</span> {entry.tableName || 'N/A'}</div>
-                                    <div><span className="font-medium">Data Type:</span> {entry.dataType}</div>
-                                    <div><span className="font-medium">Length:</span> {entry.length || 'N/A'}</div>
-                                  </div>
-                                </div>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading data dictionary entries...</p>
+              </div>
+            ) : allEntries.length === 0 ? (
+              <div className="text-center py-8">
+                <Search className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No entries found</h3>
+                <p className="text-gray-500 mb-4">Add your first data dictionary entry to get started.</p>
+                <Button onClick={handleAdd}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Entry
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Dictionary Key</TableHead>
+                        <TableHead>Attribute Name</TableHead>
+                        <TableHead>Data Type</TableHead>
+                        <TableHead>Length</TableHead>
+                        <TableHead>Precision</TableHead>
+                        <TableHead>Scale</TableHead>
+                        <TableHead>Schema</TableHead>
+                        <TableHead>Table</TableHead>
+                        <TableHead>Execution Layer</TableHead>
+                        <TableHead>Primary Key</TableHead>
+                        <TableHead>Not Null</TableHead>
+                        <TableHead>Foreign Key</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Created By</TableHead>
+                        <TableHead>Updated By</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(entries as DataDictionaryRecord[]).map((entry: DataDictionaryRecord) => (
+                        <TableRow key={entry.dataDictionaryKey} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {entry.dataDictionaryKey}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium" data-testid={`text-entry-name-${entry.dataDictionaryKey}`}>
+                              {entry.attributeName}
+                            </span>
+                          </TableCell>
+                          <TableCell>{entry.dataType}</TableCell>
+                          <TableCell>{entry.length || '-'}</TableCell>
+                          <TableCell>{entry.precisionValue || '-'}</TableCell>
+                          <TableCell>{entry.scale || '-'}</TableCell>
+                          <TableCell>{entry.schemaName || '-'}</TableCell>
+                          <TableCell>{entry.tableName || '-'}</TableCell>
+                          <TableCell>
+                            {entry.executionLayer && (
+                              <Badge variant="outline" className="capitalize">
+                                {entry.executionLayer}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={entry.isPrimaryKey ? 'default' : 'secondary'}>
+                              {entry.isPrimaryKey ? 'Yes' : 'No'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={entry.isNotNull ? 'default' : 'secondary'}>
+                              {entry.isNotNull ? 'Yes' : 'No'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={entry.isForeignKey ? 'default' : 'secondary'}>
+                              {entry.isForeignKey ? 'Yes' : 'No'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={entry.activeFlag === 'Y' ? 'default' : 'secondary'}>
+                              {entry.activeFlag === 'Y' ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs truncate" title={entry.columnDescription || ''}>
+                              {entry.columnDescription || '-'}
+                            </div>
+                          </TableCell>
+                          <TableCell>{entry.createdBy || 'System'}</TableCell>
+                          <TableCell>{entry.updatedBy || 'System'}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(entry)}
+                                data-testid={`button-edit-${entry.dataDictionaryKey}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(entry.dataDictionaryKey)}
+                                data-testid={`button-delete-${entry.dataDictionaryKey}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-                                {/* Properties */}
-                                <div className="space-y-2">
-                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Properties</h4>
-                                  <div className="space-y-1 text-sm">
-                                    <div><span className="font-medium">Precision:</span> {entry.precisionValue || 'N/A'}</div>
-                                    <div><span className="font-medium">Scale:</span> {entry.scale || 'N/A'}</div>
-                                    <div><span className="font-medium">Primary Key:</span> {entry.isPrimaryKey ? 'Yes' : 'No'}</div>
-                                    <div><span className="font-medium">Not Null:</span> {entry.isNotNull ? 'Yes' : 'No'}</div>
-                                    <div><span className="font-medium">Foreign Key:</span> {entry.isForeignKey ? 'Yes' : 'No'}</div>
-                                  </div>
-                                </div>
-
-                                {/* Metadata */}
-                                <div className="space-y-2">
-                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Metadata</h4>
-                                  <div className="space-y-1 text-sm">
-                                    <div><span className="font-medium">Created By:</span> {entry.createdBy || 'System'}</div>
-                                    <div><span className="font-medium">Updated By:</span> {entry.updatedBy || 'System'}</div>
-                                    <div><span className="font-medium">Created:</span> {entry.insertDate ? new Date(entry.insertDate).toLocaleDateString() : 'N/A'}</div>
-                                    <div><span className="font-medium">Updated:</span> {entry.updateDate ? new Date(entry.updateDate).toLocaleDateString() : 'N/A'}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              {entry.columnDescription && (
-                                <div className="mt-4">
-                                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">Description</h4>
-                                  <p className="text-sm text-gray-600">{entry.columnDescription}</p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </Card>
-                    ))}
-
-                    {allEntries.length > 0 && (
-                      <DataPagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItems}
-                        itemsPerPage={10}
-                        onPageChange={setCurrentPage}
-                        canNextPage={canNextPage}
-                        canPrevPage={canPrevPage}
-                      />
-                    )}
-                  </div>
+                {allEntries.length > 0 && (
+                  <DataPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={10}
+                    onPageChange={setCurrentPage}
+                    canNextPage={canNextPage}
+                    canPrevPage={canPrevPage}
+                  />
                 )}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
         </main>
