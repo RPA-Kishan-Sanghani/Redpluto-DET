@@ -73,7 +73,7 @@ export const configTable = pgTable("config_table", {
   configKey: integer("config_key").primaryKey().generatedAlwaysAsIdentity(),
   executionLayer: varchar("execution_layer", { length: 30 }),
   sourceSystem: varchar("source_system", { length: 30 }),
-  connectionId: integer("connection_id"),
+  sourceConnectionId: integer("source_connection_id"),
   sourceType: varchar("source_type", { length: 20 }),
   sourceFilePath: varchar("source_file_path", { length: 100 }),
   sourceFileName: varchar("source_file_name", { length: 50 }),
