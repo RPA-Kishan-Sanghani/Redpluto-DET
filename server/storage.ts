@@ -767,15 +767,33 @@ export class DatabaseStorage implements IStorage {
     if (connection.connectionType?.toLowerCase() === 'postgresql') {
       try {
         // Create connection to the external PostgreSQL database
-        const pool = new Pool({
-          host: connection.host,
-          port: connection.port || 5432,
-          database: connection.databaseName,
-          user: connection.username,
-          password: connection.password,
-          ssl: false, // Adjust as needed
-          connectionTimeoutMillis: 10000, // 10 second timeout
-        });
+        // Check if this is a cloud database that requires SSL
+        const requiresSSL = connection.host?.includes('neon.tech') || 
+                          connection.host?.includes('aws') || 
+                          connection.host?.includes('gcp') ||
+                          connection.host?.includes('azure');
+        
+        let pool;
+        if (requiresSSL) {
+          // Use connection string with SSL parameters for cloud databases
+          const connectionString = `postgresql://${connection.username}:${connection.password}@${connection.host}:${connection.port || 5432}/${connection.databaseName}?sslmode=require`;
+          pool = new Pool({
+            connectionString,
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        } else {
+          // Use regular config for local databases
+          pool = new Pool({
+            host: connection.host,
+            port: connection.port || 5432,
+            database: connection.databaseName,
+            user: connection.username,
+            password: connection.password,
+            ssl: false,
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        }
 
         const client = await pool.connect();
         try {
@@ -828,15 +846,33 @@ export class DatabaseStorage implements IStorage {
     if (connection.connectionType?.toLowerCase() === 'postgresql') {
       try {
         // Create connection to the external PostgreSQL database
-        const pool = new Pool({
-          host: connection.host,
-          port: connection.port || 5432,
-          database: connection.databaseName,
-          user: connection.username,
-          password: connection.password,
-          ssl: false, // Adjust as needed
-          connectionTimeoutMillis: 10000, // 10 second timeout
-        });
+        // Check if this is a cloud database that requires SSL
+        const requiresSSL = connection.host?.includes('neon.tech') || 
+                          connection.host?.includes('aws') || 
+                          connection.host?.includes('gcp') ||
+                          connection.host?.includes('azure');
+        
+        let pool;
+        if (requiresSSL) {
+          // Use connection string with SSL parameters for cloud databases
+          const connectionString = `postgresql://${connection.username}:${connection.password}@${connection.host}:${connection.port || 5432}/${connection.databaseName}?sslmode=require`;
+          pool = new Pool({
+            connectionString,
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        } else {
+          // Use regular config for local databases
+          pool = new Pool({
+            host: connection.host,
+            port: connection.port || 5432,
+            database: connection.databaseName,
+            user: connection.username,
+            password: connection.password,
+            ssl: false,
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        }
 
         const client = await pool.connect();
         try {
@@ -880,15 +916,33 @@ export class DatabaseStorage implements IStorage {
     if (connection.connectionType?.toLowerCase() === 'postgresql') {
       try {
         // Create connection to the external PostgreSQL database
-        const pool = new Pool({
-          host: connection.host,
-          port: connection.port || 5432,
-          database: connection.databaseName,
-          user: connection.username,
-          password: connection.password,
-          ssl: false, // Adjust as needed
-          connectionTimeoutMillis: 10000, // 10 second timeout
-        });
+        // Check if this is a cloud database that requires SSL
+        const requiresSSL = connection.host?.includes('neon.tech') || 
+                          connection.host?.includes('aws') || 
+                          connection.host?.includes('gcp') ||
+                          connection.host?.includes('azure');
+        
+        let pool;
+        if (requiresSSL) {
+          // Use connection string with SSL parameters for cloud databases
+          const connectionString = `postgresql://${connection.username}:${connection.password}@${connection.host}:${connection.port || 5432}/${connection.databaseName}?sslmode=require`;
+          pool = new Pool({
+            connectionString,
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        } else {
+          // Use regular config for local databases
+          pool = new Pool({
+            host: connection.host,
+            port: connection.port || 5432,
+            database: connection.databaseName,
+            user: connection.username,
+            password: connection.password,
+            ssl: false,
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        }
 
         const client = await pool.connect();
         try {
