@@ -1176,7 +1176,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Data dictionary implementation
-  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; configKey?: number }): Promise<DataDictionaryRecord[]> {
+  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; targetSystem?: string }): Promise<DataDictionaryRecord[]> {
     let query = db.select().from(dataDictionaryTable);
 
     const conditions = [];
@@ -1193,9 +1193,15 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (filters?.configKey) {
+    if (filters?.sourceSystem && filters.sourceSystem !== 'all') {
       conditions.push(
-        eq(dataDictionaryTable.configKey, filters.configKey)
+        like(dataDictionaryTable.schemaName, `%${filters.sourceSystem}%`)
+      );
+    }
+
+    if (filters?.targetSystem && filters.targetSystem !== 'all') {
+      conditions.push(
+        like(dataDictionaryTable.tableName, `%${filters.targetSystem}%`)
       );
     }
 

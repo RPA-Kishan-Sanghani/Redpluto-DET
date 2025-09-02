@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 export interface DataDictionaryFilters {
   search: string;
   executionLayer: string;
-  configKey: string;
+  sourceSystem: string;
+  targetSystem: string;
 }
 
 interface DataDictionaryFilterPanelProps {
@@ -29,7 +30,8 @@ export default function DataDictionaryFilterPanel({
     const resetFilters: DataDictionaryFilters = {
       search: '',
       executionLayer: 'all',
-      configKey: ''
+      sourceSystem: 'all',
+      targetSystem: 'all'
     };
     onFiltersChange(resetFilters);
   };
@@ -120,16 +122,54 @@ export default function DataDictionaryFilterPanel({
               </Select>
             </div>
 
-            {/* Config Key */}
+            {/* Source System */}
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-1 block">Config Key</label>
-              <Input
-                placeholder="Config Key..." 
-                className="text-sm"
-                value={filters.configKey}
-                onChange={(e) => onFiltersChange({ ...filters, configKey: e.target.value })}
-                data-testid="input-config-key-filter"
-              />
+              <label className="text-xs font-medium text-gray-700 mb-1 block">Source System</label>
+              <Select 
+                value={filters.sourceSystem || "all"} 
+                onValueChange={(value) => onFiltersChange({ ...filters, sourceSystem: value === 'all' ? '' : value })}
+              >
+                <SelectTrigger data-testid="select-source-system-filter">
+                  <SelectValue placeholder="All Source Systems" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Source Systems</SelectItem>
+                  <SelectItem value="MySQL">MySQL</SelectItem>
+                  <SelectItem value="PostgreSQL">PostgreSQL</SelectItem>
+                  <SelectItem value="SQL Server">SQL Server</SelectItem>
+                  <SelectItem value="Oracle">Oracle</SelectItem>
+                  <SelectItem value="CSV">CSV</SelectItem>
+                  <SelectItem value="JSON">JSON</SelectItem>
+                  <SelectItem value="Parquet">Parquet</SelectItem>
+                  <SelectItem value="Excel">Excel</SelectItem>
+                  <SelectItem value="API">API</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Target System */}
+            <div>
+              <label className="text-xs font-medium text-gray-700 mb-1 block">Target System</label>
+              <Select 
+                value={filters.targetSystem || "all"} 
+                onValueChange={(value) => onFiltersChange({ ...filters, targetSystem: value === 'all' ? '' : value })}
+              >
+                <SelectTrigger data-testid="select-target-system-filter">
+                  <SelectValue placeholder="All Target Systems" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Target Systems</SelectItem>
+                  <SelectItem value="MySQL">MySQL</SelectItem>
+                  <SelectItem value="PostgreSQL">PostgreSQL</SelectItem>
+                  <SelectItem value="SQL Server">SQL Server</SelectItem>
+                  <SelectItem value="Oracle">Oracle</SelectItem>
+                  <SelectItem value="CSV">CSV</SelectItem>
+                  <SelectItem value="JSON">JSON</SelectItem>
+                  <SelectItem value="Parquet">Parquet</SelectItem>
+                  <SelectItem value="Excel">Excel</SelectItem>
+                  <SelectItem value="API">API</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         )}

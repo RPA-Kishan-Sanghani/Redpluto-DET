@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       const user = await storage.getUserByUsername(username);
-      
+
       if (user && user.password === password) {
         // In production, use proper password hashing
         const { password: _, ...userWithoutPassword } = user;
@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/metrics", async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       let dateRange;
       if (startDate && endDate) {
         dateRange = {
@@ -60,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/pipeline-summary", async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       let dateRange;
       if (startDate && endDate) {
         dateRange = {
@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/errors", async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       let dateRange;
       if (startDate && endDate) {
         dateRange = {
@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/connections", async (req, res) => {
     try {
       const { category, search, status } = req.query;
-      
+
       const filters = {
         category: category as string,
         search: search as string,
@@ -207,11 +207,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const connection = await storage.getConnection(id);
-      
+
       if (!connection) {
         return res.status(404).json({ error: 'Connection not found' });
       }
-      
+
       res.json(connection);
     } catch (error) {
       console.error('Error fetching connection:', error);
@@ -240,11 +240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = updateSourceConnectionSchema.parse(req.body);
       const connection = await storage.updateConnection(id, validatedData);
-      
+
       if (!connection) {
         return res.status(404).json({ error: 'Connection not found' });
       }
-      
+
       res.json(connection);
     } catch (error: any) {
       console.error('Error updating connection:', error);
@@ -260,11 +260,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteConnection(id);
-      
+
       if (!success) {
         return res.status(404).json({ error: 'Connection not found' });
       }
-      
+
       res.json({ success: true, message: 'Connection deleted successfully' });
     } catch (error) {
       console.error('Error deleting connection:', error);
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/connections/test", async (req, res) => {
     try {
       const result = await storage.testConnection(req.body);
-      
+
       // If test is successful and connectionId exists, update status to Active
       if (result.success && req.body.connectionId) {
         try {
@@ -289,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the entire request if status update fails
         }
       }
-      
+
       res.json(result);
     } catch (error) {
       console.error('Error testing connection:', error);
@@ -359,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pipelines", async (req, res) => {
     try {
       const { search, executionLayer, sourceSystem, status } = req.query;
-      
+
       const filters = {
         search: search as string,
         executionLayer: executionLayer as string,
@@ -380,11 +380,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const pipeline = await storage.getPipeline(id);
-      
+
       if (!pipeline) {
         return res.status(404).json({ error: 'Pipeline not found' });
       }
-      
+
       res.json(pipeline);
     } catch (error) {
       console.error('Error fetching pipeline:', error);
@@ -413,11 +413,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = updateConfigSchema.parse(req.body);
       const pipeline = await storage.updatePipeline(id, validatedData);
-      
+
       if (!pipeline) {
         return res.status(404).json({ error: 'Pipeline not found' });
       }
-      
+
       res.json(pipeline);
     } catch (error: any) {
       console.error('Error updating pipeline:', error);
@@ -433,11 +433,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deletePipeline(id);
-      
+
       if (!success) {
         return res.status(404).json({ error: 'Pipeline not found' });
       }
-      
+
       res.json({ success: true, message: 'Pipeline deleted successfully' });
     } catch (error) {
       console.error('Error deleting pipeline:', error);
@@ -448,12 +448,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Data Dictionary routes
   app.get("/api/data-dictionary", async (req, res) => {
     try {
-      const { search, executionLayer, configKey } = req.query;
-      
+      const { search, executionLayer, sourceSystem, targetSystem } = req.query;
+
       const filters = {
         search: search as string,
         executionLayer: executionLayer as string,
-        configKey: configKey ? parseInt(configKey as string) : undefined,
+        sourceSystem: sourceSystem as string,
+        targetSystem: targetSystem as string
       };
 
       const entries = await storage.getDataDictionaryEntries(filters);
@@ -468,11 +469,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const entry = await storage.getDataDictionaryEntry(id);
-      
+
       if (!entry) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
       }
-      
+
       res.json(entry);
     } catch (error) {
       console.error('Error fetching data dictionary entry:', error);
@@ -496,11 +497,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = updateDataDictionarySchema.parse(req.body);
       const entry = await storage.updateDataDictionaryEntry(id, validatedData);
-      
+
       if (!entry) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
       }
-      
+
       res.json(entry);
     } catch (error) {
       console.error('Error updating data dictionary entry:', error);
@@ -512,11 +513,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteDataDictionaryEntry(id);
-      
+
       if (!success) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
       }
-      
+
       res.json({ success: true, message: 'Data dictionary entry deleted successfully' });
     } catch (error) {
       console.error('Error deleting data dictionary entry:', error);
@@ -528,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/reconciliation-configs", async (req, res) => {
     try {
       const { search, executionLayer, configKey, reconType, status } = req.query;
-      
+
       const filters = {
         search: search as string,
         executionLayer: executionLayer as string,
@@ -549,11 +550,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const config = await storage.getReconciliationConfig(id);
-      
+
       if (!config) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
       }
-      
+
       res.json(config);
     } catch (error) {
       console.error('Error fetching reconciliation config:', error);
@@ -580,11 +581,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = updateReconciliationConfigSchema.parse(req.body);
       const config = await storage.updateReconciliationConfig(id, validatedData);
-      
+
       if (!config) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
       }
-      
+
       res.json(config);
     } catch (error: any) {
       console.error('Error updating reconciliation config:', error);
@@ -599,11 +600,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteReconciliationConfig(id);
-      
+
       if (!success) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
       }
-      
+
       res.json({ success: true, message: 'Reconciliation config deleted successfully' });
     } catch (error) {
       console.error('Error deleting reconciliation config:', error);
@@ -615,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/data-quality-configs", async (req, res) => {
     try {
       const { search, executionLayer, configKey, validationType, status } = req.query;
-      
+
       const filters = {
         search: search as string,
         executionLayer: executionLayer as string,
@@ -636,11 +637,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const config = await storage.getDataQualityConfig(id);
-      
+
       if (!config) {
         return res.status(404).json({ error: 'Data quality config not found' });
       }
-      
+
       res.json(config);
     } catch (error) {
       console.error('Error fetching data quality config:', error);
@@ -667,11 +668,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = updateDataQualityConfigSchema.parse(req.body);
       const config = await storage.updateDataQualityConfig(id, validatedData);
-      
+
       if (!config) {
         return res.status(404).json({ error: 'Data quality config not found' });
       }
-      
+
       res.json(config);
     } catch (error: any) {
       console.error('Error updating data quality config:', error);
@@ -686,11 +687,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteDataQualityConfig(id);
-      
+
       if (!success) {
         return res.status(404).json({ error: 'Data quality config not found' });
       }
-      
+
       res.json({ success: true, message: 'Data quality config deleted successfully' });
     } catch (error) {
       console.error('Error deleting data quality config:', error);

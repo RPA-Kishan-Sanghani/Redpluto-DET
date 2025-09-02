@@ -26,14 +26,16 @@ import type { DataDictionaryRecord } from '@shared/schema';
 interface DataDictionaryFilters {
   search: string;
   executionLayer: string;
-  configKey: string;
+  sourceSystem: string;
+  targetSystem: string;
 }
 
 export function DataDictionary() {
   const [filters, setFilters] = useState<DataDictionaryFilters>({
     search: '',
     executionLayer: 'all',
-    configKey: ''
+    sourceSystem: 'all',
+    targetSystem: 'all'
   });
   const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
 
@@ -50,7 +52,12 @@ export function DataDictionary() {
       if (filters.executionLayer && filters.executionLayer !== 'all') {
         params.append('executionLayer', filters.executionLayer);
       }
-      if (filters.configKey) params.append('configKey', filters.configKey);
+      if (filters.sourceSystem && filters.sourceSystem !== 'all') {
+        params.append('sourceSystem', filters.sourceSystem);
+      }
+      if (filters.targetSystem && filters.targetSystem !== 'all') {
+        params.append('targetSystem', filters.targetSystem);
+      }
 
       const response = await fetch(`/api/data-dictionary?${params}`);
       if (!response.ok) {
@@ -74,6 +81,16 @@ export function DataDictionary() {
   } = usePagination({
     data: allEntries,
     itemsPerPage: 10,
+  });
+
+  // Fetch source systems for filter
+  const { data: sourceSystems = [] } = useQuery({
+    queryKey: ['/api/metadata/source_system'],
+    queryFn: async () => {
+      const response = await fetch('/api/metadata/source_system');
+      if (!response.ok) throw new Error('Failed to fetch source systems');
+      return response.json();
+    }
   });
 
   // Delete entry mutation
@@ -177,21 +194,27 @@ export function DataDictionary() {
                 </SelectContent>
               </Select>
 
-              <Input
-                placeholder="Config Key..."
-                value={filters.configKey}
-                onChange={(e) => setFilters(prev => ({ ...prev, configKey: e.target.value }))}
-                data-testid="input-config-key-filter"
-              />
-
-              <Select value="all" onValueChange={() => {}}>
-                <SelectTrigger data-testid="select-status-filter">
-                  <SelectValue placeholder="Status" />
+              <Select value={filters.sourceSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
+                <SelectTrigger data-testid="select-source-system-filter">
+                  <SelectValue placeholder="Source System" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Y">Active</SelectItem>
-                  <SelectItem value="N">Inactive</SelectItem>
+                  <SelectItem value="all">All Source Systems</SelectItem>
+                  {sourceSystems.map((system: string) => (
+                    <SelectItem key={system} value={system}>{system}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.targetSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, targetSystem: value === 'all' ? '' : value }))}>
+                <SelectTrigger data-testid="select-target-system-filter">
+                  <SelectValue placeholder="Target System" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Target Systems</SelectItem>
+                  {sourceSystems.map((system: string) => (
+                    <SelectItem key={system} value={system}>{system}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
