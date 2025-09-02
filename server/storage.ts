@@ -122,7 +122,7 @@ export interface IStorage {
   getMetadata(type: string): Promise<string[]>;
 
   // Data dictionary methods
-  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; targetSystem?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
+  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
   getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined>;
   createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
   updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
@@ -1176,7 +1176,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Data dictionary implementation
-  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; targetSystem?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
+  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
     let query = db.select().from(dataDictionaryTable);
 
     const conditions = [];
@@ -1193,17 +1193,7 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (filters?.sourceSystem && filters.sourceSystem !== 'all') {
-      conditions.push(
-        like(dataDictionaryTable.schemaName, `%${filters.sourceSystem}%`)
-      );
-    }
-
-    if (filters?.targetSystem && filters.targetSystem !== 'all') {
-      conditions.push(
-        like(dataDictionaryTable.tableName, `%${filters.targetSystem}%`)
-      );
-    }
+    
 
     // Handle custom field filtering
     if (filters?.customField && filters?.customValue && filters.customField !== 'all') {
@@ -1219,6 +1209,30 @@ export class DatabaseStorage implements IStorage {
           break;
         case 'tableName':
           conditions.push(like(dataDictionaryTable.tableName, `%${filters.customValue}%`));
+          break;
+        case 'sourceSchemaName':
+          conditions.push(like(dataDictionaryTable.sourceSchemaName, `%${filters.customValue}%`));
+          break;
+        case 'sourceTableName':
+          conditions.push(like(dataDictionaryTable.sourceTableName, `%${filters.customValue}%`));
+          break;
+        case 'targetSchemaName':
+          conditions.push(like(dataDictionaryTable.targetSchemaName, `%${filters.customValue}%`));
+          break;
+        case 'targetTableName':
+          conditions.push(like(dataDictionaryTable.targetTableName, `%${filters.customValue}%`));
+          break;
+        case 'sourceSystem':
+          conditions.push(like(dataDictionaryTable.sourceSystem, `%${filters.customValue}%`));
+          break;
+        case 'targetSystem':
+          conditions.push(like(dataDictionaryTable.targetSystem, `%${filters.customValue}%`));
+          break;
+        case 'sourceConnectionName':
+          conditions.push(like(dataDictionaryTable.sourceConnectionName, `%${filters.customValue}%`));
+          break;
+        case 'targetConnectionName':
+          conditions.push(like(dataDictionaryTable.targetConnectionName, `%${filters.customValue}%`));
           break;
         case 'columnDescription':
           conditions.push(like(dataDictionaryTable.columnDescription, `%${filters.customValue}%`));

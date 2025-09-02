@@ -26,8 +26,6 @@ import type { DataDictionaryRecord } from '@shared/schema';
 interface DataDictionaryFilters {
   search: string;
   executionLayer: string;
-  sourceSystem: string;
-  targetSystem: string;
   customField: string;
   customValue: string;
 }
@@ -36,8 +34,6 @@ export function DataDictionary() {
   const [filters, setFilters] = useState<DataDictionaryFilters>({
     search: '',
     executionLayer: 'all',
-    sourceSystem: 'all',
-    targetSystem: 'all',
     customField: 'all',
     customValue: ''
   });
@@ -55,12 +51,6 @@ export function DataDictionary() {
       if (filters.search) params.append('search', filters.search);
       if (filters.executionLayer && filters.executionLayer !== 'all') {
         params.append('executionLayer', filters.executionLayer);
-      }
-      if (filters.sourceSystem && filters.sourceSystem !== 'all') {
-        params.append('sourceSystem', filters.sourceSystem);
-      }
-      if (filters.targetSystem && filters.targetSystem !== 'all') {
-        params.append('targetSystem', filters.targetSystem);
       }
       if (filters.customField && filters.customField !== 'all' && filters.customValue) {
         params.append('customField', filters.customField);
@@ -178,7 +168,7 @@ export function DataDictionary() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -202,30 +192,6 @@ export function DataDictionary() {
                 </SelectContent>
               </Select>
 
-              <Select value={filters.sourceSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
-                <SelectTrigger data-testid="select-source-system-filter">
-                  <SelectValue placeholder="Source System" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Source Systems</SelectItem>
-                  {sourceSystems.map((system: string) => (
-                    <SelectItem key={system} value={system}>{system}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={filters.targetSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, targetSystem: value === 'all' ? '' : value }))}>
-                <SelectTrigger data-testid="select-target-system-filter">
-                  <SelectValue placeholder="Target System" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Target Systems</SelectItem>
-                  {sourceSystems.map((system: string) => (
-                    <SelectItem key={system} value={system}>{system}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select value={filters.customField || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, customField: value === 'all' ? '' : value, customValue: '' }))}>
                 <SelectTrigger data-testid="select-custom-field-filter">
                   <SelectValue placeholder="Custom Filter Field" />
@@ -236,6 +202,14 @@ export function DataDictionary() {
                   <SelectItem value="dataType">Data Type</SelectItem>
                   <SelectItem value="schemaName">Schema Name</SelectItem>
                   <SelectItem value="tableName">Table Name</SelectItem>
+                  <SelectItem value="sourceSchemaName">Source Schema</SelectItem>
+                  <SelectItem value="sourceTableName">Source Table</SelectItem>
+                  <SelectItem value="targetSchemaName">Target Schema</SelectItem>
+                  <SelectItem value="targetTableName">Target Table</SelectItem>
+                  <SelectItem value="sourceSystem">Source System</SelectItem>
+                  <SelectItem value="targetSystem">Target System</SelectItem>
+                  <SelectItem value="sourceConnectionName">Source Connection</SelectItem>
+                  <SelectItem value="targetConnectionName">Target Connection</SelectItem>
                   <SelectItem value="columnDescription">Description</SelectItem>
                   <SelectItem value="createdBy">Created By</SelectItem>
                   <SelectItem value="updatedBy">Updated By</SelectItem>
