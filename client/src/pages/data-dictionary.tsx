@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,17 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { DataDictionaryFormRedesigned } from "../components/data-dictionary-form-redesigned";
 import { useToast } from "@/hooks/use-toast";
 import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -42,9 +36,8 @@ export function DataDictionary() {
     configKey: ''
   });
   const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
-  const [editingEntry, setEditingEntry] = useState<DataDictionaryRecord | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
 
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -104,8 +97,7 @@ export function DataDictionary() {
   });
 
   const handleEdit = (entry: DataDictionaryRecord) => {
-    setEditingEntry(entry);
-    setIsFormOpen(true);
+    navigate('/data-dictionary/form', { state: { entry } });
   };
 
   const handleDelete = async (id: number) => {
@@ -127,18 +119,7 @@ export function DataDictionary() {
   };
 
   const handleAdd = () => {
-    setEditingEntry(null);
-    setIsFormOpen(true);
-  };
-
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingEntry(null);
-  };
-
-  const handleFormSuccess = () => {
-    handleFormClose();
-    queryClient.invalidateQueries({ queryKey: ['/api/data-dictionary'] });
+    navigate('/data-dictionary/form');
   };
 
   return (
@@ -387,22 +368,6 @@ export function DataDictionary() {
           </CardContent>
         </Card>
         </main>
-
-        {/* Form Dialog */}
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEntry ? 'Edit Data Dictionary Entry' : 'Add New Data Dictionary Entry'}
-              </DialogTitle>
-            </DialogHeader>
-            <DataDictionaryFormRedesigned
-              entry={editingEntry}
-              onSuccess={handleFormSuccess}
-              onCancel={handleFormClose}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
     );
   }

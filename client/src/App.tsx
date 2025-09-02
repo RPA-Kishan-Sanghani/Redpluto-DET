@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import SourceConnections from "@/pages/source-connections";
 import { Pipelines } from "@/pages/pipelines";
 import { DataDictionary } from "@/pages/data-dictionary";
+import { DataDictionaryFormPage } from "./pages/data-dictionary-form-page";
 import { Reconciliation } from "@/pages/reconciliation";
 import { DataQuality } from "@/pages/data-quality";
 import LoginPage from "@/pages/LoginPage";
@@ -63,8 +64,9 @@ function Router() {
       <Route path="/source-connections" component={() => <ProtectedRoute component={SourceConnections} />} />
       <Route path="/pipelines" component={() => <ProtectedRoute component={Pipelines} />} />
       <Route path="/data-dictionary" component={() => <ProtectedRoute component={DataDictionary} />} />
-      <Route path="/reconciliation" component={() => <ProtectedRoute component={Reconciliation} />} />
+      <Route path="/data-dictionary/form" element={<DataDictionaryFormPage />} />
       <Route path="/data-quality" component={() => <ProtectedRoute component={DataQuality} />} />
+      <Route path="/reconciliation" component={() => <ProtectedRoute component={Reconciliation} />} />
       <Route component={NotFound} />
     </Switch>
   );
