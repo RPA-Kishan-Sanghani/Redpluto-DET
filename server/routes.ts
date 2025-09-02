@@ -448,13 +448,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Data Dictionary routes
   app.get("/api/data-dictionary", async (req, res) => {
     try {
-      const { search, executionLayer, sourceSystem, targetSystem } = req.query;
+      const { search, executionLayer, sourceSystem, targetSystem, customField, customValue } = req.query;
 
       const filters = {
         search: search as string,
         executionLayer: executionLayer as string,
         sourceSystem: sourceSystem as string,
-        targetSystem: targetSystem as string
+        targetSystem: targetSystem as string,
+        customField: customField as string,
+        customValue: customValue as string
       };
 
       const entries = await storage.getDataDictionaryEntries(filters);

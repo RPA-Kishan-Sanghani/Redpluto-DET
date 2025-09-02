@@ -122,7 +122,7 @@ export interface IStorage {
   getMetadata(type: string): Promise<string[]>;
 
   // Data dictionary methods
-  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; configKey?: number }): Promise<DataDictionaryRecord[]>;
+  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; targetSystem?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
   getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined>;
   createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
   updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
@@ -1176,7 +1176,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Data dictionary implementation
-  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; targetSystem?: string }): Promise<DataDictionaryRecord[]> {
+  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; targetSystem?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
     let query = db.select().from(dataDictionaryTable);
 
     const conditions = [];
@@ -1203,6 +1203,39 @@ export class DatabaseStorage implements IStorage {
       conditions.push(
         like(dataDictionaryTable.tableName, `%${filters.targetSystem}%`)
       );
+    }
+
+    // Handle custom field filtering
+    if (filters?.customField && filters?.customValue && filters.customField !== 'all') {
+      switch (filters.customField) {
+        case 'attributeName':
+          conditions.push(like(dataDictionaryTable.attributeName, `%${filters.customValue}%`));
+          break;
+        case 'dataType':
+          conditions.push(like(dataDictionaryTable.dataType, `%${filters.customValue}%`));
+          break;
+        case 'schemaName':
+          conditions.push(like(dataDictionaryTable.schemaName, `%${filters.customValue}%`));
+          break;
+        case 'tableName':
+          conditions.push(like(dataDictionaryTable.tableName, `%${filters.customValue}%`));
+          break;
+        case 'columnDescription':
+          conditions.push(like(dataDictionaryTable.columnDescription, `%${filters.customValue}%`));
+          break;
+        case 'createdBy':
+          conditions.push(like(dataDictionaryTable.createdBy, `%${filters.customValue}%`));
+          break;
+        case 'updatedBy':
+          conditions.push(like(dataDictionaryTable.updatedBy, `%${filters.customValue}%`));
+          break;
+        case 'configKey':
+          const configKeyValue = parseInt(filters.customValue);
+          if (!isNaN(configKeyValue)) {
+            conditions.push(eq(dataDictionaryTable.configKey, configKeyValue));
+          }
+          break;
+      }
     }
 
     return await query

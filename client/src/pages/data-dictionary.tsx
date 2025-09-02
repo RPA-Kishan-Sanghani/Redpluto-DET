@@ -28,6 +28,8 @@ interface DataDictionaryFilters {
   executionLayer: string;
   sourceSystem: string;
   targetSystem: string;
+  customField: string;
+  customValue: string;
 }
 
 export function DataDictionary() {
@@ -35,7 +37,9 @@ export function DataDictionary() {
     search: '',
     executionLayer: 'all',
     sourceSystem: 'all',
-    targetSystem: 'all'
+    targetSystem: 'all',
+    customField: 'all',
+    customValue: ''
   });
   const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
 
@@ -57,6 +61,10 @@ export function DataDictionary() {
       }
       if (filters.targetSystem && filters.targetSystem !== 'all') {
         params.append('targetSystem', filters.targetSystem);
+      }
+      if (filters.customField && filters.customField !== 'all' && filters.customValue) {
+        params.append('customField', filters.customField);
+        params.append('customValue', filters.customValue);
       }
 
       const response = await fetch(`/api/data-dictionary?${params}`);
@@ -170,7 +178,7 @@ export function DataDictionary() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -217,6 +225,32 @@ export function DataDictionary() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Select value={filters.customField || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, customField: value === 'all' ? '' : value, customValue: '' }))}>
+                <SelectTrigger data-testid="select-custom-field-filter">
+                  <SelectValue placeholder="Custom Filter Field" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">No Custom Filter</SelectItem>
+                  <SelectItem value="attributeName">Attribute Name</SelectItem>
+                  <SelectItem value="dataType">Data Type</SelectItem>
+                  <SelectItem value="schemaName">Schema Name</SelectItem>
+                  <SelectItem value="tableName">Table Name</SelectItem>
+                  <SelectItem value="columnDescription">Description</SelectItem>
+                  <SelectItem value="createdBy">Created By</SelectItem>
+                  <SelectItem value="updatedBy">Updated By</SelectItem>
+                  <SelectItem value="configKey">Config Key</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                placeholder={`Filter by ${filters.customField !== 'all' && filters.customField ? filters.customField.replace(/([A-Z])/g, ' $1').toLowerCase() : 'selected field'}...`}
+                value={filters.customValue}
+                onChange={(e) => setFilters(prev => ({ ...prev, customValue: e.target.value }))}
+                disabled={!filters.customField || filters.customField === 'all'}
+                className={!filters.customField || filters.customField === 'all' ? 'bg-gray-100' : ''}
+                data-testid="input-custom-value-filter"
+              />
             </div>
           </CardContent>
         </Card>
