@@ -1,6 +1,7 @@
 import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type InsertDataQualityConfig, type UpdateDataQualityConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
+import { Pool } from 'pg';
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -762,29 +763,41 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Connection not found');
     }
 
-    // If this is a PostgreSQL connection to our own database, fetch real schemas
-    const isRealDatabase = connection.connectionType?.toLowerCase() === 'postgresql' && 
-        (connection.connectionName?.toLowerCase().includes('replit') || 
-         connection.host?.includes('neon') ||
-         connection.databaseName?.includes('neondb') ||
-         connection.username?.includes('neondb_owner'));
-
-    if (isRealDatabase) {
-      
+    // For PostgreSQL connections, try to connect to the actual database
+    if (connection.connectionType?.toLowerCase() === 'postgresql') {
       try {
-        // Query actual schemas from the database
-        const result = await db.execute(sql`
-          SELECT schema_name 
-          FROM information_schema.schemata 
-          WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
-          ORDER BY schema_name
-        `);
-        
-        return result.rows.map((row: any) => row.schema_name);
+        // Create connection to the external PostgreSQL database
+        const pool = new Pool({
+          host: connection.host,
+          port: connection.port || 5432,
+          database: connection.databaseName,
+          user: connection.username,
+          password: connection.password,
+          ssl: false, // Adjust as needed
+          connectionTimeoutMillis: 10000, // 10 second timeout
+        });
+
+        const client = await pool.connect();
+        try {
+          const result = await client.query(`
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+            ORDER BY schema_name
+          `);
+          
+          await client.release();
+          await pool.end();
+          
+          return result.rows.map((row: any) => row.schema_name);
+        } catch (queryError) {
+          await client.release();
+          await pool.end();
+          throw queryError;
+        }
       } catch (error) {
-        console.error('Error fetching real schemas:', error);
-        // Fallback to default if query fails
-        return ['public'];
+        console.error('Error fetching schemas from external database:', error);
+        throw new Error(`Failed to connect to database: ${error.message}`);
       }
     }
 
@@ -794,8 +807,6 @@ export class DatabaseStorage implements IStorage {
     switch (connection.connectionType?.toLowerCase()) {
       case 'mysql':
         return ['information_schema', 'performance_schema', 'sys', 'mysql', 'sales_db', 'inventory_db'];
-      case 'postgresql':
-        return ['public', 'information_schema', 'pg_catalog', 'analytics', 'reporting'];
       case 'sql server':
         return ['dbo', 'sys', 'INFORMATION_SCHEMA', 'tempdb', 'model', 'msdb'];
       case 'oracle':
@@ -813,29 +824,42 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Connection not found');
     }
 
-    const isRealDatabase = connection.connectionType?.toLowerCase() === 'postgresql' && 
-        (connection.connectionName?.toLowerCase().includes('replit') || 
-         connection.host?.includes('neon') ||
-         connection.databaseName?.includes('neondb') ||
-         connection.username?.includes('neondb_owner'));
-
-    // If this is a PostgreSQL connection to our own database, fetch real columns
-    if (isRealDatabase) {
+    // For PostgreSQL connections, try to connect to the actual database
+    if (connection.connectionType?.toLowerCase() === 'postgresql') {
       try {
-        // Query actual columns from the database
-        const result = await db.execute(sql`
-          SELECT column_name 
-          FROM information_schema.columns 
-          WHERE table_schema = ${schemaName} 
-          AND table_name = ${tableName}
-          ORDER BY ordinal_position;
-        `);
-        
-        return result.rows.map((row: any) => row.column_name);
+        // Create connection to the external PostgreSQL database
+        const pool = new Pool({
+          host: connection.host,
+          port: connection.port || 5432,
+          database: connection.databaseName,
+          user: connection.username,
+          password: connection.password,
+          ssl: false, // Adjust as needed
+          connectionTimeoutMillis: 10000, // 10 second timeout
+        });
+
+        const client = await pool.connect();
+        try {
+          const result = await client.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_schema = $1 
+            AND table_name = $2
+            ORDER BY ordinal_position
+          `, [schemaName, tableName]);
+          
+          await client.release();
+          await pool.end();
+          
+          return result.rows.map((row: any) => row.column_name);
+        } catch (queryError) {
+          await client.release();
+          await pool.end();
+          throw queryError;
+        }
       } catch (error) {
-        console.error('Error fetching real columns:', error);
-        // Fallback to mock data if real database query fails
-        return ['id', 'name', 'email', 'created_at', 'updated_at'];
+        console.error('Error fetching columns from external database:', error);
+        throw new Error(`Failed to connect to database: ${error.message}`);
       }
     } else {
       // Return mock columns for other connection types
@@ -852,30 +876,42 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Connection not found');
     }
 
-    const isRealDatabase = connection.connectionType?.toLowerCase() === 'postgresql' && 
-        (connection.connectionName?.toLowerCase().includes('replit') || 
-         connection.host?.includes('neon') ||
-         connection.databaseName?.includes('neondb') ||
-         connection.username?.includes('neondb_owner'));
-
-    // If this is a PostgreSQL connection to our own database, fetch real tables
-    if (isRealDatabase) {
-      
+    // For PostgreSQL connections, try to connect to the actual database
+    if (connection.connectionType?.toLowerCase() === 'postgresql') {
       try {
-        // Query actual tables from the database
-        const result = await db.execute(sql`
-          SELECT table_name 
-          FROM information_schema.tables 
-          WHERE table_schema = ${schemaName}
-          AND table_type = 'BASE TABLE'
-          ORDER BY table_name
-        `);
-        
-        return result.rows.map((row: any) => row.table_name);
+        // Create connection to the external PostgreSQL database
+        const pool = new Pool({
+          host: connection.host,
+          port: connection.port || 5432,
+          database: connection.databaseName,
+          user: connection.username,
+          password: connection.password,
+          ssl: false, // Adjust as needed
+          connectionTimeoutMillis: 10000, // 10 second timeout
+        });
+
+        const client = await pool.connect();
+        try {
+          const result = await client.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = $1
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+          `, [schemaName]);
+          
+          await client.release();
+          await pool.end();
+          
+          return result.rows.map((row: any) => row.table_name);
+        } catch (queryError) {
+          await client.release();
+          await pool.end();
+          throw queryError;
+        }
       } catch (error) {
-        console.error('Error fetching real tables:', error);
-        // Fallback to sample data if query fails
-        return ['users', 'config_table', 'audit_table', 'error_table'];
+        console.error('Error fetching tables from external database:', error);
+        throw new Error(`Failed to connect to database: ${error.message}`);
       }
     }
 
