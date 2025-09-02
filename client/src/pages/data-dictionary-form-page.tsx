@@ -8,7 +8,9 @@ import type { DataDictionaryRecord } from '@shared/schema';
 
 export function DataDictionaryFormPage() {
   const [location, setLocation] = useLocation();
-  const editingEntry = (location as any)?.state?.entry as DataDictionaryRecord | null;
+  
+  // Get the entry from the browser's history state
+  const editingEntry = history.state?.entry as DataDictionaryRecord | null;
 
   const handleSuccess = () => {
     setLocation('/data-dictionary');

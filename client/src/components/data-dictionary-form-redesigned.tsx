@@ -58,17 +58,47 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const form = useForm<z.infer<typeof dataDictionarySchema>>({
     resolver: zodResolver(dataDictionarySchema),
     defaultValues: {
-      executionLayer: "",
+      executionLayer: entry?.executionLayer || "",
       sourceSystem: "",
       sourceConnectionId: 0,
-      sourceSchemaName: "",
-      sourceTableName: "",
+      sourceSchemaName: entry?.schemaName || "",
+      sourceTableName: entry?.tableName || "",
       targetSystem: "",
       targetConnectionId: 0,
       targetSchemaName: "",
       targetTableName: "",
     },
   });
+
+  // Populate form with existing entry data when editing
+  useEffect(() => {
+    if (entry) {
+      form.reset({
+        executionLayer: entry.executionLayer || "",
+        sourceSystem: "",
+        sourceConnectionId: 0,
+        sourceSchemaName: entry.schemaName || "",
+        sourceTableName: entry.tableName || "",
+        targetSystem: "",
+        targetConnectionId: 0,
+        targetSchemaName: "",
+        targetTableName: "",
+      });
+
+      // Populate columns with existing entry data
+      const existingColumn: ColumnMetadata = {
+        attributeName: entry.attributeName || "",
+        dataType: entry.dataType || "",
+        length: entry.length || undefined,
+        precision: entry.precisionValue || undefined,
+        scale: entry.scale || undefined,
+        isPrimaryKey: entry.isPrimaryKey || false,
+        isForeignKey: entry.isForeignKey || false,
+        columnDescription: entry.columnDescription || "",
+      };
+      setColumns([existingColumn]);
+    }
+  }, [entry, form]);
 
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
@@ -198,14 +228,23 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           updatedBy: 'User',
         };
 
-        const url = entry ? `/api/data-dictionary/${entry.dataDictionaryKey}` : '/api/data-dictionary';
-        const method = entry ? 'PUT' : 'POST';
-
-        return fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entryData),
-        });
+        // For editing, update the existing entry; for new entries, create new ones
+        if (entry && columns.length === 1) {
+          // If editing and only one column, update the existing entry
+          const url = `/api/data-dictionary/${entry.dataDictionaryKey}`;
+          return fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entryData),
+          });
+        } else {
+          // For new entries or multiple columns, create new entries
+          return fetch('/api/data-dictionary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entryData),
+          });
+        }
       });
 
       await Promise.all(promises);
