@@ -235,13 +235,13 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     <div className="space-y-6">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Top Section - Two Column Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-[500px]">
           {/* Left Column - Source */}
-          <Card className="shadow-lg">
-            <CardHeader className="bg-blue-50 dark:bg-blue-950">
-              <CardTitle className="text-blue-700 dark:text-blue-300">🔹 Source Configuration</CardTitle>
+          <Card className="shadow-lg w-full max-w-none">
+            <CardHeader className="bg-blue-50 dark:bg-blue-950 py-3">
+              <CardTitle className="text-blue-700 dark:text-blue-300 text-sm">🔹 Source Configuration</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
+            <CardContent className="p-3 space-y-3">
               {/* Select Layer */}
               <div className="space-y-2">
                 <Label htmlFor="execution-layer">Select Layer</Label>
@@ -336,17 +336,14 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             </CardContent>
           </Card>
 
-          {/* Vertical Divider - Hidden on mobile */}
-          <div className="hidden lg:flex justify-center">
-            <Separator orientation="vertical" className="h-full" />
-          </div>
+          
 
           {/* Right Column - Target */}
-          <Card className="shadow-lg">
-            <CardHeader className="bg-green-50 dark:bg-green-950">
-              <CardTitle className="text-green-700 dark:text-green-300">🔹 Target Configuration</CardTitle>
+          <Card className="shadow-lg w-full max-w-none">
+            <CardHeader className="bg-green-50 dark:bg-green-950 py-3">
+              <CardTitle className="text-green-700 dark:text-green-300 text-sm">🔹 Target Configuration</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
+            <CardContent className="p-3 space-y-3">
               {/* Target System */}
               <div className="space-y-2">
                 <Label htmlFor="target-system">Target System</Label>
