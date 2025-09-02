@@ -180,19 +180,22 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       // Save each column as a separate data dictionary entry
       const promises = columns.map(column => {
         const entryData = {
-          ...data,
           configKey: 1, // Default config key - you may want to make this dynamic
-          sourceSchemaName: data.sourceSchemaName,
-          sourceTableName: data.sourceTableName,
+          executionLayer: data.executionLayer,
+          schemaName: data.sourceSchemaName,
+          tableName: data.sourceTableName,
           attributeName: column.attributeName,
           dataType: column.dataType,
           length: column.length,
           precisionValue: column.precision,
           scale: column.scale,
+          isNotNull: false, // Default value
           isPrimaryKey: column.isPrimaryKey,
           isForeignKey: column.isForeignKey,
           columnDescription: column.columnDescription,
           activeFlag: 'Y',
+          createdBy: 'User',
+          updatedBy: 'User',
         };
 
         const url = entry ? `/api/data-dictionary/${entry.dataDictionaryKey}` : '/api/data-dictionary';
@@ -208,7 +211,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       await Promise.all(promises);
     },
     onSuccess: () => {
+      // Invalidate all data dictionary related queries
       queryClient.invalidateQueries({ queryKey: ['/api/data-dictionary'] });
+      queryClient.invalidateQueries();
       toast({
         title: "Success",
         description: `Data dictionary ${entry ? 'updated' : 'created'} successfully`,
