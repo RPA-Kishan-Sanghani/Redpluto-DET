@@ -181,6 +181,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       const promises = columns.map(column => {
         const entryData = {
           ...data,
+          configKey: 1, // Default config key - you may want to make this dynamic
+          sourceSchemaName: data.sourceSchemaName,
+          sourceTableName: data.sourceTableName,
           attributeName: column.attributeName,
           dataType: column.dataType,
           length: column.length,
