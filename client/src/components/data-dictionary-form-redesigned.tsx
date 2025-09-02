@@ -235,7 +235,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     <div className="space-y-6">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Top Section - Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[600px]">
           {/* Left Column - Source */}
           <Card className="shadow-lg">
             <CardHeader className="bg-blue-50 dark:bg-blue-950">
