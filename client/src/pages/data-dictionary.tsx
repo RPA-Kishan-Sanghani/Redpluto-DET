@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export function DataDictionary() {
   });
   const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
 
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -97,7 +97,7 @@ export function DataDictionary() {
   });
 
   const handleEdit = (entry: DataDictionaryRecord) => {
-    navigate('/data-dictionary/form', { state: { entry } });
+    setLocation('/data-dictionary/form');
   };
 
   const handleDelete = async (id: number) => {
@@ -119,7 +119,7 @@ export function DataDictionary() {
   };
 
   const handleAdd = () => {
-    navigate('/data-dictionary/form');
+    setLocation('/data-dictionary/form');
   };
 
   return (

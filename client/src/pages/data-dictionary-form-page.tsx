@@ -1,22 +1,21 @@
 
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataDictionaryFormRedesigned } from "../components/data-dictionary-form-redesigned";
 import type { DataDictionaryRecord } from '@shared/schema';
 
 export function DataDictionaryFormPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const editingEntry = location.state?.entry as DataDictionaryRecord | null;
+  const [location, setLocation] = useLocation();
+  const editingEntry = (location as any)?.state?.entry as DataDictionaryRecord | null;
 
   const handleSuccess = () => {
-    navigate('/data-dictionary');
+    setLocation('/data-dictionary');
   };
 
   const handleCancel = () => {
-    navigate('/data-dictionary');
+    setLocation('/data-dictionary');
   };
 
   return (
@@ -26,7 +25,7 @@ export function DataDictionaryFormPage() {
         <div className="mb-8 flex items-center space-x-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/data-dictionary')}
+            onClick={() => setLocation('/data-dictionary')}
             className="flex items-center space-x-2"
             data-testid="button-back-to-dictionary"
           >

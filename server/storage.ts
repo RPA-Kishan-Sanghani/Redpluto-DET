@@ -163,19 +163,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDashboardMetrics(dateRange?: { start: Date; end: Date }) {
-    let queryBuilder = db.select({
-      status: auditTable.status,
-      count: count()
-    }).from(auditTable);
-
+    const conditions = [];
+    
     if (dateRange) {
-      queryBuilder = queryBuilder.where(and(
+      conditions.push(and(
         gte(auditTable.startTime, dateRange.start),
         lte(auditTable.startTime, dateRange.end)
       ));
     }
 
-    const results = await queryBuilder.groupBy(auditTable.status);
+    const results = await db.select({
+      status: auditTable.status,
+      count: count()
+    }).from(auditTable)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .groupBy(auditTable.status);
 
     const metrics = {
       totalPipelines: 0,
@@ -206,20 +208,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPipelineSummary(dateRange?: { start: Date; end: Date }) {
-    let queryBuilder = db.select({
-      codeName: auditTable.codeName,
-      status: auditTable.status,
-      count: count()
-    }).from(auditTable);
-
+    const conditions = [];
+    
     if (dateRange) {
-      queryBuilder = queryBuilder.where(and(
+      conditions.push(and(
         gte(auditTable.startTime, dateRange.start),
         lte(auditTable.startTime, dateRange.end)
       ));
     }
 
-    const results = await queryBuilder.groupBy(auditTable.codeName, auditTable.status);
+    const results = await db.select({
+      codeName: auditTable.codeName,
+      status: auditTable.status,
+      count: count()
+    }).from(auditTable)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .groupBy(auditTable.codeName, auditTable.status);
 
     const summary = {
       dataQuality: { total: 0, success: 0, failed: 0 },
@@ -322,33 +326,27 @@ export class DatabaseStorage implements IStorage {
       ));
     }
 
-    if (conditions.length > 0) {
-      queryBuilder = queryBuilder.where(and(...conditions));
-    }
-
-    // Add sorting
+    // Build the sorting column
     const sortColumn = sortBy === 'codeName' ? auditTable.codeName :
                       sortBy === 'status' ? auditTable.status :
                       sortBy === 'sourceSystem' ? auditTable.sourceSystem :
                       sortBy === 'startTime' ? auditTable.startTime :
                       auditTable.startTime;
 
-    if (sortOrder === 'desc') {
-      queryBuilder = queryBuilder.orderBy(desc(sortColumn));
-    } else {
-      queryBuilder = queryBuilder.orderBy(asc(sortColumn));
-    }
+    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     // Get total count for pagination
-    let countQuery = db.select({ count: count() }).from(auditTable);
-    if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
-    }
-    const [{ count: total }] = await countQuery;
+    const countResults = await db.select({ count: count() }).from(auditTable)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    const total = countResults[0]?.count || 0;
 
     // Apply pagination
     const offset = (page - 1) * limit;
-    const results = await queryBuilder.limit(limit).offset(offset);
+    const results = await queryBuilder
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
 
     // Get error details for each audit record
     const auditKeys = results.map(r => r.auditKey);
@@ -362,7 +360,7 @@ export class DatabaseStorage implements IStorage {
         .where(inArray(errorTable.auditKey, auditKeys));
 
       errors.forEach(error => {
-        if (!errorDetails[error.auditKey]) {
+        if (error.auditKey && !errorDetails[error.auditKey]) {
           errorDetails[error.auditKey] = error.errorMessage || '';
         }
       });
@@ -464,10 +462,6 @@ export class DatabaseStorage implements IStorage {
       ));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
     // Add sorting
     let sortColumn;
     switch (sortBy) {
@@ -489,22 +483,20 @@ export class DatabaseStorage implements IStorage {
         break;
     }
 
-    if (sortOrder === 'desc') {
-      query = query.orderBy(desc(sortColumn));
-    } else {
-      query = query.orderBy(asc(sortColumn));
-    }
+    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     // Get total count for pagination
-    let countQuery = db.select({ count: count() }).from(auditTable);
-    if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
-    }
-    const [{ count: total }] = await countQuery;
+    const countResults = await db.select({ count: count() }).from(auditTable)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    const total = countResults[0]?.count || 0;
 
     // Apply pagination
     const offset = (page - 1) * limit;
-    const results = await query.limit(limit).offset(offset);
+    const results = await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
 
     const data = results.map(row => ({
       auditKey: row.auditKey,
@@ -532,16 +524,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getErrors(dateRange?: { start: Date; end: Date }) {
-    let query = db.select().from(errorTable);
-
+    const conditions = [];
+    
     if (dateRange) {
-      query = query.where(and(
+      conditions.push(and(
         gte(errorTable.executionTime, dateRange.start),
         lte(errorTable.executionTime, dateRange.end)
       ));
     }
 
-    return await query.orderBy(desc(errorTable.executionTime));
+    return await db.select().from(errorTable)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(errorTable.executionTime));
   }
 
   private getLayerFromCodeName(codeName: string): string {
@@ -610,11 +604,9 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(sourceConnectionTable.createdAt));
+    return await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(sourceConnectionTable.createdAt));
   }
 
   async getConnection(id: number): Promise<SourceConnection | undefined> {
@@ -785,11 +777,11 @@ export class DatabaseStorage implements IStorage {
         } else {
           // Use regular config for local databases
           pool = new Pool({
-            host: connection.host,
+            host: connection.host || undefined,
             port: connection.port || 5432,
-            database: connection.databaseName,
-            user: connection.username,
-            password: connection.password,
+            database: connection.databaseName || undefined,
+            user: connection.username || undefined,
+            password: connection.password || undefined,
             ssl: false,
             connectionTimeoutMillis: 10000, // 10 second timeout
           });
@@ -815,7 +807,7 @@ export class DatabaseStorage implements IStorage {
         }
       } catch (error) {
         console.error('Error fetching schemas from external database:', error);
-        throw new Error(`Failed to connect to database: ${error.message}`);
+        throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -864,11 +856,11 @@ export class DatabaseStorage implements IStorage {
         } else {
           // Use regular config for local databases
           pool = new Pool({
-            host: connection.host,
+            host: connection.host || undefined,
             port: connection.port || 5432,
-            database: connection.databaseName,
-            user: connection.username,
-            password: connection.password,
+            database: connection.databaseName || undefined,
+            user: connection.username || undefined,
+            password: connection.password || undefined,
             ssl: false,
             connectionTimeoutMillis: 10000, // 10 second timeout
           });
@@ -895,7 +887,7 @@ export class DatabaseStorage implements IStorage {
         }
       } catch (error) {
         console.error('Error fetching columns from external database:', error);
-        throw new Error(`Failed to connect to database: ${error.message}`);
+        throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else {
       // Return mock columns for other connection types
@@ -934,11 +926,11 @@ export class DatabaseStorage implements IStorage {
         } else {
           // Use regular config for local databases
           pool = new Pool({
-            host: connection.host,
+            host: connection.host || undefined,
             port: connection.port || 5432,
-            database: connection.databaseName,
-            user: connection.username,
-            password: connection.password,
+            database: connection.databaseName || undefined,
+            user: connection.username || undefined,
+            password: connection.password || undefined,
             ssl: false,
             connectionTimeoutMillis: 10000, // 10 second timeout
           });
@@ -1012,7 +1004,7 @@ export class DatabaseStorage implements IStorage {
         }
       } catch (error) {
         console.error('Error fetching column metadata from external database:', error);
-        throw new Error(`Failed to connect to database: ${error.message}`);
+        throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else {
       // Return mock metadata for other connection types
@@ -1056,11 +1048,11 @@ export class DatabaseStorage implements IStorage {
         } else {
           // Use regular config for local databases
           pool = new Pool({
-            host: connection.host,
+            host: connection.host || undefined,
             port: connection.port || 5432,
-            database: connection.databaseName,
-            user: connection.username,
-            password: connection.password,
+            database: connection.databaseName || undefined,
+            user: connection.username || undefined,
+            password: connection.password || undefined,
             ssl: false,
             connectionTimeoutMillis: 10000, // 10 second timeout
           });
@@ -1087,7 +1079,7 @@ export class DatabaseStorage implements IStorage {
         }
       } catch (error) {
         console.error('Error fetching tables from external database:', error);
-        throw new Error(`Failed to connect to database: ${error.message}`);
+        throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -1131,11 +1123,9 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(configTable.activeFlag, filters.status));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(configTable.createdAt));
+    return await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(configTable.createdAt));
   }
 
   async getPipeline(id: number): Promise<ConfigRecord | undefined> {
@@ -1159,7 +1149,7 @@ export class DatabaseStorage implements IStorage {
 
   async deletePipeline(id: number): Promise<boolean> {
     const result = await db.delete(configTable).where(eq(configTable.configKey, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getMetadata(type: string): Promise<string[]> {
@@ -1209,11 +1199,9 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(dataDictionaryTable.insertDate));
+    return await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(dataDictionaryTable.insertDate));
   }
 
   async getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined> {
@@ -1294,11 +1282,9 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(reconciliationConfigTable.reconKey));
+    return await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(reconciliationConfigTable.reconKey));
   }
 
   async getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined> {
@@ -1369,11 +1355,9 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(dataQualityConfigTable.dataQualityKey));
+    return await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(dataQualityConfigTable.dataQualityKey));
   }
 
   async getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined> {
