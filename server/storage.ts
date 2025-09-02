@@ -904,6 +904,128 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Get enhanced database column metadata with data types and constraints
+  async getDatabaseColumnMetadata(connectionId: number, schemaName: string, tableName: string): Promise<any[]> {
+    // Get the connection details first
+    const connection = await this.getConnection(connectionId);
+    if (!connection) {
+      throw new Error('Connection not found');
+    }
+
+    // For PostgreSQL connections, try to connect to the actual database
+    if (connection.connectionType?.toLowerCase() === 'postgresql') {
+      try {
+        // Create connection to the external PostgreSQL database
+        // Check if this is a cloud database that requires SSL
+        const requiresSSL = connection.host?.includes('neon.tech') || 
+                          connection.host?.includes('aws') || 
+                          connection.host?.includes('gcp') ||
+                          connection.host?.includes('azure');
+        
+        let pool;
+        if (requiresSSL) {
+          // Use connection string with SSL parameters for cloud databases
+          const connectionString = `postgresql://${connection.username}:${connection.password}@${connection.host}:${connection.port || 5432}/${connection.databaseName}?sslmode=require`;
+          pool = new Pool({
+            connectionString,
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        } else {
+          // Use regular config for local databases
+          pool = new Pool({
+            host: connection.host,
+            port: connection.port || 5432,
+            database: connection.databaseName,
+            user: connection.username,
+            password: connection.password,
+            ssl: false,
+            connectionTimeoutMillis: 10000, // 10 second timeout
+          });
+        }
+
+        const client = await pool.connect();
+        try {
+          const result = await client.query(`
+            SELECT 
+              c.column_name,
+              c.data_type,
+              c.character_maximum_length,
+              c.numeric_precision,
+              c.numeric_scale,
+              c.is_nullable,
+              CASE WHEN pk.column_name IS NOT NULL THEN true ELSE false END as is_primary_key,
+              CASE WHEN fk.column_name IS NOT NULL THEN true ELSE false END as is_foreign_key,
+              fk.foreign_table_name
+            FROM information_schema.columns c
+            LEFT JOIN (
+              SELECT kcu.column_name, kcu.table_schema, kcu.table_name
+              FROM information_schema.table_constraints tc
+              JOIN information_schema.key_column_usage kcu 
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+              WHERE tc.constraint_type = 'PRIMARY KEY'
+            ) pk ON c.column_name = pk.column_name 
+                AND c.table_schema = pk.table_schema 
+                AND c.table_name = pk.table_name
+            LEFT JOIN (
+              SELECT 
+                kcu.column_name, 
+                kcu.table_schema, 
+                kcu.table_name,
+                ccu.table_name as foreign_table_name
+              FROM information_schema.table_constraints tc
+              JOIN information_schema.key_column_usage kcu 
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+              JOIN information_schema.constraint_column_usage ccu
+                ON ccu.constraint_name = tc.constraint_name
+                AND ccu.table_schema = tc.table_schema
+              WHERE tc.constraint_type = 'FOREIGN KEY'
+            ) fk ON c.column_name = fk.column_name 
+                AND c.table_schema = fk.table_schema 
+                AND c.table_name = fk.table_name
+            WHERE c.table_schema = $1 
+            AND c.table_name = $2
+            ORDER BY c.ordinal_position
+          `, [schemaName, tableName]);
+          
+          await client.release();
+          await pool.end();
+          
+          return result.rows.map((row: any) => ({
+            attributeName: row.column_name,
+            dataType: row.data_type,
+            length: row.character_maximum_length,
+            precision: row.numeric_precision,
+            scale: row.numeric_scale,
+            isPrimaryKey: row.is_primary_key,
+            isForeignKey: row.is_foreign_key,
+            foreignKeyTable: row.foreign_table_name,
+            columnDescription: '',
+            isNotNull: row.is_nullable === 'NO'
+          }));
+        } catch (queryError) {
+          await client.release();
+          await pool.end();
+          throw queryError;
+        }
+      } catch (error) {
+        console.error('Error fetching column metadata from external database:', error);
+        throw new Error(`Failed to connect to database: ${error.message}`);
+      }
+    } else {
+      // Return mock metadata for other connection types
+      await this.simulateConnectionDelay();
+      return [
+        { attributeName: 'id', dataType: 'integer', isPrimaryKey: true, isForeignKey: false, columnDescription: '' },
+        { attributeName: 'name', dataType: 'varchar', length: 255, isPrimaryKey: false, isForeignKey: false, columnDescription: '' },
+        { attributeName: 'email', dataType: 'varchar', length: 255, isPrimaryKey: false, isForeignKey: false, columnDescription: '' },
+        { attributeName: 'created_at', dataType: 'timestamp', isPrimaryKey: false, isForeignKey: false, columnDescription: '' }
+      ];
+    }
+  }
+
   // Get database tables from a connection and schema
   async getDatabaseTables(connectionId: number, schemaName: string): Promise<string[]> {
     // Get the connection details first

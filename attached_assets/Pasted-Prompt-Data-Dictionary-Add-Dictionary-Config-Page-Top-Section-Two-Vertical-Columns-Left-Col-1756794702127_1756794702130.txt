@@ -1,0 +1,76 @@
+Prompt: Data Dictionary – Add Dictionary Config Page
+Top Section – Two Vertical Columns
+
+🔹 Left Column (Source)
+
+Select Layer – Dropdown (same as existing execution layer logic)
+
+Source System – Dropdown (existing logic)
+
+Source Connection – Dropdown (existing logic)
+
+Source Schema – Dropdown (existing logic)
+
+Source Object – Dropdown (existing logic, list tables/objects from schema)
+
+🔹 Right Column (Target)
+
+Target System – Dropdown (existing logic)
+
+Target Connection – Dropdown (existing logic)
+
+Target Schema – Dropdown (existing logic)
+
+Target Object – Dropdown (existing logic)
+
+➕ Add New Option if target object not available
+
+⚡ Layout: Use two equal-width cards/sections placed side-by-side, separated by subtle vertical divider. Labels aligned left, consistent spacing, dropdowns full-width.
+
+Bottom Section – Metadata Table
+
+Display all columns of the selected Source Object
+
+Auto-fetch metadata (for databases). For files, keep inputs open.
+
+Columns in the table:
+
+Attribute Name – (column name, readonly if DB, editable if file)
+
+Data Type – (autofill from metadata if DB, input field if file)
+
+Precision – (autofill if DB, input field if file)
+
+Length – (autofill if DB, input field if file)
+
+Scale – (autofill if DB, input field if file)
+
+Primary Key – (Yes/No toggle or dropdown; autofill if DB, dropdown if file)
+
+Foreign Key – (Yes/No toggle or dropdown; autofill if DB, dropdown if file)
+
+Foreign Key Table –
+
+Autofill from metadata if DB
+
+If not found → dropdown with available tables from source schema
+
+Column Description – Text field (max 1000 chars, multi-line allowed)
+
+Actions – Ellipsis menu (⋮) at row end for extra options
+
+Visual Design Guidelines
+
+Clean, modern layout with two-column top section and tabular bottom section
+
+Use cards or bordered containers for source vs target inputs
+
+Tabular metadata view should support scrolling if too many columns
+
+Status indicators (success/error) for DB metadata fetch
+
+Loading state while fetching metadata
+
+Empty state with friendly message if no object selected
+
+Soft shadows, rounded corners (2xl), consistent padding (p-4)

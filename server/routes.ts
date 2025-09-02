@@ -340,6 +340,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get enhanced database column metadata with data types and constraints
+  app.get("/api/connections/:id/schemas/:schema/tables/:table/metadata", async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const schemaName = req.params.schema;
+      const tableName = req.params.table;
+      const metadata = await storage.getDatabaseColumnMetadata(connectionId, schemaName, tableName);
+      res.json(metadata);
+    } catch (error) {
+      console.error('Error fetching column metadata:', error);
+      res.status(500).json({ error: 'Failed to fetch column metadata' });
+    }
+  });
+
   // Pipeline configuration endpoints
   // Get all pipelines with optional filtering
   app.get("/api/pipelines", async (req, res) => {

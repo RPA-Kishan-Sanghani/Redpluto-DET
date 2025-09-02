@@ -23,7 +23,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { DataDictionaryForm } from "../components/data-dictionary-form";
+import { DataDictionaryFormRedesigned } from "../components/data-dictionary-form-redesigned";
 import { useToast } from "@/hooks/use-toast";
 import { usePagination } from '@/hooks/use-pagination';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -396,7 +396,7 @@ export function DataDictionary() {
                 {editingEntry ? 'Edit Data Dictionary Entry' : 'Add New Data Dictionary Entry'}
               </DialogTitle>
             </DialogHeader>
-            <DataDictionaryForm
+            <DataDictionaryFormRedesigned
               entry={editingEntry}
               onSuccess={handleFormSuccess}
               onCancel={handleFormClose}
