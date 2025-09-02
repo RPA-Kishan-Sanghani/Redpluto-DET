@@ -548,6 +548,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                         <TableCell>
                           <Input
                             type="number"
+                            min="0"
                             value={column.scale || ''}
                             onChange={(e) => updateColumn(index, 'scale', e.target.value ? parseInt(e.target.value) : undefined)}
                             className="w-20"
