@@ -194,7 +194,7 @@ export type ConfigRecord = typeof configTable.$inferSelect;
 export type InsertConfigRecord = z.infer<typeof insertConfigSchema>;
 export type UpdateConfigRecord = z.infer<typeof updateConfigSchema>;
 
-// Data Dictionary Table
+// Data Dictionary Table - Column order matches actual database structure
 export const dataDictionaryTable = pgTable("data_dictionary_table", {
   dataDictionaryKey: serial("data_dictionary_key").primaryKey(),
   configKey: integer("config_key").notNull(),
@@ -206,15 +206,15 @@ export const dataDictionaryTable = pgTable("data_dictionary_table", {
   length: integer("length"),
   precisionValue: integer("precision_value"),
   scale: integer("scale"),
-  isNotNull: char("is_not_null", { length: 1 }),
-  isPrimaryKey: char("is_primary_key", { length: 1 }),
-  isForeignKey: char("is_foreign_key", { length: 1 }),
-  activeFlag: char("active_flag", { length: 1 }),
   insertDate: timestamp("insert_date").defaultNow(),
   updateDate: timestamp("update_date").defaultNow(),
   columnDescription: varchar("column_description", { length: 150 }),
   createdBy: varchar("created_by", { length: 100 }),
   updatedBy: varchar("updated_by", { length: 100 }),
+  isNotNull: char("is_not_null", { length: 1 }),
+  isPrimaryKey: char("is_primary_key", { length: 1 }),
+  isForeignKey: char("is_foreign_key", { length: 1 }),
+  activeFlag: char("active_flag", { length: 1 }),
 });
 
 export const insertDataDictionarySchema = createInsertSchema(dataDictionaryTable).omit({
