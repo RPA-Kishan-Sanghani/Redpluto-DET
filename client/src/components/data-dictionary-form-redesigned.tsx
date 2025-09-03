@@ -652,9 +652,14 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                               <DropdownMenuItem onClick={() => {
-                                // Edit functionality - focus on the first editable field for this row
-                                const firstInput = document.querySelector(`[data-testid="input-data-type-${index}"]`) as HTMLInputElement;
-                                firstInput?.focus();
+                                // Edit functionality - focus on the data type field for this row with a small delay
+                                setTimeout(() => {
+                                  const dataTypeInput = document.querySelector(`[data-testid="input-data-type-${index}"]`) as HTMLInputElement;
+                                  if (dataTypeInput) {
+                                    dataTypeInput.focus();
+                                    dataTypeInput.select(); // Select the text for easy editing
+                                  }
+                                }, 100);
                               }}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Column
@@ -693,7 +698,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                                 Delete Column
                               </DropdownMenuItem>
                               <div className="border-t my-1"></div>
-                              <DropdownMenuItem onClick={() => updateColumn(index, 'columnDescription', '')}>
+                              <DropdownMenuItem onClick={() => {
+                                // Clear the description and force re-render
+                                updateColumn(index, 'columnDescription', '');
+                                // Focus on the description textarea after clearing
+                                setTimeout(() => {
+                                  const descriptionTextarea = document.querySelector(`[data-testid="textarea-description-${index}"]`) as HTMLTextAreaElement;
+                                  if (descriptionTextarea) {
+                                    descriptionTextarea.focus();
+                                  }
+                                }, 100);
+                              }}>
                                 Clear Description
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => updateColumn(index, 'isPrimaryKey', false)}>
