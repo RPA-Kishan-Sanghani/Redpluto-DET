@@ -355,7 +355,6 @@ export function DataQualityForm({
             <Card>
               <CardHeader>
                 <CardTitle>Validation Rules</CardTitle>
-                <CardDescription>Define data quality validation criteria</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -417,7 +416,9 @@ export function DataQualityForm({
                       </FormItem>
                     )}
                   />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="defaultValue"
@@ -438,9 +439,7 @@ export function DataQualityForm({
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="thresholdPercentage"
