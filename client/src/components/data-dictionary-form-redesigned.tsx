@@ -211,22 +211,33 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       const promises = columns.map(column => {
         const entryData = {
           configKey: 1, // Default config key - you may want to make this dynamic
-          executionLayer: data.executionLayer,
-          schemaName: data.sourceSchemaName,
-          tableName: data.sourceTableName,
-          attributeName: column.attributeName,
-          dataType: column.dataType,
+          executionLayer: (data.executionLayer || '').substring(0, 50),
+          schemaName: (data.sourceSchemaName || '').substring(0, 100),
+          tableName: (data.sourceTableName || '').substring(0, 100),
+          attributeName: (column.attributeName || '').substring(0, 100),
+          dataType: (column.dataType || '').substring(0, 50),
           length: column.length || null,
           precisionValue: column.precision || null,
           scale: column.scale || null,
           isNotNull: false, // Default value
           isPrimaryKey: column.isPrimaryKey || false,
           isForeignKey: column.isForeignKey || false,
-          columnDescription: column.columnDescription || '',
+          columnDescription: (column.columnDescription || '').substring(0, 150),
           activeFlag: 'Y',
           createdBy: 'User',
           updatedBy: 'User',
         };
+        
+        console.log('=== FRONTEND DEBUG: Sending entry data ===');
+        console.log('Column:', column);
+        console.log('Entry data to send:', entryData);
+        
+        // Check for long strings
+        Object.entries(entryData).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            console.log(`Field ${key}: "${value}" (length: ${value.length})`);
+          }
+        });
 
         // For editing, update the existing entry; for new entries, create new ones
         if (entry && columns.length === 1) {

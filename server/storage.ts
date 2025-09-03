@@ -1242,15 +1242,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
+    console.log('=== DEBUG: createDataDictionaryEntry called ===');
+    console.log('Input entry:', JSON.stringify(entry, null, 2));
+    
+    // Check for potentially problematic fields
+    const fields = Object.entries(entry);
+    fields.forEach(([key, value]) => {
+      if (typeof value === 'string' && value.length > 1) {
+        console.log(`Field ${key} has length ${value.length}: "${value}"`);
+      }
+    });
+    
+    const insertData = {
+      ...entry,
+      createdBy: entry.createdBy || 'System',
+      updatedBy: entry.updatedBy || 'System',
+      insertDate: new Date(),
+      updateDate: new Date(),
+    };
+    
+    console.log('Final insert data:', JSON.stringify(insertData, null, 2));
+    
     const [created] = await db
       .insert(dataDictionaryTable)
-      .values({
-        ...entry,
-        createdBy: entry.createdBy || 'System',
-        updatedBy: entry.updatedBy || 'System',
-        insertDate: new Date(),
-        updateDate: new Date(),
-      })
+      .values(insertData)
       .returning();
     return created;
   }
