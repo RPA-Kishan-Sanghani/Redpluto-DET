@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { insertUserSchema, insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
+import { sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User registration endpoint
@@ -489,8 +490,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Incoming data dictionary request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertDataDictionarySchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-      const entry = await storage.createDataDictionaryEntry(validatedData);
-      res.status(201).json(entry);
+      
+      // Use direct SQL execution that actually works with the external database
+      const result = await db.execute(sql`
+        INSERT INTO data_dictionary_table (
+          config_key, execution_layer, schema_name, table_name, attribute_name,
+          data_type, length, precision_value, scale, insert_date, update_date,
+          column_description, created_by, updated_by, is_not_null, is_primary_key,
+          is_foreign_key, active_flag
+        ) VALUES (
+          ${validatedData.configKey}, 
+          ${validatedData.executionLayer}, 
+          ${validatedData.schemaName || null}, 
+          ${validatedData.tableName || null}, 
+          ${validatedData.attributeName}, 
+          ${validatedData.dataType}, 
+          ${validatedData.length || null}, 
+          ${validatedData.precisionValue || null}, 
+          ${validatedData.scale || null}, 
+          NOW(), 
+          NOW(), 
+          ${validatedData.columnDescription || null}, 
+          ${validatedData.createdBy || 'API_USER'}, 
+          ${validatedData.updatedBy || 'API_USER'},
+          ${validatedData.isNotNull || 'N'}, 
+          ${validatedData.isPrimaryKey || 'N'}, 
+          ${validatedData.isForeignKey || 'N'}, 
+          ${validatedData.activeFlag || 'Y'}
+        ) RETURNING *;
+      `);
+      
+      console.log('Successfully saved to external database with ID:', result.rows[0]?.data_dictionary_key);
+      res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating data dictionary entry:', error);
       res.status(500).json({ error: 'Failed to create data dictionary entry' });

@@ -1242,32 +1242,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
-    // Temporary implementation - API insert has unresolved column ordering issue
-    // For now, return a mock response with a note about the issue
-    console.log('API insert attempted but has column ordering issue. Using temp workaround.');
-    
-    // Return a temporary response indicating the issue
-    return {
-      dataDictionaryKey: 999999, // Temporary ID to indicate mock response
-      configKey: entry.configKey || 1,
-      executionLayer: entry.executionLayer || 'Bronze',
-      schemaName: entry.schemaName || 'temp_schema',
-      tableName: entry.tableName || 'temp_table',
-      attributeName: entry.attributeName || 'temp_column',
-      dataType: entry.dataType || 'varchar',
-      length: entry.length || null,
-      precisionValue: entry.precisionValue || null,
-      scale: entry.scale || null,
-      insertDate: new Date(),
-      updateDate: new Date(),
-      columnDescription: `API_INSERT_ISSUE: ${entry.columnDescription || 'Column ordering needs fixing'}`,
-      createdBy: entry.createdBy || 'API_USER',
-      updatedBy: entry.updatedBy || 'API_USER',
-      isNotNull: entry.isNotNull || 'N',
-      isPrimaryKey: entry.isPrimaryKey || 'N',
-      isForeignKey: entry.isForeignKey || 'N',
-      activeFlag: entry.activeFlag || 'Y',
-    } as DataDictionaryRecord;
+    // For now, use the direct SQL approach that we know works
+    // This bypasses the column ordering issue completely
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO data_dictionary_table (
+          config_key, execution_layer, schema_name, table_name, attribute_name,
+          data_type, length, precision_value, scale, insert_date, update_date,
+          column_description, created_by, updated_by, is_not_null, is_primary_key,
+          is_foreign_key, active_flag
+        ) VALUES (
+          ${entry.configKey}, 
+          ${entry.executionLayer}, 
+          ${entry.schemaName || null}, 
+          ${entry.tableName || null}, 
+          ${entry.attributeName}, 
+          ${entry.dataType}, 
+          ${entry.length || null}, 
+          ${entry.precisionValue || null}, 
+          ${entry.scale || null}, 
+          NOW(), 
+          NOW(), 
+          ${entry.columnDescription || null}, 
+          ${entry.createdBy || 'API_USER'}, 
+          ${entry.updatedBy || 'API_USER'},
+          ${entry.isNotNull || 'N'}, 
+          ${entry.isPrimaryKey || 'N'}, 
+          ${entry.isForeignKey || 'N'}, 
+          ${entry.activeFlag || 'Y'}
+        ) RETURNING *;
+      `);
+      
+      console.log('Successfully inserted record via Drizzle SQL:', result.rows[0]?.data_dictionary_key);
+      return result.rows[0] as DataDictionaryRecord;
+    } catch (error) {
+      console.error('Drizzle SQL insert error:', error);
+      throw error;
+    }
   }
 
   async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
