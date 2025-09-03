@@ -1210,30 +1210,6 @@ export class DatabaseStorage implements IStorage {
         case 'tableName':
           conditions.push(like(dataDictionaryTable.tableName, `%${filters.customValue}%`));
           break;
-        case 'sourceSchemaName':
-          conditions.push(like(dataDictionaryTable.sourceSchemaName, `%${filters.customValue}%`));
-          break;
-        case 'sourceTableName':
-          conditions.push(like(dataDictionaryTable.sourceTableName, `%${filters.customValue}%`));
-          break;
-        case 'targetSchemaName':
-          conditions.push(like(dataDictionaryTable.targetSchemaName, `%${filters.customValue}%`));
-          break;
-        case 'targetTableName':
-          conditions.push(like(dataDictionaryTable.targetTableName, `%${filters.customValue}%`));
-          break;
-        case 'sourceSystem':
-          conditions.push(like(dataDictionaryTable.sourceSystem, `%${filters.customValue}%`));
-          break;
-        case 'targetSystem':
-          conditions.push(like(dataDictionaryTable.targetSystem, `%${filters.customValue}%`));
-          break;
-        case 'sourceConnectionName':
-          conditions.push(like(dataDictionaryTable.sourceConnectionName, `%${filters.customValue}%`));
-          break;
-        case 'targetConnectionName':
-          conditions.push(like(dataDictionaryTable.targetConnectionName, `%${filters.customValue}%`));
-          break;
         case 'columnDescription':
           conditions.push(like(dataDictionaryTable.columnDescription, `%${filters.customValue}%`));
           break;

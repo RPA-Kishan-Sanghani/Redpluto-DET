@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataDictionaryFormRedesigned } from "../components/data-dictionary-form-redesigned";
@@ -8,9 +9,20 @@ import type { DataDictionaryRecord } from '@shared/schema';
 
 export function DataDictionaryFormPage() {
   const [location, setLocation] = useLocation();
+  const [match, params] = useRoute("/data-dictionary/form/:id");
+  const entryId = params?.id;
   
-  // Get the entry from the browser's history state
-  const editingEntry = history.state?.entry as DataDictionaryRecord | null;
+  // Fetch the entry data if we have an ID (editing mode)
+  const { data: editingEntry, isLoading } = useQuery({
+    queryKey: ['/api/data-dictionary', entryId],
+    queryFn: async () => {
+      if (!entryId) return null;
+      const response = await fetch(`/api/data-dictionary/${entryId}`);
+      if (!response.ok) throw new Error('Failed to fetch entry');
+      return response.json();
+    },
+    enabled: !!entryId,
+  });
 
   const handleSuccess = () => {
     setLocation('/data-dictionary');
@@ -19,6 +31,18 @@ export function DataDictionaryFormPage() {
   const handleCancel = () => {
     setLocation('/data-dictionary');
   };
+
+  // Show loading state while fetching entry data
+  if (entryId && isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading entry data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,7 +72,7 @@ export function DataDictionaryFormPage() {
         <div className="bg-white rounded-lg shadow-sm">
           <div className="p-6">
             <DataDictionaryFormRedesigned
-              entry={editingEntry}
+              entry={editingEntry || null}
               onSuccess={handleSuccess}
               onCancel={handleCancel}
             />

@@ -114,7 +114,7 @@ export function DataDictionary() {
   });
 
   const handleEdit = (entry: DataDictionaryRecord) => {
-    setLocation('/data-dictionary/form', { state: { entry } });
+    setLocation(`/data-dictionary/form/${entry.dataDictionaryKey}`);
   };
 
   const handleDelete = async (id: number) => {
