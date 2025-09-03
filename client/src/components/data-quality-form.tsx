@@ -230,7 +230,6 @@ export function DataQualityForm({
             <Card>
               <CardHeader>
                 <CardTitle>Basic Configuration</CardTitle>
-                <CardDescription>Essential data quality settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,36 +320,7 @@ export function DataQualityForm({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="referenceTableName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Reference Table Name</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-reference-table">
-                              <SelectValue placeholder="Select reference table" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="NA">NA</SelectItem>
-                            {referenceTableNames.map((tableName) => (
-                              <SelectItem key={tableName} value={tableName}>
-                                {tableName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="activeFlag"
@@ -412,6 +382,35 @@ export function DataQualityForm({
                             <SelectItem value="Custom Query Check">Custom Query Check</SelectItem>
                             <SelectItem value="File Format Check">File Format Check</SelectItem>
                             <SelectItem value="Referential Integrity Check">Referential Integrity Check</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="referenceTableName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reference Table Name</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-reference-table">
+                              <SelectValue placeholder="Select reference table" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="NA">NA</SelectItem>
+                            {referenceTableNames.map((tableName) => (
+                              <SelectItem key={tableName} value={tableName}>
+                                {tableName}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
