@@ -1242,41 +1242,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
-    // For now, use the direct SQL approach that we know works
-    // This bypasses the column ordering issue completely
+    // FORCE connection to external PostgreSQL database with proper auto-increment
     try {
-      const result = await db.execute(sql`
+      const externalPool = new Pool({
+        host: '4.240.90.166',
+        port: 5432,
+        database: 'config_db',
+        user: 'rpdet_az',
+        password: 'Rpdet#1234',
+        ssl: false,
+        connectionTimeoutMillis: 10000,
+      });
+
+      const query = `
         INSERT INTO data_dictionary_table (
           config_key, execution_layer, schema_name, table_name, attribute_name,
           data_type, length, precision_value, scale, insert_date, update_date,
           column_description, created_by, updated_by, is_not_null, is_primary_key,
           is_foreign_key, active_flag
-        ) VALUES (
-          ${entry.configKey}, 
-          ${entry.executionLayer}, 
-          ${entry.schemaName || null}, 
-          ${entry.tableName || null}, 
-          ${entry.attributeName}, 
-          ${entry.dataType}, 
-          ${entry.length || null}, 
-          ${entry.precisionValue || null}, 
-          ${entry.scale || null}, 
-          NOW(), 
-          NOW(), 
-          ${entry.columnDescription || null}, 
-          ${entry.createdBy || 'API_USER'}, 
-          ${entry.updatedBy || 'API_USER'},
-          ${entry.isNotNull || 'N'}, 
-          ${entry.isPrimaryKey || 'N'}, 
-          ${entry.isForeignKey || 'N'}, 
-          ${entry.activeFlag || 'Y'}
-        ) RETURNING *;
-      `);
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW(), $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *;
+      `;
       
-      console.log('Successfully inserted record via Drizzle SQL:', result.rows[0]?.data_dictionary_key);
+      const values = [
+        entry.configKey,
+        entry.executionLayer,
+        entry.schemaName || null,
+        entry.tableName || null,
+        entry.attributeName,
+        entry.dataType,
+        entry.length || null,
+        entry.precisionValue || null,
+        entry.scale || null,
+        entry.columnDescription || null,
+        entry.createdBy || 'API_USER',
+        entry.updatedBy || 'API_USER',
+        entry.isNotNull || 'N',
+        entry.isPrimaryKey || 'N',
+        entry.isForeignKey || 'N',
+        entry.activeFlag || 'Y'
+      ];
+      
+      const result = await externalPool.query(query, values);
+      await externalPool.end();
+      
+      console.log('Successfully inserted into external database with ID:', result.rows[0]?.data_dictionary_key);
       return result.rows[0] as DataDictionaryRecord;
     } catch (error) {
-      console.error('Drizzle SQL insert error:', error);
+      console.error('External database insert error:', error);
       throw error;
     }
   }
