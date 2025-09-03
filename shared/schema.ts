@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, serial, char } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -199,17 +199,17 @@ export const dataDictionaryTable = pgTable("data_dictionary_table", {
   dataDictionaryKey: serial("data_dictionary_key").primaryKey(),
   configKey: integer("config_key").notNull(),
   executionLayer: varchar("execution_layer", { length: 50 }).notNull(),
-  schemaName: varchar("schema_name", { length: 100 }),
-  tableName: varchar("table_name", { length: 100 }),
+  schemaName: varchar("schema_name", { length: 50 }),
+  tableName: varchar("table_name", { length: 50 }),
   attributeName: varchar("attribute_name", { length: 100 }).notNull(),
   dataType: varchar("data_type", { length: 50 }).notNull(),
   length: integer("length"),
   precisionValue: integer("precision_value"),
   scale: integer("scale"),
-  isNotNull: boolean("is_not_null"),
-  isPrimaryKey: boolean("is_primary_key"),
-  isForeignKey: boolean("is_foreign_key"),
-  activeFlag: varchar("active_flag", { length: 10 }),
+  isNotNull: char("is_not_null", { length: 1 }),
+  isPrimaryKey: char("is_primary_key", { length: 1 }),
+  isForeignKey: char("is_foreign_key", { length: 1 }),
+  activeFlag: char("active_flag", { length: 1 }),
   insertDate: timestamp("insert_date").defaultNow(),
   updateDate: timestamp("update_date").defaultNow(),
   columnDescription: varchar("column_description", { length: 150 }),
