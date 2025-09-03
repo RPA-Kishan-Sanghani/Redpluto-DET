@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, X, MoreVertical, Loader2 } from "lucide-react";
+import { Plus, Save, X, MoreVertical, Loader2, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -651,6 +651,48 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => {
+                                // Edit functionality - focus on the first editable field for this row
+                                const firstInput = document.querySelector(`[data-testid="input-data-type-${index}"]`) as HTMLInputElement;
+                                firstInput?.focus();
+                              }}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Column
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                // Add new column after this one
+                                const newColumn: ColumnMetadata = {
+                                  attributeName: `new_column_${columns.length + 1}`,
+                                  dataType: "varchar",
+                                  precision: undefined,
+                                  length: undefined,
+                                  scale: undefined,
+                                  isPrimaryKey: false,
+                                  isForeignKey: false,
+                                  foreignKeyTable: undefined,
+                                  columnDescription: "",
+                                };
+                                setColumns(prev => [
+                                  ...prev.slice(0, index + 1),
+                                  newColumn,
+                                  ...prev.slice(index + 1)
+                                ]);
+                              }}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Column After
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to delete this column?')) {
+                                    setColumns(prev => prev.filter((_, i) => i !== index));
+                                  }
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Column
+                              </DropdownMenuItem>
+                              <div className="border-t my-1"></div>
                               <DropdownMenuItem onClick={() => updateColumn(index, 'columnDescription', '')}>
                                 Clear Description
                               </DropdownMenuItem>
