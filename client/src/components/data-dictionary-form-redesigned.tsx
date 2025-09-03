@@ -219,25 +219,15 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           length: column.length || null,
           precisionValue: column.precision || null,
           scale: column.scale || null,
-          isNotNull: false, // Default value
-          isPrimaryKey: column.isPrimaryKey || false,
-          isForeignKey: column.isForeignKey || false,
+          isNotNull: false, // Use boolean for database
+          isPrimaryKey: column.isPrimaryKey || false, // Keep as boolean for database
+          isForeignKey: column.isForeignKey || false, // Keep as boolean for database
           columnDescription: (column.columnDescription || '').substring(0, 150),
           activeFlag: 'Y',
           createdBy: 'User',
           updatedBy: 'User',
         };
         
-        console.log('=== FRONTEND DEBUG: Sending entry data ===');
-        console.log('Column:', column);
-        console.log('Entry data to send:', entryData);
-        
-        // Check for long strings
-        Object.entries(entryData).forEach(([key, value]) => {
-          if (typeof value === 'string') {
-            console.log(`Field ${key}: "${value}" (length: ${value.length})`);
-          }
-        });
 
         // For editing, update the existing entry; for new entries, create new ones
         if (entry && columns.length === 1) {
