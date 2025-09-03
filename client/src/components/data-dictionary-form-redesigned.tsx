@@ -219,9 +219,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           length: column.length || null,
           precisionValue: column.precision || null,
           scale: column.scale || null,
-          isNotNull: false, // Use boolean for database field
-          isPrimaryKey: column.isPrimaryKey || false, // Keep as boolean for database
-          isForeignKey: column.isForeignKey || false, // Keep as boolean for database
+          isNotNull: 'N', // Use Y/N for CHAR(1) database field
+          isPrimaryKey: column.isPrimaryKey ? 'Y' : 'N', // Convert boolean to Y/N for CHAR(1)
+          isForeignKey: column.isForeignKey ? 'Y' : 'N', // Convert boolean to Y/N for CHAR(1)
           columnDescription: (column.columnDescription || '').substring(0, 150),
           activeFlag: 'Y',
           createdBy: 'User',
