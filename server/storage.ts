@@ -1242,22 +1242,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
-    // Explicitly exclude any primary key field that might be included
-    const { dataDictionaryKey, ...cleanEntry } = entry as any;
+    // Use raw SQL to bypass any ORM issues with auto-increment
+    const result = await db.execute(sql`
+      INSERT INTO data_dictionary_table (
+        config_key, execution_layer, schema_name, table_name, attribute_name,
+        data_type, length, precision_value, scale, is_not_null, is_primary_key,
+        is_foreign_key, active_flag, column_description, created_by, updated_by
+      ) VALUES (
+        ${entry.configKey}, ${entry.executionLayer}, ${entry.schemaName}, ${entry.tableName}, 
+        ${entry.attributeName}, ${entry.dataType}, ${entry.length}, ${entry.precisionValue}, 
+        ${entry.scale}, ${entry.isNotNull}, ${entry.isPrimaryKey}, ${entry.isForeignKey}, 
+        ${entry.activeFlag}, ${entry.columnDescription}, ${entry.createdBy || 'System'}, 
+        ${entry.updatedBy || 'System'}
+      ) RETURNING *;
+    `);
     
-    const insertData = {
-      ...cleanEntry,
-      createdBy: cleanEntry.createdBy || 'System',
-      updatedBy: cleanEntry.updatedBy || 'System',
-      insertDate: new Date(),
-      updateDate: new Date(),
-    };
-    
-    const [created] = await db
-      .insert(dataDictionaryTable)
-      .values(insertData)
-      .returning();
-    return created;
+    return result.rows[0] as DataDictionaryRecord;
   }
 
   async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
