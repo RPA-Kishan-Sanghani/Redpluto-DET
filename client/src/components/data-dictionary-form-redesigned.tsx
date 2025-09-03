@@ -216,13 +216,13 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           tableName: data.sourceTableName,
           attributeName: column.attributeName,
           dataType: column.dataType,
-          length: column.length,
-          precisionValue: column.precision,
-          scale: column.scale,
+          length: column.length || null,
+          precisionValue: column.precision || null,
+          scale: column.scale || null,
           isNotNull: false, // Default value
-          isPrimaryKey: column.isPrimaryKey,
-          isForeignKey: column.isForeignKey,
-          columnDescription: column.columnDescription,
+          isPrimaryKey: column.isPrimaryKey || false,
+          isForeignKey: column.isForeignKey || false,
+          columnDescription: column.columnDescription || '',
           activeFlag: 'Y',
           createdBy: 'User',
           updatedBy: 'User',
@@ -243,6 +243,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData),
+          }).then(async (response) => {
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to save entry');
+            }
+            return response;
           });
         }
       });

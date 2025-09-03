@@ -486,7 +486,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/data-dictionary", async (req, res) => {
     try {
+      console.log('Incoming data dictionary request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertDataDictionarySchema.parse(req.body);
+      console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       const entry = await storage.createDataDictionaryEntry(validatedData);
       res.status(201).json(entry);
     } catch (error) {
