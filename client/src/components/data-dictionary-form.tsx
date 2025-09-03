@@ -270,13 +270,19 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
         });
       } else {
         // Create new entry
-        await fetch('/api/data-dictionary', {
+        const response = await fetch('/api/data-dictionary', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(submitData),
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to save data dictionary entry');
+        }
+        
         toast({
           title: 'Success',
           description: 'Data dictionary entry created successfully',
@@ -286,9 +292,16 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
       onSuccess();
     } catch (error) {
       console.error('Error saving data dictionary entry:', error);
+      
+      // Show detailed error message from server
+      let errorMessage = 'Failed to save data dictionary entry. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Error',
-        description: 'Failed to save data dictionary entry. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

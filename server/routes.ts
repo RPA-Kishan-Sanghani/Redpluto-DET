@@ -491,40 +491,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertDataDictionarySchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       
-      // Use direct SQL execution that actually works with the external database
-      const result = await db.execute(sql`
+      // Bypass Drizzle and use raw SQL that definitely works
+      const { Pool } = require('pg');
+      const pool = new Pool({
+        host: "4.240.90.166",
+        port: 5432,
+        database: "config_db",
+        user: "rpdet_az",
+        password: "Rpdet#1234",
+        ssl: false
+      });
+      
+      const query = `
         INSERT INTO data_dictionary_table (
-          config_key, execution_layer, schema_name, table_name, attribute_name,
-          data_type, length, precision_value, scale, insert_date, update_date,
-          column_description, created_by, updated_by, is_not_null, is_primary_key,
-          is_foreign_key, active_flag
-        ) VALUES (
-          ${validatedData.configKey}, 
-          ${validatedData.executionLayer}, 
-          ${validatedData.schemaName || null}, 
-          ${validatedData.tableName || null}, 
-          ${validatedData.attributeName}, 
-          ${validatedData.dataType}, 
-          ${validatedData.length || null}, 
-          ${validatedData.precisionValue || null}, 
-          ${validatedData.scale || null}, 
-          NOW(), 
-          NOW(), 
-          ${validatedData.columnDescription || null}, 
-          ${validatedData.createdBy || 'API_USER'}, 
-          ${validatedData.updatedBy || 'API_USER'},
-          ${validatedData.isNotNull || 'N'}, 
-          ${validatedData.isPrimaryKey || 'N'}, 
-          ${validatedData.isForeignKey || 'N'}, 
-          ${validatedData.activeFlag || 'Y'}
-        ) RETURNING *;
-      `);
+          config_key, schema_name, table_name, attribute_name, data_type, execution_layer,
+          length, precision_value, scale, column_description, created_by, updated_by, 
+          is_not_null, is_primary_key, is_foreign_key, active_flag
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *;
+      `;
+      
+      const values = [
+        validatedData.configKey,
+        validatedData.schemaName || null,
+        validatedData.tableName || null,
+        validatedData.attributeName,
+        validatedData.dataType,
+        validatedData.executionLayer,
+        validatedData.length || null,
+        validatedData.precisionValue || null,
+        validatedData.scale || null,
+        validatedData.columnDescription || null,
+        validatedData.createdBy || 'API_USER',
+        validatedData.updatedBy || 'API_USER',
+        validatedData.isNotNull || 'N',
+        validatedData.isPrimaryKey || 'N',
+        validatedData.isForeignKey || 'N',
+        validatedData.activeFlag || 'Y'
+      ];
+      
+      const result = await pool.query(query, values);
+      await pool.end();
       
       console.log('Successfully saved to external database with ID:', result.rows[0]?.data_dictionary_key);
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating data dictionary entry:', error);
-      res.status(500).json({ error: 'Failed to create data dictionary entry' });
+      
+      // Send detailed error message to user interface
+      let userErrorMessage = 'Failed to create data dictionary entry';
+      if (error instanceof Error) {
+        // Extract meaningful error details for the user
+        if (error.message.includes('duplicate key')) {
+          userErrorMessage = 'This entry already exists. Please check for duplicates.';
+        } else if (error.message.includes('not-null constraint')) {
+          userErrorMessage = 'Required fields are missing. Please fill in all required information.';
+        } else if (error.message.includes('foreign key constraint')) {
+          userErrorMessage = 'Invalid reference data. Please check your selections.';
+        } else {
+          userErrorMessage = `Database error: ${error.message}`;
+        }
+      }
+      
+      res.status(500).json({ 
+        error: userErrorMessage,
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
