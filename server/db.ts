@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// External PostgreSQL database configuration
+// Force external PostgreSQL database configuration (ignore any environment variables)
 const externalDbConfig = {
   host: '4.240.90.166',
   port: 5432,
@@ -13,7 +13,8 @@ const externalDbConfig = {
   connectionTimeoutMillis: 10000,
 };
 
-console.log('Database configured for external PostgreSQL:', externalDbConfig.host);
+console.log('Forcing connection to external PostgreSQL:', externalDbConfig.host);
+console.log('Database config:', JSON.stringify(externalDbConfig, null, 2));
 
 export const pool = new Pool(externalDbConfig);
 export const db = drizzle({ client: pool, schema });
