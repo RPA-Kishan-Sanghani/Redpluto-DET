@@ -49,7 +49,6 @@ import {
 
 // Form validation schema
 const reconciliationFormSchema = z.object({
-  configKey: z.number().min(1, "Config key is required"),
   executionLayer: z.string().min(1, "Execution layer is required"),
   sourceSystem: z.string().optional(),
   sourceConnectionId: z.number().optional(),
@@ -121,7 +120,6 @@ export function ReconciliationForm({
   const form = useForm<FormData>({
     resolver: zodResolver(reconciliationFormSchema),
     defaultValues: {
-      configKey: config?.configKey || undefined,
       executionLayer: config?.executionLayer || "",
       sourceSystem: config?.sourceSystem || "",
       sourceConnectionId: config?.sourceConnectionId || undefined,
@@ -353,7 +351,7 @@ export function ReconciliationForm({
                 <CardDescription>Basic reconciliation settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="executionLayer"
@@ -377,26 +375,6 @@ export function ReconciliationForm({
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="configKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Config Key *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Enter config key"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                            data-testid="input-config-key"
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
