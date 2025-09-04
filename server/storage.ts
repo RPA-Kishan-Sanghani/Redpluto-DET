@@ -172,12 +172,18 @@ export class DatabaseStorage implements IStorage {
       ));
     }
 
+    // Get all records first to debug
+    const allRecords = await db.select().from(auditTable).limit(5);
+    console.log('Sample audit records:', allRecords);
+
     const results = await db.select({
       status: auditTable.status,
       count: count()
     }).from(auditTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .groupBy(auditTable.status);
+
+    console.log('Dashboard metrics query results:', results);
 
     const metrics = {
       totalPipelines: 0,
@@ -189,7 +195,7 @@ export class DatabaseStorage implements IStorage {
 
     results.forEach(result => {
       const status = result.status?.toLowerCase();
-      const count = result.count;
+      const count = Number(result.count);
 
       metrics.totalPipelines += count;
 
@@ -204,6 +210,7 @@ export class DatabaseStorage implements IStorage {
       }
     });
 
+    console.log('Final metrics:', metrics);
     return metrics;
   }
 
@@ -219,11 +226,14 @@ export class DatabaseStorage implements IStorage {
 
     const results = await db.select({
       codeName: auditTable.codeName,
+      executionLayer: auditTable.executionLayer,
       status: auditTable.status,
       count: count()
     }).from(auditTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .groupBy(auditTable.codeName, auditTable.status);
+      .groupBy(auditTable.codeName, auditTable.executionLayer, auditTable.status);
+
+    console.log('Pipeline summary query results:', results);
 
     const summary = {
       dataQuality: { total: 0, success: 0, failed: 0 },
@@ -235,10 +245,40 @@ export class DatabaseStorage implements IStorage {
 
     results.forEach(result => {
       const codeName = result.codeName?.toLowerCase() || '';
+      const executionLayer = result.executionLayer?.toLowerCase() || '';
       const status = result.status?.toLowerCase();
-      const count = result.count;
+      const count = Number(result.count);
 
       let category: keyof typeof summary;
+
+      // Categorize based on execution layer first, then code name patterns
+      if (executionLayer === 'quality' || codeName.includes('quality')) {
+        category = 'dataQuality';
+      } else if (executionLayer === 'reconciliation' || codeName.includes('reconciliation')) {
+        category = 'reconciliation';
+      } else if (executionLayer === 'bronze' || codeName.includes('bronze')) {
+        category = 'bronze';
+      } else if (executionLayer === 'silver' || codeName.includes('silver')) {
+        category = 'silver';
+      } else if (executionLayer === 'gold' || codeName.includes('gold')) {
+        category = 'gold';
+      } else {
+        // Default categorization if no clear match
+        return;
+      }
+
+      summary[category].total += count;
+
+      if (status === 'success') {
+        summary[category].success += count;
+      } else if (status === 'failed') {
+        summary[category].failed += count;
+      }
+    });
+
+    console.log('Final pipeline summary:', summary);
+    return summary;
+  }
 
       if (codeName.includes('quality')) {
         category = 'dataQuality';
