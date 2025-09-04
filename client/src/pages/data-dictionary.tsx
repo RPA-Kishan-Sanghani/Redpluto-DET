@@ -29,16 +29,18 @@ import type { DataDictionaryRecord } from '@shared/schema';
 interface DataDictionaryFilters {
   search: string;
   executionLayer: string;
-  customField: string;
-  customValue: string;
+  schemaName: string;
+  tableName: string;
+  sourceSystem: string;
 }
 
 export function DataDictionary() {
   const [filters, setFilters] = useState<DataDictionaryFilters>({
     search: '',
     executionLayer: 'all',
-    customField: 'all',
-    customValue: ''
+    schemaName: 'all',
+    tableName: 'all',
+    sourceSystem: 'all'
   });
 
   const [location, setLocation] = useLocation();
@@ -54,9 +56,14 @@ export function DataDictionary() {
       if (filters.executionLayer && filters.executionLayer !== 'all') {
         params.append('executionLayer', filters.executionLayer);
       }
-      if (filters.customField && filters.customField !== 'all' && filters.customValue) {
-        params.append('customField', filters.customField);
-        params.append('customValue', filters.customValue);
+      if (filters.schemaName && filters.schemaName !== 'all') {
+        params.append('schemaName', filters.schemaName);
+      }
+      if (filters.tableName && filters.tableName !== 'all') {
+        params.append('tableName', filters.tableName);
+      }
+      if (filters.sourceSystem && filters.sourceSystem !== 'all') {
+        params.append('sourceSystem', filters.sourceSystem);
       }
 
       const response = await fetch(`/api/data-dictionary?${params}`);
@@ -161,7 +168,7 @@ export function DataDictionary() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -185,39 +192,55 @@ export function DataDictionary() {
                 </SelectContent>
               </Select>
 
-              <Select value={filters.customField || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, customField: value === 'all' ? '' : value, customValue: '' }))}>
-                <SelectTrigger data-testid="select-custom-field-filter">
-                  <SelectValue placeholder="Custom Filter Field" />
+              <Select value={filters.schemaName || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, schemaName: value === 'all' ? '' : value }))}>
+                <SelectTrigger data-testid="select-schema-filter">
+                  <SelectValue placeholder="Schema Name" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">No Custom Filter</SelectItem>
-                  <SelectItem value="attributeName">Attribute Name</SelectItem>
-                  <SelectItem value="dataType">Data Type</SelectItem>
-                  <SelectItem value="schemaName">Schema Name</SelectItem>
-                  <SelectItem value="tableName">Table Name</SelectItem>
-                  <SelectItem value="sourceSchemaName">Source Schema</SelectItem>
-                  <SelectItem value="sourceTableName">Source Table</SelectItem>
-                  <SelectItem value="targetSchemaName">Target Schema</SelectItem>
-                  <SelectItem value="targetTableName">Target Table</SelectItem>
-                  <SelectItem value="sourceSystem">Source System</SelectItem>
-                  <SelectItem value="targetSystem">Target System</SelectItem>
-                  <SelectItem value="sourceConnectionName">Source Connection</SelectItem>
-                  <SelectItem value="targetConnectionName">Target Connection</SelectItem>
-                  <SelectItem value="columnDescription">Description</SelectItem>
-                  <SelectItem value="createdBy">Created By</SelectItem>
-                  <SelectItem value="updatedBy">Updated By</SelectItem>
-                  <SelectItem value="configKey">Config Key</SelectItem>
+                  <SelectItem value="all">All Schemas</SelectItem>
+                  <SelectItem value="bronze">bronze</SelectItem>
+                  <SelectItem value="silver">silver</SelectItem>
+                  <SelectItem value="gold">gold</SelectItem>
+                  <SelectItem value="staging">staging</SelectItem>
+                  <SelectItem value="raw">raw</SelectItem>
+                  <SelectItem value="public">public</SelectItem>
+                  <SelectItem value="dbo">dbo</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Input
-                placeholder={`Filter by ${filters.customField !== 'all' && filters.customField ? filters.customField.replace(/([A-Z])/g, ' $1').toLowerCase() : 'selected field'}...`}
-                value={filters.customValue}
-                onChange={(e) => setFilters(prev => ({ ...prev, customValue: e.target.value }))}
-                disabled={!filters.customField || filters.customField === 'all'}
-                className={!filters.customField || filters.customField === 'all' ? 'bg-gray-100' : ''}
-                data-testid="input-custom-value-filter"
-              />
+              <Select value={filters.tableName || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, tableName: value === 'all' ? '' : value }))}>
+                <SelectTrigger data-testid="select-object-filter">
+                  <SelectValue placeholder="Object Name" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Objects</SelectItem>
+                  <SelectItem value="customers">customers</SelectItem>
+                  <SelectItem value="orders">orders</SelectItem>
+                  <SelectItem value="products">products</SelectItem>
+                  <SelectItem value="transactions">transactions</SelectItem>
+                  <SelectItem value="users">users</SelectItem>
+                  <SelectItem value="sales">sales</SelectItem>
+                  <SelectItem value="inventory">inventory</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.sourceSystem || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, sourceSystem: value === 'all' ? '' : value }))}>
+                <SelectTrigger data-testid="select-system-filter">
+                  <SelectValue placeholder="System" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Systems</SelectItem>
+                  <SelectItem value="MySQL">MySQL</SelectItem>
+                  <SelectItem value="PostgreSQL">PostgreSQL</SelectItem>
+                  <SelectItem value="SQL Server">SQL Server</SelectItem>
+                  <SelectItem value="Oracle">Oracle</SelectItem>
+                  <SelectItem value="CSV">CSV</SelectItem>
+                  <SelectItem value="JSON">JSON</SelectItem>
+                  <SelectItem value="Parquet">Parquet</SelectItem>
+                  <SelectItem value="Excel">Excel</SelectItem>
+                  <SelectItem value="API">API</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

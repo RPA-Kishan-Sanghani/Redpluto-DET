@@ -452,16 +452,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Data Dictionary routes
   app.get("/api/data-dictionary", async (req, res) => {
     try {
-      const { search, executionLayer, customField, customValue } = req.query;
+      const { search, executionLayer, schemaName, tableName, sourceSystem } = req.query;
 
-      const filters = {
+      const entries = await storage.getDataDictionaryEntries({
         search: search as string,
         executionLayer: executionLayer as string,
-        customField: customField as string,
-        customValue: customValue as string
-      };
-
-      const entries = await storage.getDataDictionaryEntries(filters);
+        schemaName: schemaName as string,
+        tableName: tableName as string,
+        sourceSystem: sourceSystem as string
+      });
       res.json(entries);
     } catch (error) {
       console.error('Error fetching data dictionary entries:', error);
@@ -490,15 +489,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Incoming data dictionary request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertDataDictionarySchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-      
+
       // Use the main database connection that's forced to external PostgreSQL
       const entry = await storage.createDataDictionaryEntry(validatedData);
-      
+
       console.log('Successfully saved to external database with ID:', entry.dataDictionaryKey);
       res.status(201).json(entry);
     } catch (error) {
       console.error('Error creating data dictionary entry:', error);
-      
+
       // Send detailed error message to user interface
       let userErrorMessage = 'Failed to create data dictionary entry';
       if (error instanceof Error) {
@@ -513,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userErrorMessage = `Database error: ${error.message}`;
         }
       }
-      
+
       res.status(500).json({ 
         error: userErrorMessage,
         details: error instanceof Error ? error.message : 'Unknown error'
