@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -49,10 +50,16 @@ interface TableMetadata {
   dataDictionaryKey: number;
 }
 
+interface EditingState {
+  [key: number]: boolean;
+}
+
 export function DataDictionary() {
   const [searchTerm, setSearchTerm] = useState("");
   const [layerFilter, setLayerFilter] = useState("all");
   const [expandedRows, setExpandedRows] = useState<ExpandedRowState>({});
+  const [editingStates, setEditingStates] = useState<EditingState>({});
+  const [editingValues, setEditingValues] = useState<{[key: number]: Partial<DataDictionaryRecord>}>({});
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -100,6 +107,36 @@ export function DataDictionary() {
     return matchesSearch && matchesLayer;
   });
 
+  // Update entry mutation for inline editing
+  const updateEntryMutation = useMutation({
+    mutationFn: async ({id, data}: {id: number, data: Partial<DataDictionaryRecord>}) => {
+      const response = await fetch(`/api/data-dictionary/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update entry');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/data-dictionary'] });
+      toast({
+        title: 'Success',
+        description: 'Data dictionary entry updated successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to update entry: ${error.message}`,
+        variant: 'destructive',
+      });
+    }
+  });
+
   // Delete entry mutation
   const deleteEntryMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -142,6 +179,40 @@ export function DataDictionary() {
   };
 
   const getTableKey = (table: TableGroup) => `${table.schemaName}.${table.tableName}`;
+
+  const startInlineEdit = (entry: DataDictionaryRecord) => {
+    setEditingStates(prev => ({ ...prev, [entry.dataDictionaryKey]: true }));
+    setEditingValues(prev => ({ ...prev, [entry.dataDictionaryKey]: { ...entry } }));
+  };
+
+  const cancelInlineEdit = (id: number) => {
+    setEditingStates(prev => ({ ...prev, [id]: false }));
+    setEditingValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[id];
+      return newValues;
+    });
+  };
+
+  const saveInlineEdit = async (id: number) => {
+    const values = editingValues[id];
+    if (values) {
+      await updateEntryMutation.mutateAsync({ id, data: values });
+      setEditingStates(prev => ({ ...prev, [id]: false }));
+      setEditingValues(prev => {
+        const newValues = { ...prev };
+        delete newValues[id];
+        return newValues;
+      });
+    }
+  };
+
+  const updateEditingValue = (id: number, field: keyof DataDictionaryRecord, value: any) => {
+    setEditingValues(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value }
+    }));
+  };
 
   if (isLoading) {
     return (
@@ -316,56 +387,209 @@ export function DataDictionary() {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {table.entries.map((entry) => (
-                                      <TableRow key={entry.dataDictionaryKey} className="hover:bg-gray-50">
-                                        <TableCell className="font-medium">{entry.attributeName}</TableCell>
-                                        <TableCell>
-                                          <Badge variant="outline">{entry.dataType}</Badge>
-                                        </TableCell>
-                                        <TableCell>{entry.length || '-'}</TableCell>
-                                        <TableCell>{entry.precisionValue || '-'}</TableCell>
-                                        <TableCell>{entry.scale || '-'}</TableCell>
-                                        <TableCell>
-                                          <Badge variant={entry.isPrimaryKey === 'Y' ? 'default' : 'secondary'}>
-                                            {entry.isPrimaryKey === 'Y' ? 'Yes' : 'No'}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                          <Badge variant={entry.isForeignKey === 'Y' ? 'default' : 'secondary'}>
-                                            {entry.isForeignKey === 'Y' ? 'Yes' : 'No'}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                          <Badge variant={entry.isNotNull === 'Y' ? 'default' : 'secondary'}>
-                                            {entry.isNotNull === 'Y' ? 'Yes' : 'No'}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell className="max-w-48 truncate" title={entry.columnDescription || ''}>
-                                          {entry.columnDescription || '-'}
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex space-x-1">
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => handleEdit(entry)}
-                                              data-testid={`button-edit-entry-${entry.dataDictionaryKey}`}
-                                            >
-                                              <Edit className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => handleDelete(entry.dataDictionaryKey)}
-                                              data-testid={`button-delete-entry-${entry.dataDictionaryKey}`}
-                                              className="text-red-600 hover:text-red-700"
-                                            >
-                                              <Trash2 className="h-3 w-3" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
+                                    {table.entries.map((entry) => {
+                                      const isEditing = editingStates[entry.dataDictionaryKey];
+                                      const editValues = editingValues[entry.dataDictionaryKey] || entry;
+                                      
+                                      return (
+                                        <TableRow key={entry.dataDictionaryKey} className="hover:bg-gray-50">
+                                          <TableCell className="font-medium">
+                                            {isEditing ? (
+                                              <Input
+                                                value={editValues.attributeName || ''}
+                                                onChange={(e) => updateEditingValue(entry.dataDictionaryKey, 'attributeName', e.target.value)}
+                                                className="w-32"
+                                              />
+                                            ) : (
+                                              entry.attributeName
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Input
+                                                value={editValues.dataType || ''}
+                                                onChange={(e) => updateEditingValue(entry.dataDictionaryKey, 'dataType', e.target.value)}
+                                                className="w-24"
+                                              />
+                                            ) : (
+                                              <Badge variant="outline">{entry.dataType}</Badge>
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Input
+                                                type="number"
+                                                value={editValues.length || ''}
+                                                onChange={(e) => updateEditingValue(entry.dataDictionaryKey, 'length', e.target.value ? parseInt(e.target.value) : null)}
+                                                className="w-20"
+                                              />
+                                            ) : (
+                                              entry.length || '-'
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Input
+                                                type="number"
+                                                value={editValues.precisionValue || ''}
+                                                onChange={(e) => updateEditingValue(entry.dataDictionaryKey, 'precisionValue', e.target.value ? parseInt(e.target.value) : null)}
+                                                className="w-20"
+                                              />
+                                            ) : (
+                                              entry.precisionValue || '-'
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Input
+                                                type="number"
+                                                value={editValues.scale || ''}
+                                                onChange={(e) => updateEditingValue(entry.dataDictionaryKey, 'scale', e.target.value ? parseInt(e.target.value) : null)}
+                                                className="w-20"
+                                              />
+                                            ) : (
+                                              entry.scale || '-'
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Select
+                                                value={editValues.isPrimaryKey || 'N'}
+                                                onValueChange={(value) => updateEditingValue(entry.dataDictionaryKey, 'isPrimaryKey', value)}
+                                              >
+                                                <SelectTrigger className="w-20">
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="Y">Yes</SelectItem>
+                                                  <SelectItem value="N">No</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            ) : (
+                                              <Badge variant={entry.isPrimaryKey === 'Y' ? 'default' : 'secondary'}>
+                                                {entry.isPrimaryKey === 'Y' ? 'Yes' : 'No'}
+                                              </Badge>
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Select
+                                                value={editValues.isForeignKey || 'N'}
+                                                onValueChange={(value) => updateEditingValue(entry.dataDictionaryKey, 'isForeignKey', value)}
+                                              >
+                                                <SelectTrigger className="w-20">
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="Y">Yes</SelectItem>
+                                                  <SelectItem value="N">No</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            ) : (
+                                              <Badge variant={entry.isForeignKey === 'Y' ? 'default' : 'secondary'}>
+                                                {entry.isForeignKey === 'Y' ? 'Yes' : 'No'}
+                                              </Badge>
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            {isEditing ? (
+                                              <Select
+                                                value={editValues.isNotNull || 'N'}
+                                                onValueChange={(value) => updateEditingValue(entry.dataDictionaryKey, 'isNotNull', value)}
+                                              >
+                                                <SelectTrigger className="w-20">
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="Y">Yes</SelectItem>
+                                                  <SelectItem value="N">No</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            ) : (
+                                              <Badge variant={entry.isNotNull === 'Y' ? 'default' : 'secondary'}>
+                                                {entry.isNotNull === 'Y' ? 'Yes' : 'No'}
+                                              </Badge>
+                                            )}
+                                          </TableCell>
+                                          <TableCell className="max-w-48">
+                                            {isEditing ? (
+                                              <Textarea
+                                                value={editValues.columnDescription || ''}
+                                                onChange={(e) => updateEditingValue(entry.dataDictionaryKey, 'columnDescription', e.target.value)}
+                                                className="w-40 min-h-[60px]"
+                                                placeholder="Column description..."
+                                              />
+                                            ) : (
+                                              <div className="truncate" title={entry.columnDescription || ''}>
+                                                {entry.columnDescription || '-'}
+                                              </div>
+                                            )}
+                                          </TableCell>
+                                          <TableCell>
+                                            <div className="flex space-x-1">
+                                              {isEditing ? (
+                                                <>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => saveInlineEdit(entry.dataDictionaryKey)}
+                                                    data-testid={`button-save-entry-${entry.dataDictionaryKey}`}
+                                                    className="text-green-600 hover:text-green-700"
+                                                    disabled={updateEntryMutation.isPending}
+                                                  >
+                                                    {updateEntryMutation.isPending ? (
+                                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                                    ) : (
+                                                      <Check className="h-3 w-3" />
+                                                    )}
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => cancelInlineEdit(entry.dataDictionaryKey)}
+                                                    data-testid={`button-cancel-entry-${entry.dataDictionaryKey}`}
+                                                    className="text-gray-600 hover:text-gray-700"
+                                                  >
+                                                    <X className="h-3 w-3" />
+                                                  </Button>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => startInlineEdit(entry)}
+                                                    data-testid={`button-inline-edit-entry-${entry.dataDictionaryKey}`}
+                                                    title="Edit inline"
+                                                  >
+                                                    <Edit className="h-3 w-3" />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleEdit(entry)}
+                                                    data-testid={`button-form-edit-entry-${entry.dataDictionaryKey}`}
+                                                    title="Edit in form"
+                                                    className="text-blue-600 hover:text-blue-700"
+                                                  >
+                                                    <Edit className="h-3 w-3" />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(entry.dataDictionaryKey)}
+                                                    data-testid={`button-delete-entry-${entry.dataDictionaryKey}`}
+                                                    className="text-red-600 hover:text-red-700"
+                                                  >
+                                                    <Trash2 className="h-3 w-3" />
+                                                  </Button>
+                                                </>
+                                              )}
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               </div>
