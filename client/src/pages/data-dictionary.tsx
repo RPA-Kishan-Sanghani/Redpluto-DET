@@ -385,8 +385,8 @@ export function DataDictionary() {
                         <TableCell className="font-medium">{table.tableName}</TableCell>
                         <TableCell>
                           <Badge variant={
-                            table.executionLayer === 'Gold' ? 'default' :
-                            table.executionLayer === 'Silver' ? 'secondary' : 'outline'
+                            table.executionLayer.toLowerCase() === 'gold' ? 'default' :
+                            table.executionLayer.toLowerCase() === 'silver' ? 'secondary' : 'outline'
                           }>
                             {table.executionLayer}
                           </Badge>
