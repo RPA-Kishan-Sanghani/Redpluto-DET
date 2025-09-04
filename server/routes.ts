@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics endpoint
   app.get("/api/dashboard/metrics", async (req, res) => {
     try {
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, search, system, layer, status, category, targetTable } = req.query;
 
       let dateRange;
       if (startDate && endDate) {
@@ -52,7 +52,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      const metrics = await storage.getDashboardMetrics(dateRange);
+      const filters = {
+        search: search as string,
+        system: system as string,
+        layer: layer as string,
+        status: status as string,
+        category: category as string,
+        targetTable: targetTable as string,
+      };
+
+      const metrics = await storage.getDashboardMetrics(dateRange, filters);
       res.json(metrics);
     } catch (error) {
       console.error('Error fetching dashboard metrics:', error);
@@ -63,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Pipeline summary endpoint
   app.get("/api/dashboard/pipeline-summary", async (req, res) => {
     try {
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, search, system, layer, status, category, targetTable } = req.query;
 
       let dateRange;
       if (startDate && endDate) {
@@ -73,7 +82,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      const summary = await storage.getPipelineSummary(dateRange);
+      const filters = {
+        search: search as string,
+        system: system as string,
+        layer: layer as string,
+        status: status as string,
+        category: category as string,
+        targetTable: targetTable as string,
+      };
+
+      const summary = await storage.getPipelineSummary(dateRange, filters);
       res.json(summary);
     } catch (error) {
       console.error('Error fetching pipeline summary:', error);

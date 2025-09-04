@@ -9,7 +9,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 
   // Dashboard metrics
-  getDashboardMetrics(dateRange?: { start: Date; end: Date }): Promise<{
+  getDashboardMetrics(dateRange?: { start: Date; end: Date }, filters?: {
+    search?: string;
+    system?: string;
+    layer?: string;
+    status?: string;
+    category?: string;
+    targetTable?: string;
+  }): Promise<{
     totalPipelines: number;
     successfulRuns: number;
     failedRuns: number;
@@ -18,7 +25,14 @@ export interface IStorage {
   }>;
 
   // Pipeline summary by category
-  getPipelineSummary(dateRange?: { start: Date; end: Date }): Promise<{
+  getPipelineSummary(dateRange?: { start: Date; end: Date }, filters?: {
+    search?: string;
+    system?: string;
+    layer?: string;
+    status?: string;
+    category?: string;
+    targetTable?: string;
+  }): Promise<{
     dataQuality: { total: number; success: number; failed: number };
     reconciliation: { total: number; success: number; failed: number };
     bronze: { total: number; success: number; failed: number };
@@ -162,7 +176,14 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getDashboardMetrics(dateRange?: { start: Date; end: Date }) {
+  async getDashboardMetrics(dateRange?: { start: Date; end: Date }, filters?: {
+    search?: string;
+    system?: string;
+    layer?: string;
+    status?: string;
+    category?: string;
+    targetTable?: string;
+  }) {
     const conditions = [];
     
     if (dateRange) {
@@ -170,6 +191,32 @@ export class DatabaseStorage implements IStorage {
         gte(auditTable.startTime, dateRange.start),
         lte(auditTable.startTime, dateRange.end)
       ));
+    }
+
+    // Apply filters
+    if (filters?.search) {
+      conditions.push(
+        like(auditTable.codeName, `%${filters.search}%`)
+      );
+    }
+
+    if (filters?.system) {
+      conditions.push(eq(auditTable.sourceSystem, filters.system));
+    }
+
+    if (filters?.layer) {
+      conditions.push(like(auditTable.schemaName, `%${filters.layer.toLowerCase()}%`));
+    }
+
+    if (filters?.status) {
+      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' : 
+                         filters.status.toLowerCase() === 'success' ? 'Success' : 
+                         filters.status;
+      conditions.push(eq(auditTable.status, statusValue));
+    }
+
+    if (filters?.targetTable) {
+      conditions.push(like(auditTable.targetTableName, `%${filters.targetTable}%`));
     }
 
     // Get all records first to debug
@@ -214,7 +261,14 @@ export class DatabaseStorage implements IStorage {
     return metrics;
   }
 
-  async getPipelineSummary(dateRange?: { start: Date; end: Date }) {
+  async getPipelineSummary(dateRange?: { start: Date; end: Date }, filters?: {
+    search?: string;
+    system?: string;
+    layer?: string;
+    status?: string;
+    category?: string;
+    targetTable?: string;
+  }) {
     const conditions = [];
     
     if (dateRange) {
@@ -222,6 +276,32 @@ export class DatabaseStorage implements IStorage {
         gte(auditTable.startTime, dateRange.start),
         lte(auditTable.startTime, dateRange.end)
       ));
+    }
+
+    // Apply filters
+    if (filters?.search) {
+      conditions.push(
+        like(auditTable.codeName, `%${filters.search}%`)
+      );
+    }
+
+    if (filters?.system) {
+      conditions.push(eq(auditTable.sourceSystem, filters.system));
+    }
+
+    if (filters?.layer) {
+      conditions.push(like(auditTable.schemaName, `%${filters.layer.toLowerCase()}%`));
+    }
+
+    if (filters?.status) {
+      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' : 
+                         filters.status.toLowerCase() === 'success' ? 'Success' : 
+                         filters.status;
+      conditions.push(eq(auditTable.status, statusValue));
+    }
+
+    if (filters?.targetTable) {
+      conditions.push(like(auditTable.targetTableName, `%${filters.targetTable}%`));
     }
 
     const results = await db.select({

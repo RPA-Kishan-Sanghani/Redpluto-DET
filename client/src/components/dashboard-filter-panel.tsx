@@ -243,6 +243,7 @@ export default function DashboardFilterPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="All time">All time</SelectItem>
               <SelectItem value="Last 24 hours">Last 24 hours</SelectItem>
               <SelectItem value="Last 7 days">Last 7 days</SelectItem>
               <SelectItem value="Last 30 days">Last 30 days</SelectItem>
