@@ -102,7 +102,12 @@ export function DataDictionary() {
   const filteredTables = groupedTables.filter(table => {
     const matchesSearch = !searchTerm || 
       table.tableName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      table.schemaName.toLowerCase().includes(searchTerm.toLowerCase());
+      table.schemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      table.entries.some(entry => 
+        entry.attributeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.columnDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.dataType?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     const matchesLayer = layerFilter === 'all' || table.executionLayer === layerFilter;
     return matchesSearch && matchesLayer;
   });
@@ -268,7 +273,7 @@ export function DataDictionary() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search tables or schemas..."
+              placeholder="Search tables, schemas, columns, or data types..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
