@@ -131,7 +131,7 @@ export function DataDictionary() {
     }
   };
 
-  
+
 
   const handleAdd = () => {
     setLocation('/data-dictionary/form');
