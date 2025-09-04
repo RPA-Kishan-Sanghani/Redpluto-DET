@@ -14,7 +14,7 @@ export default function Dashboard() {
     status: '',
     category: '',
     targetTable: '',
-    dateRange: 'Last 24 hours',
+    dateRange: 'All time',
     customStartDate: undefined,
     customEndDate: undefined,
   });
@@ -49,6 +49,8 @@ export default function Dashboard() {
           start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
           end: now,
         };
+      case "All time":
+        return undefined;
       default:
         return undefined;
     }

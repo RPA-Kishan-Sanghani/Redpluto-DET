@@ -201,7 +201,7 @@ export class DatabaseStorage implements IStorage {
 
       if (status === 'success') {
         metrics.successfulRuns += count;
-      } else if (status === 'failed') {
+      } else if (status === 'failed' || status === 'fail') {
         metrics.failedRuns += count;
       } else if (status === 'scheduled') {
         metrics.scheduledRuns += count;
@@ -226,11 +226,12 @@ export class DatabaseStorage implements IStorage {
 
     const results = await db.select({
       codeName: auditTable.codeName,
+      schemaName: auditTable.schemaName,
       status: auditTable.status,
       count: count()
     }).from(auditTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .groupBy(auditTable.codeName, auditTable.status);
+      .groupBy(auditTable.codeName, auditTable.schemaName, auditTable.status);
 
     console.log('Pipeline summary query results:', results);
 
@@ -244,32 +245,33 @@ export class DatabaseStorage implements IStorage {
 
     results.forEach(result => {
       const codeName = result.codeName?.toLowerCase() || '';
+      const schemaName = result.schemaName?.toLowerCase() || '';
       const status = result.status?.toLowerCase();
       const count = Number(result.count);
 
       let category: keyof typeof summary;
 
-      // Categorize based on code name patterns
+      // Categorize based on code name patterns and schema name
       if (codeName.includes('quality')) {
         category = 'dataQuality';
       } else if (codeName.includes('reconciliation')) {
         category = 'reconciliation';
-      } else if (codeName.includes('bronze')) {
+      } else if (codeName.includes('bronze') || schemaName.includes('bronze')) {
         category = 'bronze';
-      } else if (codeName.includes('silver')) {
+      } else if (codeName.includes('silver') || schemaName.includes('silver')) {
         category = 'silver';
-      } else if (codeName.includes('gold')) {
+      } else if (codeName.includes('gold') || schemaName.includes('gold')) {
         category = 'gold';
       } else {
-        // Default categorization if no clear match
-        return;
+        // Default to bronze for incremental_load, SCD1, SCD2, truncate_load and other general pipelines
+        category = 'bronze';
       }
 
       summary[category].total += count;
 
       if (status === 'success') {
         summary[category].success += count;
-      } else if (status === 'failed') {
+      } else if (status === 'failed' || status === 'fail') {
         summary[category].failed += count;
       }
     });
