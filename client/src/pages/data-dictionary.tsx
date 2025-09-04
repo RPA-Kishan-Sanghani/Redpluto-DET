@@ -132,7 +132,7 @@ export function DataDictionary() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-4 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Dictionary</h1>
@@ -224,13 +224,13 @@ export function DataDictionary() {
 
         {/* Entries Table */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 px-0">
             {isLoading ? (
-              <div className="text-center py-8">
+              <div className="text-center py-8 px-6">
                 <p className="text-gray-500">Loading data dictionary entries...</p>
               </div>
             ) : allEntries.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-8 px-6">
                 <Search className="mx-auto h-12 w-12 mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No entries found</h3>
                 <p className="text-gray-500 mb-4">Add your first data dictionary entry to get started.</p>
@@ -241,7 +241,7 @@ export function DataDictionary() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="overflow-x-auto">
+                <div className="w-full overflow-x-auto max-h-[600px] overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -344,15 +344,17 @@ export function DataDictionary() {
                 </div>
 
                 {allEntries.length > 0 && (
-                  <DataPagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={totalItems}
-                    itemsPerPage={10}
-                    onPageChange={setCurrentPage}
-                    canNextPage={canNextPage}
-                    canPrevPage={canPrevPage}
-                  />
+                  <div className="px-6">
+                    <DataPagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={totalItems}
+                      itemsPerPage={10}
+                      onPageChange={setCurrentPage}
+                      canNextPage={canNextPage}
+                      canPrevPage={canPrevPage}
+                    />
+                  </div>
                 )}
               </div>
             )}
