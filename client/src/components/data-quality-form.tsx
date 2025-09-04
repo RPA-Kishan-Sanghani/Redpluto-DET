@@ -232,7 +232,7 @@ export function DataQualityForm({
                 <CardTitle>Basic Configuration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="executionLayer"
@@ -256,26 +256,6 @@ export function DataQualityForm({
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="configKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Config Key *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Enter config key"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                            data-testid="input-config-key"
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
