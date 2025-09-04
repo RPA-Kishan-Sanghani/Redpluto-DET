@@ -567,16 +567,6 @@ export function DataDictionary() {
                                                   <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => handleEdit(entry)}
-                                                    data-testid={`button-form-edit-entry-${entry.dataDictionaryKey}`}
-                                                    title="Edit in form"
-                                                    className="text-blue-600 hover:text-blue-700"
-                                                  >
-                                                    <Edit className="h-3 w-3" />
-                                                  </Button>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
                                                     onClick={() => handleDelete(entry.dataDictionaryKey)}
                                                     data-testid={`button-delete-entry-${entry.dataDictionaryKey}`}
                                                     className="text-red-600 hover:text-red-700"
