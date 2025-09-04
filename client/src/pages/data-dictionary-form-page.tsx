@@ -29,7 +29,9 @@ export function DataDictionaryFormPage() {
   };
 
   const handleCancel = () => {
-    setLocation('/data-dictionary');
+    if (confirm('Do you really want to cancel?')) {
+      setLocation('/data-dictionary');
+    }
   };
 
   // Show loading state while fetching entry data

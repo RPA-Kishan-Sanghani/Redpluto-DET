@@ -1252,11 +1252,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined> {
-    const [entry] = await db
-      .select()
-      .from(dataDictionaryTable)
-      .where(eq(dataDictionaryTable.dataDictionaryKey, id));
-    return entry || undefined;
+    // FORCE connection to external PostgreSQL database
+    try {
+      const externalPool = new Pool({
+        host: '4.240.90.166',
+        port: 5432,
+        database: 'config_db',
+        user: 'rpdet_az',
+        password: 'Rpdet#1234',
+        ssl: false,
+        connectionTimeoutMillis: 10000,
+      });
+
+      const query = `
+        SELECT * FROM data_dictionary_table 
+        WHERE data_dictionary_key = $1
+      `;
+      
+      const result = await externalPool.query(query, [id]);
+      await externalPool.end();
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      return result.rows[0] as DataDictionaryRecord;
+    } catch (error) {
+      console.error('External database get entry error:', error);
+      throw error;
+    }
   }
 
   async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
@@ -1313,16 +1337,104 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
-    const [updated] = await db
-      .update(dataDictionaryTable)
-      .set({
-        ...updates,
-        updatedBy: updates.updatedBy || 'System',
-        updateDate: new Date(),
-      })
-      .where(eq(dataDictionaryTable.dataDictionaryKey, id))
-      .returning();
-    return updated || undefined;
+    // FORCE connection to external PostgreSQL database  
+    try {
+      const externalPool = new Pool({
+        host: '4.240.90.166',
+        port: 5432,
+        database: 'config_db',
+        user: 'rpdet_az',
+        password: 'Rpdet#1234',
+        ssl: false,
+        connectionTimeoutMillis: 10000,
+      });
+
+      // Build dynamic update query with only provided fields
+      const updateFields = [];
+      const values = [];
+      let paramCount = 1;
+
+      if (updates.configKey !== undefined) {
+        updateFields.push(`config_key = $${paramCount++}`);
+        values.push(updates.configKey);
+      }
+      if (updates.executionLayer !== undefined) {
+        updateFields.push(`execution_layer = $${paramCount++}`);
+        values.push(updates.executionLayer);
+      }
+      if (updates.schemaName !== undefined) {
+        updateFields.push(`schema_name = $${paramCount++}`);
+        values.push(updates.schemaName);
+      }
+      if (updates.tableName !== undefined) {
+        updateFields.push(`table_name = $${paramCount++}`);
+        values.push(updates.tableName);
+      }
+      if (updates.attributeName !== undefined) {
+        updateFields.push(`attribute_name = $${paramCount++}`);
+        values.push(updates.attributeName);
+      }
+      if (updates.dataType !== undefined) {
+        updateFields.push(`data_type = $${paramCount++}`);
+        values.push(updates.dataType);
+      }
+      if (updates.length !== undefined) {
+        updateFields.push(`length = $${paramCount++}`);
+        values.push(updates.length);
+      }
+      if (updates.precisionValue !== undefined) {
+        updateFields.push(`precision_value = $${paramCount++}`);
+        values.push(updates.precisionValue);
+      }
+      if (updates.scale !== undefined) {
+        updateFields.push(`scale = $${paramCount++}`);
+        values.push(updates.scale);
+      }
+      if (updates.columnDescription !== undefined) {
+        updateFields.push(`column_description = $${paramCount++}`);
+        values.push(updates.columnDescription);
+      }
+      if (updates.isNotNull !== undefined) {
+        updateFields.push(`is_not_null = $${paramCount++}`);
+        values.push(updates.isNotNull);
+      }
+      if (updates.isPrimaryKey !== undefined) {
+        updateFields.push(`is_primary_key = $${paramCount++}`);
+        values.push(updates.isPrimaryKey);
+      }
+      if (updates.isForeignKey !== undefined) {
+        updateFields.push(`is_foreign_key = $${paramCount++}`);
+        values.push(updates.isForeignKey);
+      }
+      if (updates.activeFlag !== undefined) {
+        updateFields.push(`active_flag = $${paramCount++}`);
+        values.push(updates.activeFlag);
+      }
+
+      // Always update the update_date and updated_by
+      updateFields.push(`update_date = NOW()`);
+      updateFields.push(`updated_by = $${paramCount++}`);
+      values.push(updates.updatedBy || 'System');
+
+      // Add the ID for WHERE clause
+      values.push(id);
+
+      const query = `
+        UPDATE data_dictionary_table 
+        SET ${updateFields.join(', ')}
+        WHERE data_dictionary_key = $${paramCount}
+        RETURNING *;
+      `;
+      
+      const result = await externalPool.query(query, values);
+      await externalPool.end();
+      
+      console.log('Successfully updated entry in external database with ID:', id);
+      return result.rows[0] as DataDictionaryRecord;
+    } catch (error) {
+      console.error('External database update entry error:', error);
+      throw error;
+    }
   }
 
   async deleteDataDictionaryEntry(id: number): Promise<boolean> {

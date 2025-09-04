@@ -1,0 +1,66 @@
+Replit AI Prompt: Edit Data Dictionary Entry
+
+Objective:
+Enhance the Data Dictionary module so that clicking Edit on an existing entry automatically loads all the details of that entry into the form, allowing users to modify only the fields they want and save changes.
+
+Functional Flow
+
+Existing Data Dictionary Table
+
+List of saved dictionary entries displayed in a tabular format.
+
+Each row should have actions: Edit | Delete.
+
+Click on Edit
+
+When user clicks Edit, the selected entry’s details should be fetched from the my external database backend (GET /data-dictionary/:id).
+
+Open the Add/Edit Data Dictionary form pre-populated with the existing values.
+
+Form Behavior
+
+All fields should be filled with existing entry details (e.g., Execution Layer, Source/Target System, Schema, Object, Attribute Metadata).
+
+User can modify only the fields they want.
+
+Fields not changed should retain their original values.
+
+Save Changes
+
+On Save, send updated values to my external database backend API (PUT /data-dictionary/:id).
+
+Only modified fields should be updated, others remain unchanged.
+
+Show success/failure message on completion.
+
+UI Requirements
+
+Edit form should look identical to Add form but pre-populated.
+
+Provide Save and Cancel buttons.
+
+Cancel → returns to Data Dictionary list without changes.
+
+when user selct cancel it should popup a message that "Do you really want to cancel?"
+
+Add tooltip/help icon for complex fields.
+
+Backend Integration
+
+GET /data-dictionary/:id → Fetch entry details by ID.
+
+PUT /data-dictionary/:id → Update entry with new values.
+
+Ensure database updates only for changed fields.
+
+Acceptance Criteria
+
+User clicks Edit → form opens with pre-filled existing values.
+
+User edits one or more fields → clicks Save → updated successfully in DB.
+
+If no change is made and Save is clicked → no error, keep original entry.
+
+Cancel button closes form without changes.
+
+User experience is seamless (no blank form on edit).
