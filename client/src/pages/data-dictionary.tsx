@@ -380,7 +380,15 @@ export function DataDictionary() {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {table.entries.map((entry) => {
+                                    {table.entries.filter(entry => {
+                                      if (!searchTerm) return true;
+                                      const searchLower = searchTerm.toLowerCase();
+                                      return (
+                                        entry.attributeName?.toLowerCase().includes(searchLower) ||
+                                        entry.columnDescription?.toLowerCase().includes(searchLower) ||
+                                        entry.dataType?.toLowerCase().includes(searchLower)
+                                      );
+                                    }).map((entry) => {
                                       const isEditing = editingStates[entry.dataDictionaryKey];
                                       const editValues = editingValues[entry.dataDictionaryKey] || entry;
                                       
