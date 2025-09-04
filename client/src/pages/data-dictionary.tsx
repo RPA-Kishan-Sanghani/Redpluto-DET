@@ -349,17 +349,6 @@ export function DataDictionary() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(table.entries[0]);
-                              }}
-                              data-testid={`button-edit-${tableKey}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
