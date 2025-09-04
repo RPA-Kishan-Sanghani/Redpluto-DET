@@ -114,6 +114,7 @@ export function DataDictionary() {
   });
 
   const handleEdit = (entry: DataDictionaryRecord) => {
+    // Navigate to edit page with the entry ID
     setLocation(`/data-dictionary/form/${entry.dataDictionaryKey}`);
   };
 

@@ -38,6 +38,7 @@ interface ColumnMetadata {
   isForeignKey: boolean;
   foreignKeyTable?: string;
   columnDescription: string;
+  isNotNull?: boolean; // Added for isNotNull flag
 }
 
 interface DataDictionaryFormRedesignedProps {
@@ -75,14 +76,14 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     if (entry) {
       form.reset({
         executionLayer: entry.executionLayer || "",
-        sourceSystem: "",
-        sourceConnectionId: 0,
+        sourceSystem: "", // These will be fetched based on connectionId if available
+        sourceConnectionId: entry.sourceConnectionId || 0, // Assuming sourceConnectionId is available on entry
         sourceSchemaName: entry.schemaName || "",
         sourceTableName: entry.tableName || "",
-        targetSystem: "",
-        targetConnectionId: 0,
+        targetSystem: "", // These will be fetched based on connectionId if available
+        targetConnectionId: entry.targetConnectionId || 0, // Assuming targetConnectionId is available on entry
         targetSchemaName: "",
-        targetTableName: "",
+        targetTableName: entry.targetTableName || "", // Assuming targetTableName is available on entry
       });
 
       // Populate columns with existing entry data
@@ -92,9 +93,11 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         length: entry.length || undefined,
         precision: entry.precisionValue || undefined,
         scale: entry.scale || undefined,
-        isPrimaryKey: entry.isPrimaryKey || false,
-        isForeignKey: entry.isForeignKey || false,
+        isPrimaryKey: entry.isPrimaryKey === 'Y', // Convert 'Y'/'N' to boolean
+        isForeignKey: entry.isForeignKey === 'Y', // Convert 'Y'/'N' to boolean
+        foreignKeyTable: entry.foreignKeyTable,
         columnDescription: entry.columnDescription || "",
+        isNotNull: entry.isNotNull === 'Y', // Convert 'Y'/'N' to boolean
       };
       setColumns([existingColumn]);
     }
@@ -108,6 +111,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/metadata/execution_layer'],
     queryFn: async () => {
       const response = await fetch('/api/metadata/execution_layer');
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     }
   });
@@ -117,6 +121,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/metadata/source_system'],
     queryFn: async () => {
       const response = await fetch('/api/metadata/source_system');
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     }
   });
@@ -126,6 +131,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections'],
     queryFn: async () => {
       const response = await fetch('/api/connections');
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as any[];
     }
   });
@@ -136,6 +142,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryFn: async () => {
       if (!watchedValues.sourceConnectionId) return [];
       const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas`);
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
     enabled: !!watchedValues.sourceConnectionId
@@ -147,6 +154,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryFn: async () => {
       if (!watchedValues.sourceConnectionId || !watchedValues.sourceSchemaName) return [];
       const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables`);
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
     enabled: !!watchedValues.sourceConnectionId && !!watchedValues.sourceSchemaName
@@ -158,6 +166,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryFn: async () => {
       if (!watchedValues.targetConnectionId) return [];
       const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas`);
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
     enabled: !!watchedValues.targetConnectionId
@@ -169,6 +178,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryFn: async () => {
       if (!watchedValues.targetConnectionId || !watchedValues.targetSchemaName) return [];
       const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables`);
+      if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
     enabled: !!watchedValues.targetConnectionId && !!watchedValues.targetSchemaName
@@ -185,8 +195,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       setIsLoadingMetadata(true);
       try {
         const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables/${watchedValues.sourceTableName}/metadata`);
+        if (!response.ok) throw new Error('Network response was not ok');
         const metadata = await response.json() as ColumnMetadata[];
-        
+
         // Use the real metadata from the database
         setColumns(metadata);
       } catch (error) {
@@ -207,39 +218,61 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof dataDictionarySchema>) => {
-      // Save each column as a separate data dictionary entry
-      const promises = columns.map(column => {
+      if (entry) {
+        // EDITING MODE: Update the existing entry
         const entryData = {
-          configKey: 1, // Default config key - you may want to make this dynamic
+          configKey: entry.configKey || 1,
           executionLayer: (data.executionLayer || '').substring(0, 50),
           schemaName: (data.sourceSchemaName || '').substring(0, 100),
           tableName: (data.sourceTableName || '').substring(0, 100),
-          attributeName: (column.attributeName || '').substring(0, 100),
-          dataType: (column.dataType || '').substring(0, 50),
-          length: column.length || null,
-          precisionValue: column.precision || null,
-          scale: column.scale || null,
-          isNotNull: 'N', // Use Y/N for CHAR(1) database field
-          isPrimaryKey: column.isPrimaryKey ? 'Y' : 'N', // Convert boolean to Y/N for CHAR(1)
-          isForeignKey: column.isForeignKey ? 'Y' : 'N', // Convert boolean to Y/N for CHAR(1)
-          columnDescription: (column.columnDescription || '').substring(0, 150),
-          activeFlag: 'Y',
-          createdBy: 'User',
+          attributeName: (columns[0]?.attributeName || entry.attributeName || '').substring(0, 100),
+          dataType: (columns[0]?.dataType || entry.dataType || '').substring(0, 50),
+          length: columns[0]?.length || entry.length || null,
+          precisionValue: columns[0]?.precision || entry.precisionValue || null,
+          scale: columns[0]?.scale || entry.scale || null,
+          isNotNull: columns[0]?.isNotNull ? 'Y' : 'N',
+          isPrimaryKey: columns[0]?.isPrimaryKey ? 'Y' : 'N',
+          isForeignKey: columns[0]?.isForeignKey ? 'Y' : 'N',
+          columnDescription: (columns[0]?.columnDescription || entry.columnDescription || '').substring(0, 150),
+          activeFlag: entry.activeFlag || 'Y',
+          createdBy: entry.createdBy || 'User',
           updatedBy: 'User',
         };
-        
 
-        // For editing, update the existing entry; for new entries, create new ones
-        if (entry && columns.length === 1) {
-          // If editing and only one column, update the existing entry
-          const url = `/api/data-dictionary/${entry.dataDictionaryKey}`;
-          return fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(entryData),
-          });
-        } else {
-          // For new entries or multiple columns, create new entries
+        const response = await fetch(`/api/data-dictionary/${entry.dataDictionaryKey}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entryData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update entry');
+        }
+
+        return response.json();
+      } else {
+        // CREATION MODE: Create new entries for each column
+        const promises = columns.map(column => {
+          const entryData = {
+            configKey: 1,
+            executionLayer: (data.executionLayer || '').substring(0, 50),
+            schemaName: (data.sourceSchemaName || '').substring(0, 100),
+            tableName: (data.sourceTableName || '').substring(0, 100),
+            attributeName: (column.attributeName || '').substring(0, 100),
+            dataType: (column.dataType || '').substring(0, 50),
+            length: column.length || null,
+            precisionValue: column.precision || null,
+            scale: column.scale || null,
+            isNotNull: column.isNotNull ? 'Y' : 'N',
+            isPrimaryKey: column.isPrimaryKey ? 'Y' : 'N',
+            isForeignKey: column.isForeignKey ? 'Y' : 'N',
+            columnDescription: (column.columnDescription || '').substring(0, 150),
+            activeFlag: 'Y',
+            createdBy: 'User',
+            updatedBy: 'User',
+          };
+
           return fetch('/api/data-dictionary', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -249,12 +282,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
               const errorData = await response.json();
               throw new Error(errorData.error || 'Failed to save entry');
             }
-            return response;
+            return response.json();
           });
-        }
-      });
+        });
 
-      await Promise.all(promises);
+        return Promise.all(promises);
+      }
     },
     onSuccess: () => {
       // Invalidate all data dictionary related queries
@@ -269,7 +302,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to ${entry ? 'update' : 'create'} data dictionary`,
+        description: `Failed to ${entry ? 'update' : 'create'} data dictionary: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -390,7 +423,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             </CardContent>
           </Card>
 
-          
+
 
           {/* Right Column - Target */}
           <Card className="shadow-lg w-full max-w-none">
@@ -683,6 +716,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                                   isForeignKey: false,
                                   foreignKeyTable: undefined,
                                   columnDescription: "",
+                                  isNotNull: false, // Default value for new column
                                 };
                                 setColumns(prev => [
                                   ...prev.slice(0, index + 1),
@@ -724,6 +758,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                               <DropdownMenuItem onClick={() => updateColumn(index, 'isForeignKey', false)}>
                                 Remove Foreign Key
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateColumn(index, 'isNotNull', false)}>
+                                Set Nullable
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -761,7 +798,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                {entry ? 'Update' : 'Save'} Dictionary Config
+                {entry ? "Update Entry" : "Save Configuration"}
               </>
             )}
           </Button>
