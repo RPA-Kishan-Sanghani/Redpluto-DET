@@ -57,6 +57,9 @@ interface EditingState {
 export function DataDictionary() {
   const [searchTerm, setSearchTerm] = useState("");
   const [layerFilter, setLayerFilter] = useState("all");
+  const [schemaFilter, setSchemaFilter] = useState("all");
+  const [tableFilter, setTableFilter] = useState("all");
+  const [targetSystemFilter, setTargetSystemFilter] = useState("all");
   const [expandedRows, setExpandedRows] = useState<ExpandedRowState>({});
   const [editingStates, setEditingStates] = useState<EditingState>({});
   const [editingValues, setEditingValues] = useState<{[key: number]: Partial<DataDictionaryRecord>}>({});
@@ -98,7 +101,7 @@ export function DataDictionary() {
     return acc;
   }, []);
 
-  // Filter tables based on search and layer filter
+  // Filter tables based on search and all filters
   const filteredTables = groupedTables.filter(table => {
     const matchesSearch = !searchTerm || 
       table.tableName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,7 +112,12 @@ export function DataDictionary() {
         entry.dataType?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     const matchesLayer = layerFilter === 'all' || table.executionLayer === layerFilter;
-    return matchesSearch && matchesLayer;
+    const matchesSchema = schemaFilter === 'all' || table.schemaName === schemaFilter;
+    const matchesTable = tableFilter === 'all' || table.tableName === tableFilter;
+    const matchesTargetSystem = targetSystemFilter === 'all' || 
+      table.entries.some(entry => entry.targetSystem === targetSystemFilter);
+    
+    return matchesSearch && matchesLayer && matchesSchema && matchesTable && matchesTargetSystem;
   });
 
   // Update entry mutation for inline editing
@@ -269,7 +277,7 @@ export function DataDictionary() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center space-x-4 mt-4">
+        <div className="flex items-center space-x-4 mt-4 flex-wrap">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -290,6 +298,42 @@ export function DataDictionary() {
               <SelectItem value="Bronze">Bronze</SelectItem>
               <SelectItem value="Silver">Silver</SelectItem>
               <SelectItem value="Gold">Gold</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={schemaFilter} onValueChange={setSchemaFilter}>
+            <SelectTrigger className="w-48" data-testid="select-schema-filter">
+              <SelectValue placeholder="Filter by schema" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Schemas</SelectItem>
+              {Array.from(new Set(allEntries.map(entry => entry.schemaName))).filter(Boolean).map((schema) => (
+                <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={tableFilter} onValueChange={setTableFilter}>
+            <SelectTrigger className="w-48" data-testid="select-table-filter">
+              <SelectValue placeholder="Filter by table" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tables</SelectItem>
+              {Array.from(new Set(allEntries.map(entry => entry.tableName))).filter(Boolean).map((table) => (
+                <SelectItem key={table} value={table}>{table}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={targetSystemFilter} onValueChange={setTargetSystemFilter}>
+            <SelectTrigger className="w-48" data-testid="select-target-system-filter">
+              <SelectValue placeholder="Filter by target system" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Target Systems</SelectItem>
+              {Array.from(new Set(allEntries.map(entry => entry.targetSystem))).filter(Boolean).map((system) => (
+                <SelectItem key={system} value={system}>{system}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
