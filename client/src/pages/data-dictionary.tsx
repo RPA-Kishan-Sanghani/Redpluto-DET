@@ -101,21 +101,22 @@ export function DataDictionary() {
     return acc;
   }, []);
 
-  // Filter tables based on search and all filters
+  // Filter tables based on search and all filters (case-insensitive)
   const filteredTables = groupedTables.filter(table => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      table.tableName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      table.schemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      table.tableName.toLowerCase().includes(searchLower) ||
+      table.schemaName.toLowerCase().includes(searchLower) ||
       table.entries.some(entry => 
-        entry.attributeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.columnDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.dataType?.toLowerCase().includes(searchTerm.toLowerCase())
+        entry.attributeName?.toLowerCase().includes(searchLower) ||
+        entry.columnDescription?.toLowerCase().includes(searchLower) ||
+        entry.dataType?.toLowerCase().includes(searchLower)
       );
-    const matchesLayer = layerFilter === 'all' || table.executionLayer === layerFilter;
-    const matchesSchema = schemaFilter === 'all' || table.schemaName === schemaFilter;
-    const matchesTable = tableFilter === 'all' || table.tableName === tableFilter;
+    const matchesLayer = layerFilter === 'all' || table.executionLayer.toLowerCase() === layerFilter.toLowerCase();
+    const matchesSchema = schemaFilter === 'all' || table.schemaName.toLowerCase() === schemaFilter.toLowerCase();
+    const matchesTable = tableFilter === 'all' || table.tableName.toLowerCase() === tableFilter.toLowerCase();
     const matchesTargetSystem = targetSystemFilter === 'all' || 
-      table.entries.some(entry => entry.targetSystem === targetSystemFilter);
+      table.entries.some(entry => entry.targetSystem?.toLowerCase() === targetSystemFilter.toLowerCase());
     
     return matchesSearch && matchesLayer && matchesSchema && matchesTable && matchesTargetSystem;
   });
@@ -430,7 +431,8 @@ export function DataDictionary() {
                                       return (
                                         entry.attributeName?.toLowerCase().includes(searchLower) ||
                                         entry.columnDescription?.toLowerCase().includes(searchLower) ||
-                                        entry.dataType?.toLowerCase().includes(searchLower)
+                                        entry.dataType?.toLowerCase().includes(searchLower) ||
+                                        entry.targetSystem?.toLowerCase().includes(searchLower)
                                       );
                                     }).map((entry) => {
                                       const isEditing = editingStates[entry.dataDictionaryKey];
