@@ -74,34 +74,38 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   // Populate form with existing entry data when editing
   useEffect(() => {
     if (entry) {
+      // Find the connection that matches the schema name from available connections
+      // This is a temporary solution until we can get the actual connectionId from the entry
       form.reset({
         executionLayer: entry.executionLayer || "",
-        sourceSystem: "", // These will be fetched based on connectionId if available
-        sourceConnectionId: entry.sourceConnectionId || 0, // Assuming sourceConnectionId is available on entry
+        sourceSystem: "", // Will be determined by connection
+        sourceConnectionId: 0, // Will be set when we find the matching connection
         sourceSchemaName: entry.schemaName || "",
         sourceTableName: entry.tableName || "",
-        targetSystem: "", // These will be fetched based on connectionId if available
-        targetConnectionId: entry.targetConnectionId || 0, // Assuming targetConnectionId is available on entry
+        targetSystem: "",
+        targetConnectionId: 0,
         targetSchemaName: "",
-        targetTableName: entry.targetTableName || "", // Assuming targetTableName is available on entry
+        targetTableName: "",
       });
 
-      // Populate columns with existing entry data
-      const existingColumn: ColumnMetadata = {
-        attributeName: entry.attributeName || "",
-        dataType: entry.dataType || "",
-        length: entry.length || undefined,
-        precision: entry.precisionValue || undefined,
-        scale: entry.scale || undefined,
-        isPrimaryKey: entry.isPrimaryKey === 'Y', // Convert 'Y'/'N' to boolean
-        isForeignKey: entry.isForeignKey === 'Y', // Convert 'Y'/'N' to boolean
-        foreignKeyTable: entry.foreignKeyTable,
-        columnDescription: entry.columnDescription || "",
-        isNotNull: entry.isNotNull === 'Y', // Convert 'Y'/'N' to boolean
-      };
-      setColumns([existingColumn]);
+      // Don't manually set columns here - let the auto-fetch handle it
+      // This will be triggered by the useEffect that watches form values
     }
   }, [entry, form]);
+
+  // Auto-select connection when editing based on schema name
+  useEffect(() => {
+    if (entry && connections.length > 0 && !watchedValues.sourceConnectionId) {
+      // For now, default to the first connection since we don't have connectionId stored
+      // In a real scenario, you'd have a mapping or query to find the right connection
+      const defaultConnection = connections[0];
+      if (defaultConnection) {
+        form.setValue('sourceConnectionId', defaultConnection.config_key);
+        // The source system will be set based on the connection
+        form.setValue('sourceSystem', defaultConnection.source_system);
+      }
+    }
+  }, [entry, connections, watchedValues.sourceConnectionId, form]);
 
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();

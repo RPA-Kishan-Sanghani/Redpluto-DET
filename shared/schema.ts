@@ -226,6 +226,7 @@ export const insertDataDictionarySchema = createInsertSchema(dataDictionaryTable
 export const updateDataDictionarySchema = createInsertSchema(dataDictionaryTable).omit({
   dataDictionaryKey: true,
   insertDate: true,
+  updateDate: true,
 }).partial();
 
 export type DataDictionaryRecord = typeof dataDictionaryTable.$inferSelect;
