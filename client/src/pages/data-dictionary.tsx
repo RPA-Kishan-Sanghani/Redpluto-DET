@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight, Loader2, Check, X } from "lucide-react";
@@ -116,7 +116,7 @@ export function DataDictionary() {
     const matchesSchema = schemaFilter === 'all' || table.schemaName.toLowerCase() === schemaFilter.toLowerCase();
     const matchesTable = tableFilter === 'all' || table.tableName.toLowerCase() === tableFilter.toLowerCase();
     const matchesTargetSystem = targetSystemFilter === 'all' || 
-      table.entries.some(entry => entry.targetSystem?.toLowerCase() === targetSystemFilter.toLowerCase());
+      table.entries.some(entry => entry.createdBy?.toLowerCase() === targetSystemFilter.toLowerCase());
     
     return matchesSearch && matchesLayer && matchesSchema && matchesTable && matchesTargetSystem;
   });
@@ -308,7 +308,7 @@ export function DataDictionary() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Schemas</SelectItem>
-              {Array.from(new Set(allEntries.map(entry => entry.schemaName))).filter(Boolean).map((schema) => (
+              {Array.from(new Set(allEntries.map((entry: DataDictionaryRecord) => entry.schemaName))).filter(Boolean).map((schema: string) => (
                 <SelectItem key={schema} value={schema}>{schema}</SelectItem>
               ))}
             </SelectContent>
@@ -320,7 +320,7 @@ export function DataDictionary() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Tables</SelectItem>
-              {Array.from(new Set(allEntries.map(entry => entry.tableName))).filter(Boolean).map((table) => (
+              {Array.from(new Set(allEntries.map((entry: DataDictionaryRecord) => entry.tableName))).filter(Boolean).map((table: string) => (
                 <SelectItem key={table} value={table}>{table}</SelectItem>
               ))}
             </SelectContent>
@@ -332,7 +332,7 @@ export function DataDictionary() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Target Systems</SelectItem>
-              {Array.from(new Set(allEntries.map(entry => entry.targetSystem))).filter(Boolean).map((system) => (
+              {Array.from(new Set(allEntries.map((entry: DataDictionaryRecord) => entry.createdBy))).filter(Boolean).map((system: string) => (
                 <SelectItem key={system} value={system}>{system}</SelectItem>
               ))}
             </SelectContent>
@@ -364,10 +364,9 @@ export function DataDictionary() {
                   const isExpanded = expandedRows[tableKey];
                   
                   return (
-                    <>
+                    <React.Fragment key={tableKey}>
                       {/* Main Table Row */}
                       <TableRow 
-                        key={tableKey}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => toggleRowExpansion(tableKey)}
                         data-testid={`row-table-${tableKey}`}
@@ -432,7 +431,7 @@ export function DataDictionary() {
                                         entry.attributeName?.toLowerCase().includes(searchLower) ||
                                         entry.columnDescription?.toLowerCase().includes(searchLower) ||
                                         entry.dataType?.toLowerCase().includes(searchLower) ||
-                                        entry.targetSystem?.toLowerCase().includes(searchLower)
+                                        entry.createdBy?.toLowerCase().includes(searchLower)
                                       );
                                     }).map((entry) => {
                                       const isEditing = editingStates[entry.dataDictionaryKey];
@@ -634,7 +633,7 @@ export function DataDictionary() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </TableBody>

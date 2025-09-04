@@ -122,7 +122,7 @@ export interface IStorage {
   getMetadata(type: string): Promise<string[]>;
 
   // Data dictionary methods
-  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
+  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
   getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined>;
   createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
   updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
@@ -226,12 +226,11 @@ export class DatabaseStorage implements IStorage {
 
     const results = await db.select({
       codeName: auditTable.codeName,
-      executionLayer: auditTable.executionLayer,
       status: auditTable.status,
       count: count()
     }).from(auditTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .groupBy(auditTable.codeName, auditTable.executionLayer, auditTable.status);
+      .groupBy(auditTable.codeName, auditTable.status);
 
     console.log('Pipeline summary query results:', results);
 
@@ -245,22 +244,21 @@ export class DatabaseStorage implements IStorage {
 
     results.forEach(result => {
       const codeName = result.codeName?.toLowerCase() || '';
-      const executionLayer = result.executionLayer?.toLowerCase() || '';
       const status = result.status?.toLowerCase();
       const count = Number(result.count);
 
       let category: keyof typeof summary;
 
-      // Categorize based on execution layer first, then code name patterns
-      if (executionLayer === 'quality' || codeName.includes('quality')) {
+      // Categorize based on code name patterns
+      if (codeName.includes('quality')) {
         category = 'dataQuality';
-      } else if (executionLayer === 'reconciliation' || codeName.includes('reconciliation')) {
+      } else if (codeName.includes('reconciliation')) {
         category = 'reconciliation';
-      } else if (executionLayer === 'bronze' || codeName.includes('bronze')) {
+      } else if (codeName.includes('bronze')) {
         category = 'bronze';
-      } else if (executionLayer === 'silver' || codeName.includes('silver')) {
+      } else if (codeName.includes('silver')) {
         category = 'silver';
-      } else if (executionLayer === 'gold' || codeName.includes('gold')) {
+      } else if (codeName.includes('gold')) {
         category = 'gold';
       } else {
         // Default categorization if no clear match
@@ -277,33 +275,6 @@ export class DatabaseStorage implements IStorage {
     });
 
     console.log('Final pipeline summary:', summary);
-    return summary;
-  }
-
-      if (codeName.includes('quality')) {
-        category = 'dataQuality';
-      } else if (codeName.includes('reconciliation')) {
-        category = 'reconciliation';
-      } else if (codeName.includes('bronze')) {
-        category = 'bronze';
-      } else if (codeName.includes('silver')) {
-        category = 'silver';
-      } else if (codeName.includes('gold')) {
-        category = 'gold';
-      } else {
-        // Default to bronze for unspecified layers
-        category = 'bronze';
-      }
-
-      summary[category].total += count;
-
-      if (status === 'success') {
-        summary[category].success += count;
-      } else if (status === 'failed') {
-        summary[category].failed += count;
-      }
-    });
-
     return summary;
   }
 
@@ -1216,7 +1187,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Data dictionary implementation
-  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; sourceSystem?: string }): Promise<DataDictionaryRecord[]> {
+  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
     let query = db.select().from(dataDictionaryTable);
 
     const conditions = [];
@@ -1245,11 +1216,6 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (filters?.sourceSystem && filters.sourceSystem !== 'all') {
-      conditions.push(
-        eq(dataDictionaryTable.sourceSystem, filters.sourceSystem)
-      );
-    }
 
     
 
