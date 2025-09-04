@@ -306,7 +306,6 @@ export function DataDictionary() {
                   <TableHead>Table Name</TableHead>
                   <TableHead>Execution Layer</TableHead>
                   <TableHead>Columns</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
