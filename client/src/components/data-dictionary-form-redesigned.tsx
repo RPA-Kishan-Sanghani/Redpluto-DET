@@ -93,20 +93,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     }
   }, [entry, form]);
 
-  // Auto-select connection when editing based on schema name
-  useEffect(() => {
-    if (entry && connections.length > 0 && !watchedValues.sourceConnectionId) {
-      // For now, default to the first connection since we don't have connectionId stored
-      // In a real scenario, you'd have a mapping or query to find the right connection
-      const defaultConnection = connections[0];
-      if (defaultConnection) {
-        form.setValue('sourceConnectionId', defaultConnection.config_key);
-        // The source system will be set based on the connection
-        form.setValue('sourceSystem', defaultConnection.source_system);
-      }
-    }
-  }, [entry, connections, watchedValues.sourceConnectionId, form]);
-
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
 
@@ -187,6 +173,20 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     },
     enabled: !!watchedValues.targetConnectionId && !!watchedValues.targetSchemaName
   });
+
+  // Auto-select connection when editing based on schema name
+  useEffect(() => {
+    if (entry && connections.length > 0 && !watchedValues.sourceConnectionId) {
+      // For now, default to the first connection since we don't have connectionId stored
+      // In a real scenario, you'd have a mapping or query to find the right connection
+      const defaultConnection = connections[0];
+      if (defaultConnection) {
+        form.setValue('sourceConnectionId', defaultConnection.config_key);
+        // The source system will be set based on the connection
+        form.setValue('sourceSystem', defaultConnection.source_system);
+      }
+    }
+  }, [entry, connections, watchedValues.sourceConnectionId, form]);
 
   // Auto-fetch metadata when source object is selected
   useEffect(() => {
