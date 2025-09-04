@@ -291,18 +291,18 @@ export function DataDictionary() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={entry.isPrimaryKey ? 'default' : 'secondary'}>
-                              {entry.isPrimaryKey ? 'Yes' : 'No'}
+                            <Badge variant={entry.isPrimaryKey === 'Y' ? 'default' : 'secondary'}>
+                              {entry.isPrimaryKey === 'Y' ? 'Yes' : 'No'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={entry.isNotNull ? 'default' : 'secondary'}>
-                              {entry.isNotNull ? 'Yes' : 'No'}
+                            <Badge variant={entry.isNotNull === 'Y' ? 'default' : 'secondary'}>
+                              {entry.isNotNull === 'Y' ? 'Yes' : 'No'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={entry.isForeignKey ? 'default' : 'secondary'}>
-                              {entry.isForeignKey ? 'Yes' : 'No'}
+                            <Badge variant={entry.isForeignKey === 'Y' ? 'default' : 'secondary'}>
+                              {entry.isForeignKey === 'Y' ? 'Yes' : 'No'}
                             </Badge>
                           </TableCell>
                           <TableCell>
