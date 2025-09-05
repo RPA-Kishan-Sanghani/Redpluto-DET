@@ -1643,7 +1643,7 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.validationType && filters.validationType !== 'all') {
       conditions.push(
-        ilike(dataQualityConfigTable.validationType, filters.validationType.toLowerCase())
+        ilike(dataQualityConfigTable.validationType, filters.validationType)
       );
     }
 

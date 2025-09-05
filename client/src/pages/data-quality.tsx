@@ -44,7 +44,7 @@ export function DataQuality() {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search.toLowerCase());
       if (filters.executionLayer) params.append('executionLayer', filters.executionLayer.toLowerCase());
-      if (filters.validationType) params.append('validationType', filters.validationType.toLowerCase());
+      if (filters.validationType && filters.validationType !== 'all') params.append('validationType', filters.validationType.toLowerCase());
       if (filters.status) params.append('status', filters.status.toLowerCase());
 
       const response = await fetch(`/api/data-quality-configs?${params}`);
