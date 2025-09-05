@@ -214,10 +214,12 @@ export function DataQuality() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="NOT_NULL">Not Null</SelectItem>
-                  <SelectItem value="RANGE_CHECK">Range Check</SelectItem>
-                  <SelectItem value="FORMAT_CHECK">Format Check</SelectItem>
-                  <SelectItem value="CUSTOM">Custom</SelectItem>
+                  <SelectItem value="Custom Query Check">Custom Query Check</SelectItem>
+                  <SelectItem value="List Value Check">List Value Check</SelectItem>
+                  <SelectItem value="Duplicate Check">Duplicate Check</SelectItem>
+                  <SelectItem value="File Format Check">File Format Check</SelectItem>
+                  <SelectItem value="Referential Integrity Check">Referential Integrity Check</SelectItem>
+                  <SelectItem value="Null Check">Null Check</SelectItem>
                 </SelectContent>
               </Select>
 
