@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import * as SelectPrimitive from '@radix-ui/react-select';
 import {
   Card,
   CardContent,
@@ -204,7 +203,7 @@ export function DataQualityForm({
     queryFn: async () => {
       if (!selectedSourceConnectionId) return [];
       const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
-      return response.json() as string[];
+      return response.json();
     },
     enabled: !!selectedSourceConnectionId
   });
@@ -215,7 +214,7 @@ export function DataQualityForm({
     queryFn: async () => {
       if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
       const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
-      return response.json() as string[];
+      return response.json();
     },
     enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
   });
@@ -226,7 +225,7 @@ export function DataQualityForm({
     queryFn: async () => {
       if (!selectedTargetConnectionId) return [];
       const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
-      return response.json() as string[];
+      return response.json();
     },
     enabled: !!selectedTargetConnectionId
   });
@@ -237,7 +236,7 @@ export function DataQualityForm({
     queryFn: async () => {
       if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
       const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
-      return response.json() as string[];
+      return response.json();
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
@@ -294,7 +293,30 @@ export function DataQualityForm({
       if (config) {
         await updateMutation.mutateAsync(data);
       } else {
-        await createMutation.mutateAsync(data);
+        const createData = {
+          configKey: data.configKey || 1, // Provide a default value
+          executionLayer: data.executionLayer,
+          tableName: data.tableName,
+          attributeName: data.attributeName,
+          validationType: data.validationType,
+          referenceTableName: data.referenceTableName,
+          defaultValue: data.defaultValue,
+          errorTableTransferFlag: data.errorTableTransferFlag,
+          thresholdPercentage: data.thresholdPercentage,
+          activeFlag: data.activeFlag,
+          customQuery: data.customQuery,
+          sourceSystem: data.sourceSystem,
+          sourceConnectionId: data.sourceConnectionId,
+          sourceType: data.sourceType,
+          sourceSchema: data.sourceSchema,
+          sourceTableName: data.sourceTableName,
+          targetSystem: data.targetSystem,
+          targetConnectionId: data.targetConnectionId,
+          targetType: data.targetType,
+          targetSchema: data.targetSchema,
+          targetTableName: data.targetTableName,
+        };
+        await createMutation.mutateAsync(createData);
       }
     } catch (error) {
       console.error("Form submission error:", error);
@@ -719,7 +741,7 @@ export function DataQualityForm({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {sourceSchemas.map((schema) => (
+                              {sourceSchemas.map((schema: string) => (
                                 <SelectItem key={schema} value={schema}>{schema}</SelectItem>
                               ))}
                             </SelectContent>
@@ -745,7 +767,7 @@ export function DataQualityForm({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {sourceTables.map((table) => (
+                              {sourceTables.map((table: string) => (
                                 <SelectItem key={table} value={table}>{table}</SelectItem>
                               ))}
                             </SelectContent>
@@ -868,7 +890,7 @@ export function DataQualityForm({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {targetSchemas.map((schema) => (
+                              {targetSchemas.map((schema: string) => (
                                 <SelectItem key={schema} value={schema}>{schema}</SelectItem>
                               ))}
                             </SelectContent>
@@ -894,7 +916,7 @@ export function DataQualityForm({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {targetTables.map((table) => (
+                              {targetTables.map((table: string) => (
                                 <SelectItem key={table} value={table}>{table}</SelectItem>
                               ))}
                             </SelectContent>
@@ -975,47 +997,3 @@ export function DataQualityForm({
   );
 }
 
-function Select({ children, ...props }: any) {
-  return (
-    <SelectPrimitive.Root {...props}>
-      <SelectPrimitive.Trigger asChild>
-        {children}
-      </SelectPrimitive.Trigger>
-      <SelectPrimitive.Content>
-        {children}
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Root>
-  );
-}
-
-function SelectTrigger({ children, ...props }: any) {
-  return (
-    <SelectPrimitive.Trigger {...props}>
-      {children}
-    </SelectPrimitive.Trigger>
-  );
-}
-
-function SelectValue(props: any) {
-  return <SelectPrimitive.Value {...props} />;
-}
-
-function SelectContent({ children, ...props }: any) {
-  return (
-    <SelectPrimitive.Portal>
-      <SelectPrimitive.Content {...props}>
-        <SelectPrimitive.Viewport className="text-sm">
-          {children}
-        </SelectPrimitive.Viewport>
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
-  );
-}
-
-function SelectItem({ children, ...props }: any) {
-  return (
-    <SelectPrimitive.Item {...props}>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    </SelectPrimitive.Item>
-  );
-}
