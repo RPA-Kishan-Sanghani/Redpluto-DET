@@ -246,6 +246,20 @@ export function DataQualityForm({
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
 
+  // Watch target table for columns
+  const selectedTargetTable = form.watch('targetTableName');
+
+  // Fetch target table columns for selected target table
+  const { data: targetColumns = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'columns'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns`);
+      return response.json();
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
+  });
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: InsertDataQualityConfig) => {
@@ -402,7 +416,7 @@ export function DataQualityForm({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="tableName"
@@ -414,24 +428,6 @@ export function DataQualityForm({
                             placeholder="Enter table name"
                             {...field}
                             data-testid="input-table-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="attributeName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Attribute Name *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter attribute/column name"
-                            {...field}
-                            data-testid="input-attribute-name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -911,7 +907,11 @@ export function DataQualityForm({
                         <FormItem>
                           <FormLabel>Target Table Name</FormLabel>
                           <Select 
-                            onValueChange={(value) => field.onChange(value || '')} 
+                            onValueChange={(value) => {
+                              field.onChange(value || '');
+                              // Reset attribute name when target table changes
+                              form.setValue('attributeName', '');
+                            }} 
                             value={field.value || ''}
                             disabled={!selectedTargetConnectionId || !selectedTargetSchema}
                           >
@@ -923,6 +923,42 @@ export function DataQualityForm({
                             <SelectContent>
                               {targetTables.map((table: string) => (
                                 <SelectItem key={table} value={table}>{table}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="attributeName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Attribute Name *</FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value || '')} 
+                            value={field.value || ''}
+                            disabled={!selectedTargetConnectionId || !selectedTargetSchema || !form.watch('targetTableName')}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-attribute-name">
+                                <SelectValue placeholder={
+                                  !selectedTargetConnectionId || !selectedTargetSchema 
+                                    ? "Select target connection and schema first" 
+                                    : !form.watch('targetTableName')
+                                      ? "Select target table first"
+                                      : targetColumns.length === 0 
+                                        ? "Loading columns..." 
+                                        : "Select column for attribute"
+                                } />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {targetColumns.map((column: string) => (
+                                <SelectItem key={column} value={column}>
+                                  {column}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
