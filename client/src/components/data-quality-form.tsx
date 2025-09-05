@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import * as SelectPrimitive from '@radix-ui/react-select';
 import {
   Card,
   CardContent,
@@ -41,6 +42,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type {
   DataQualityConfig,
   InsertDataQualityConfig,
+  UpdateDataQualityConfig
 } from "@shared/schema";
 import {
   Shield,
@@ -123,8 +125,24 @@ export function DataQualityForm({
       fetch("/api/metadata/reference_tables").then((res) => res.json()) as Promise<string[]>,
   });
 
+  // Fetch all available connections
+  const { data: allConnections = [] } = useQuery({
+    queryKey: ["/api/connections"],
+    queryFn: () => fetch("/api/connections").then((res) => res.json()) as Promise<any[]>,
+  });
+
+  // Fetch available system types (e.g., MySQL, PostgreSQL, File, API)
+  const { data: sourceSystems = [] } = useQuery({
+    queryKey: ["/api/metadata/connection_types"],
+    queryFn: () => fetch("/api/metadata/connection_types").then((res) => res.json()) as Promise<string[]>,
+  });
+  const { data: sourceTypes = [] } = useQuery({
+    queryKey: ["/api/metadata/data_types"],
+    queryFn: () => fetch("/api/metadata/data_types").then((res) => res.json()) as Promise<string[]>,
+  });
+
   // Initialize form with default values or existing config values
-  const form = useForm<FormData>({
+  const form = useForm<z.infer<typeof dataQualityFormSchema>>({
     resolver: zodResolver(dataQualityFormSchema),
     defaultValues: {
       configKey: config?.configKey || undefined,
@@ -151,6 +169,77 @@ export function DataQualityForm({
       targetSchema: config?.targetSchema || "",
       targetTableName: config?.targetTableName || "",
     },
+  });
+
+  // Watch form values for dynamic dropdowns
+  const selectedSourceSystem = form.watch('sourceSystem');
+  const selectedSourceConnectionId = form.watch('sourceConnectionId');
+  const selectedSourceSchema = form.watch('sourceSchema');
+  const selectedTargetSystem = form.watch('targetSystem');
+  const selectedTargetConnectionId = form.watch('targetConnectionId');
+  const selectedTargetSchema = form.watch('targetSchema');
+
+  // Filter connections based on selected system
+  const sourceConnections = allConnections.filter(conn => 
+    !selectedSourceSystem || 
+    conn.connectionType?.toLowerCase() === selectedSourceSystem.toLowerCase() ||
+    (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle')
+  );
+
+  const targetConnections = allConnections.filter(conn => 
+    !selectedTargetSystem || 
+    conn.connectionType?.toLowerCase() === selectedTargetSystem.toLowerCase() ||
+    (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (selectedTargetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (selectedTargetSystem === 'Oracle' && conn.connectionType === 'Oracle')
+  );
+
+  // Fetch source schemas for selected source connection
+  const { data: sourceSchemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedSourceConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedSourceConnectionId
+  });
+
+  // Fetch source tables for selected source schema
+  const { data: sourceTables = [] } = useQuery({
+    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas', selectedSourceSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
+      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
+  });
+
+  // Fetch target schemas for selected target connection
+  const { data: targetSchemas = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId
+  });
+
+  // Fetch target tables for selected target schema
+  const { data: targetTables = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
+      return response.json() as string[];
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
 
   // Create mutation
@@ -529,9 +618,27 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Source System</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter source system" {...field} data-testid="input-source-system" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Reset dependent fields when source system changes
+                              form.setValue('sourceConnectionId', undefined);
+                              form.setValue('sourceSchema', '');
+                              form.setValue('sourceTableName', '');
+                            }} 
+                            value={field.value || ''}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-source-system">
+                                <SelectValue placeholder="Select source system" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceSystems.map((system) => (
+                                <SelectItem key={system} value={system}>{system}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -541,10 +648,30 @@ export function DataQualityForm({
                       name="sourceConnectionId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Database Connection ID</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="Enter database connection ID" {...field} data-testid="input-source-connection-id" />
-                          </FormControl>
+                          <FormLabel>Database Connection</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value ? parseInt(value) : undefined);
+                              // Reset dependent fields when connection changes
+                              form.setValue('sourceSchema', '');
+                              form.setValue('sourceTableName', '');
+                            }} 
+                            value={field.value?.toString() || ''}
+                            disabled={!selectedSourceSystem}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-source-connection">
+                                <SelectValue placeholder={selectedSourceSystem ? "Select connection" : "Select source system first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceConnections.map((connection) => (
+                                <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
+                                  {connection.connectionName} ({connection.connectionType})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -555,9 +682,18 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Source Type</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter source type" {...field} data-testid="input-source-type" />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-source-type">
+                                <SelectValue placeholder="Select source type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceTypes.map((type) => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -568,9 +704,26 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Source Schema</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter source schema" {...field} data-testid="input-source-schema" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value || '');
+                              // Reset table when schema changes
+                              form.setValue('sourceTableName', '');
+                            }} 
+                            value={field.value || ''}
+                            disabled={!selectedSourceConnectionId}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-source-schema">
+                                <SelectValue placeholder={selectedSourceConnectionId ? "Select schema" : "Select connection first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceSchemas.map((schema) => (
+                                <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -581,9 +734,22 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Source Table Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter source table name" {...field} data-testid="input-source-table-name" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value || '')} 
+                            value={field.value || ''}
+                            disabled={!selectedSourceConnectionId || !selectedSourceSchema}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-source-table">
+                                <SelectValue placeholder={selectedSourceConnectionId && selectedSourceSchema ? "Select table" : "Select schema first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceTables.map((table) => (
+                                <SelectItem key={table} value={table}>{table}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -601,9 +767,27 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Target System</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter target system" {...field} data-testid="input-target-system" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Reset dependent fields when target system changes
+                              form.setValue('targetConnectionId', undefined);
+                              form.setValue('targetSchema', '');
+                              form.setValue('targetTableName', '');
+                            }} 
+                            value={field.value || ''}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-target-system">
+                                <SelectValue placeholder="Select target system" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceSystems.map((system) => (
+                                <SelectItem key={system} value={system}>{system}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -613,10 +797,30 @@ export function DataQualityForm({
                       name="targetConnectionId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Database Connection ID</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="Enter database connection ID" {...field} data-testid="input-target-connection-id" />
-                          </FormControl>
+                          <FormLabel>Database Connection</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value ? parseInt(value) : undefined);
+                              // Reset dependent fields when connection changes
+                              form.setValue('targetSchema', '');
+                              form.setValue('targetTableName', '');
+                            }} 
+                            value={field.value?.toString() || ''}
+                            disabled={!selectedTargetSystem}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-target-connection">
+                                <SelectValue placeholder={selectedTargetSystem ? "Select connection" : "Select target system first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {targetConnections.map((connection) => (
+                                <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
+                                  {connection.connectionName} ({connection.connectionType})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -627,9 +831,18 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Target Type</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter target type" {...field} data-testid="input-target-type" />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-target-type">
+                                <SelectValue placeholder="Select target type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sourceTypes.map((type) => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -640,9 +853,26 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Target Schema</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter target schema" {...field} data-testid="input-target-schema" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value || '');
+                              // Reset table when schema changes
+                              form.setValue('targetTableName', '');
+                            }} 
+                            value={field.value || ''}
+                            disabled={!selectedTargetConnectionId}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-target-schema">
+                                <SelectValue placeholder={selectedTargetConnectionId ? "Select schema" : "Select connection first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {targetSchemas.map((schema) => (
+                                <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -653,9 +883,22 @@ export function DataQualityForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Target Table Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter target table name" {...field} data-testid="input-target-table-name" />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value || '')} 
+                            value={field.value || ''}
+                            disabled={!selectedTargetConnectionId || !selectedTargetSchema}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-target-table">
+                                <SelectValue placeholder={selectedTargetConnectionId && selectedTargetSchema ? "Select table" : "Select schema first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {targetTables.map((table) => (
+                                <SelectItem key={table} value={table}>{table}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -729,5 +972,50 @@ export function DataQualityForm({
         </div>
       </form>
     </Form>
+  );
+}
+
+function Select({ children, ...props }: any) {
+  return (
+    <SelectPrimitive.Root {...props}>
+      <SelectPrimitive.Trigger asChild>
+        {children}
+      </SelectPrimitive.Trigger>
+      <SelectPrimitive.Content>
+        {children}
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Root>
+  );
+}
+
+function SelectTrigger({ children, ...props }: any) {
+  return (
+    <SelectPrimitive.Trigger {...props}>
+      {children}
+    </SelectPrimitive.Trigger>
+  );
+}
+
+function SelectValue(props: any) {
+  return <SelectPrimitive.Value {...props} />;
+}
+
+function SelectContent({ children, ...props }: any) {
+  return (
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content {...props}>
+        <SelectPrimitive.Viewport className="text-sm">
+          {children}
+        </SelectPrimitive.Viewport>
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  );
+}
+
+function SelectItem({ children, ...props }: any) {
+  return (
+    <SelectPrimitive.Item {...props}>
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
   );
 }
