@@ -364,7 +364,7 @@ export function DataQualityForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Basic Config
@@ -372,10 +372,6 @@ export function DataQualityForm({
             <TabsTrigger value="validation" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Validation
-            </TabsTrigger>
-            <TabsTrigger value="source-target" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Source/Target
             </TabsTrigger>
           </TabsList>
 
@@ -419,26 +415,6 @@ export function DataQualityForm({
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
-                    name="tableName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Table Name *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter table name"
-                            {...field}
-                            data-testid="input-table-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <FormField
-                    control={form.control}
                     name="activeFlag"
                     render={({ field }) => (
                       <FormItem>
@@ -464,168 +440,8 @@ export function DataQualityForm({
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Validation Configuration */}
-          <TabsContent value="validation" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Validation Rules</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="validationType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <TooltipField tooltip="Type of validation rule to apply">
-                          <FormLabel>Validation Type *</FormLabel>
-                        </TooltipField>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-validation-type">
-                              <SelectValue placeholder="Select validation type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="List Value Check">List Value Check</SelectItem>
-                            <SelectItem value="Duplicate Check">Duplicate Check</SelectItem>
-                            <SelectItem value="Custom Query Check">Custom Query Check</SelectItem>
-                            <SelectItem value="File Format Check">File Format Check</SelectItem>
-                            <SelectItem value="Referential Integrity Check">Referential Integrity Check</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="referenceTableName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Reference Table Name</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-reference-table">
-                              <SelectValue placeholder="Select reference table" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="NA">NA</SelectItem>
-                            {referenceTableNames.map((tableName) => (
-                              <SelectItem key={tableName} value={tableName}>
-                                {tableName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="defaultValue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Default Value</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter default value"
-                            {...field}
-                            data-testid="input-default-value"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Default value to use when validation fails
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="thresholdPercentage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <TooltipField tooltip="Acceptable percentage of failed validations before triggering alerts (0-100)">
-                          <FormLabel>Threshold Percentage</FormLabel>
-                        </TooltipField>
-                        <FormDescription>
-                          Acceptable variance percentage (0-100)
-                        </FormDescription>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              placeholder="Enter threshold percentage"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value ? parseInt(e.target.value) : undefined
-                                )
-                              }
-                              data-testid="input-threshold"
-                              className="pr-8"
-                            />
-                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                              %
-                            </span>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="errorTableTransferFlag"
-                    render={({ field }) => (
-                      <FormItem>
-                        <TooltipField tooltip="Whether to transfer failed records to error table for analysis">
-                          <FormLabel>Error Table Transfer</FormLabel>
-                        </TooltipField>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value || "N"}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-error-transfer">
-                              <SelectValue placeholder="Select error transfer flag" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Y">Yes</SelectItem>
-                            <SelectItem value="N">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Source/Target Configuration */}
-          <TabsContent value="source-target" className="space-y-6">
+            {/* Source/Target Configuration moved to Basic Config */}
             <Card>
               <CardHeader>
                 <CardTitle>Source and Target Configuration</CardTitle>
@@ -1008,6 +824,166 @@ export function DataQualityForm({
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Validation Configuration */}
+          <TabsContent value="validation" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Validation Rules</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="validationType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <TooltipField tooltip="Type of validation rule to apply">
+                          <FormLabel>Validation Type *</FormLabel>
+                        </TooltipField>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-validation-type">
+                              <SelectValue placeholder="Select validation type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="List Value Check">List Value Check</SelectItem>
+                            <SelectItem value="Duplicate Check">Duplicate Check</SelectItem>
+                            <SelectItem value="Custom Query Check">Custom Query Check</SelectItem>
+                            <SelectItem value="File Format Check">File Format Check</SelectItem>
+                            <SelectItem value="Referential Integrity Check">Referential Integrity Check</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="referenceTableName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reference Table Name</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-reference-table">
+                              <SelectValue placeholder="Select reference table" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="NA">NA</SelectItem>
+                            {referenceTableNames.map((tableName) => (
+                              <SelectItem key={tableName} value={tableName}>
+                                {tableName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="defaultValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Default Value</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter default value"
+                            {...field}
+                            data-testid="input-default-value"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Default value to use when validation fails
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="thresholdPercentage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <TooltipField tooltip="Acceptable percentage of failed validations before triggering alerts (0-100)">
+                          <FormLabel>Threshold Percentage</FormLabel>
+                        </TooltipField>
+                        <FormDescription>
+                          Acceptable variance percentage (0-100)
+                        </FormDescription>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              placeholder="Enter threshold percentage"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : undefined
+                                )
+                              }
+                              data-testid="input-threshold"
+                              className="pr-8"
+                            />
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              %
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="errorTableTransferFlag"
+                    render={({ field }) => (
+                      <FormItem>
+                        <TooltipField tooltip="Whether to transfer failed records to error table for analysis">
+                          <FormLabel>Error Table Transfer</FormLabel>
+                        </TooltipField>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || "N"}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-error-transfer">
+                              <SelectValue placeholder="Select error transfer flag" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Y">Yes</SelectItem>
+                            <SelectItem value="N">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          
 
           {/* Advanced Configuration */}
           <TabsContent value="advanced" className="space-y-6">
