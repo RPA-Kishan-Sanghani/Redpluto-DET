@@ -1257,6 +1257,7 @@ export class DatabaseStorage implements IStorage {
       'execution_layer': ['Bronze', 'Silver', 'Gold'],
       'load_type': ['Truncate', 'Incremental', 'SCD1', 'SCD2'],
       'source_system': ['MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'CSV', 'JSON', 'Parquet', 'Excel', 'API'],
+      'connection_types': ['MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'CSV', 'JSON', 'Parquet', 'Excel', 'API'],
       'source_type': ['Table', 'File', 'API'],
       'target_type': ['Table', 'File', 'API'],
       'file_delimiter': [',', ';', '|', '\t', 'NA'],
