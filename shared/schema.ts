@@ -1,23 +1,34 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, serial, char } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, serial, char, json, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  email: text("email"),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-});
-
+export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export const auditTable = pgTable("audit_table", {
   auditKey: integer("audit_key").primaryKey().generatedAlwaysAsIdentity(),
@@ -53,6 +64,7 @@ export const errorTable = pgTable("error_table", {
 
 export const sourceConnectionTable = pgTable("source_connection_table", {
   connectionId: integer("connection_id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull(), // Add user ownership
   connectionName: varchar("connection_name", { length: 100 }).notNull(),
   connectionType: varchar("connection_type", { length: 50 }).notNull(),
   host: varchar("host", { length: 100 }),
@@ -71,6 +83,7 @@ export const sourceConnectionTable = pgTable("source_connection_table", {
 
 export const configTable = pgTable("config_table", {
   configKey: integer("config_key").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull(), // Add user ownership
   executionLayer: varchar("execution_layer", { length: 30 }),
   sourceSystem: varchar("source_system", { length: 30 }),
   sourceConnectionId: integer("source_connection_id"),
@@ -135,6 +148,7 @@ export const insertErrorSchema = z.object({
 });
 
 export const insertSourceConnectionSchema = z.object({
+  userId: z.string(),
   connectionName: z.string().max(100),
   connectionType: z.string().max(50),
   host: z.string().max(100).optional(),
@@ -152,6 +166,7 @@ export const insertSourceConnectionSchema = z.object({
 export const updateSourceConnectionSchema = insertSourceConnectionSchema.partial();
 
 export const insertConfigSchema = z.object({
+  userId: z.string(),
   executionLayer: z.string().max(30).optional(),
   sourceSystem: z.string().max(30).optional(),
   connectionId: z.number().optional(),
