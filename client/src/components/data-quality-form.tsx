@@ -412,32 +412,7 @@ export function DataQualityForm({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="activeFlag"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Active Flag</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value || "Y"}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-active-flag">
-                              <SelectValue placeholder="Select active flag" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Y">Y</SelectItem>
-                            <SelectItem value="N">N</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                
               </CardContent>
             </Card>
 
@@ -972,6 +947,31 @@ export function DataQualityForm({
                           <SelectContent>
                             <SelectItem value="Y">Yes</SelectItem>
                             <SelectItem value="N">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="activeFlag"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Active Flag</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value || "Y"}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-active-flag">
+                              <SelectValue placeholder="Select active flag" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
