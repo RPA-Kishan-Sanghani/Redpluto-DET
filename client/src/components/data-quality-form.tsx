@@ -933,38 +933,75 @@ export function DataQualityForm({
                     <FormField
                       control={form.control}
                       name="attributeName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Attribute Name *</FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(value || '')} 
-                            value={field.value || ''}
-                            disabled={!selectedTargetConnectionId || !selectedTargetSchema || !form.watch('targetTableName')}
-                          >
+                      render={({ field }) => {
+                        const selectedColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                        
+                        const handleColumnToggle = (column: string) => {
+                          const currentSelected = selectedColumns;
+                          const isSelected = currentSelected.includes(column);
+                          
+                          let newSelected;
+                          if (isSelected) {
+                            newSelected = currentSelected.filter(col => col !== column);
+                          } else {
+                            newSelected = [...currentSelected, column];
+                          }
+                          
+                          field.onChange(newSelected.join(','));
+                        };
+
+                        return (
+                          <FormItem>
+                            <FormLabel>Attribute Name * (Multiple Selection)</FormLabel>
                             <FormControl>
-                              <SelectTrigger data-testid="select-attribute-name">
-                                <SelectValue placeholder={
-                                  !selectedTargetConnectionId || !selectedTargetSchema 
-                                    ? "Select target connection and schema first" 
-                                    : !form.watch('targetTableName')
-                                      ? "Select target table first"
-                                      : targetColumns.length === 0 
-                                        ? "Loading columns..." 
-                                        : "Select column for attribute"
-                                } />
-                              </SelectTrigger>
+                              <div className="border rounded-md p-3 bg-white">
+                                {!selectedTargetConnectionId || !selectedTargetSchema ? (
+                                  <div className="text-gray-500 text-sm">
+                                    Select target connection and schema first
+                                  </div>
+                                ) : !form.watch('targetTableName') ? (
+                                  <div className="text-gray-500 text-sm">
+                                    Select target table first
+                                  </div>
+                                ) : targetColumns.length === 0 ? (
+                                  <div className="text-gray-500 text-sm">
+                                    Loading columns...
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    <div className="text-sm text-gray-600 mb-2">
+                                      Selected: {selectedColumns.length} column{selectedColumns.length !== 1 ? 's' : ''}
+                                    </div>
+                                    {targetColumns.map((column: string) => (
+                                      <div key={column} className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id={`column-${column}`}
+                                          checked={selectedColumns.includes(column)}
+                                          onChange={() => handleColumnToggle(column)}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        />
+                                        <label
+                                          htmlFor={`column-${column}`}
+                                          className="text-sm font-medium text-gray-700 cursor-pointer"
+                                        >
+                                          {column}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </FormControl>
-                            <SelectContent>
-                              {targetColumns.map((column: string) => (
-                                <SelectItem key={column} value={column}>
-                                  {column}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                            {selectedColumns.length > 0 && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                Selected columns: {selectedColumns.join(', ')}
+                              </div>
+                            )}
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   </div>
                 </div>
