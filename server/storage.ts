@@ -1,6 +1,6 @@
 import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type InsertDataQualityConfig, type UpdateDataQualityConfig } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, gte, lte, count, desc, asc, like, inArray, sql } from "drizzle-orm";
+import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } from "drizzle-orm";
 import { Pool } from 'pg';
 
 export interface IStorage {
@@ -191,7 +191,7 @@ export class DatabaseStorage implements IStorage {
     targetTable?: string;
   }) {
     const conditions = [];
-    
+
     if (dateRange) {
       conditions.push(and(
         gte(auditTable.startTime, dateRange.start),
@@ -276,7 +276,7 @@ export class DatabaseStorage implements IStorage {
     targetTable?: string;
   }) {
     const conditions = [];
-    
+
     if (dateRange) {
       conditions.push(and(
         gte(auditTable.startTime, dateRange.start),
@@ -624,7 +624,7 @@ export class DatabaseStorage implements IStorage {
 
   async getErrors(dateRange?: { start: Date; end: Date }) {
     const conditions = [];
-    
+
     if (dateRange) {
       conditions.push(and(
         gte(errorTable.executionTime, dateRange.start),
@@ -863,7 +863,7 @@ export class DatabaseStorage implements IStorage {
                           connection.host?.includes('aws') || 
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
-        
+
         let pool;
         if (requiresSSL) {
           // Use connection string with SSL parameters for cloud databases
@@ -894,10 +894,10 @@ export class DatabaseStorage implements IStorage {
             WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
             ORDER BY schema_name
           `);
-          
+
           await client.release();
           await pool.end();
-          
+
           return result.rows.map((row: any) => row.schema_name);
         } catch (queryError) {
           await client.release();
@@ -912,7 +912,7 @@ export class DatabaseStorage implements IStorage {
 
     // Simulate fetching schemas for other connection types
     await this.simulateConnectionDelay();
-    
+
     switch (connection.connectionType?.toLowerCase()) {
       case 'mysql':
         return ['information_schema', 'performance_schema', 'sys', 'mysql', 'sales_db', 'inventory_db'];
@@ -942,7 +942,7 @@ export class DatabaseStorage implements IStorage {
                           connection.host?.includes('aws') || 
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
-        
+
         let pool;
         if (requiresSSL) {
           // Use connection string with SSL parameters for cloud databases
@@ -974,10 +974,10 @@ export class DatabaseStorage implements IStorage {
             AND table_name = $2
             ORDER BY ordinal_position
           `, [schemaName, tableName]);
-          
+
           await client.release();
           await pool.end();
-          
+
           return result.rows.map((row: any) => row.column_name);
         } catch (queryError) {
           await client.release();
@@ -1012,7 +1012,7 @@ export class DatabaseStorage implements IStorage {
                           connection.host?.includes('aws') || 
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
-        
+
         let pool;
         if (requiresSSL) {
           // Use connection string with SSL parameters for cloud databases
@@ -1080,10 +1080,10 @@ export class DatabaseStorage implements IStorage {
             AND c.table_name = $2
             ORDER BY c.ordinal_position
           `, [schemaName, tableName]);
-          
+
           await client.release();
           await pool.end();
-          
+
           return result.rows.map((row: any) => ({
             attributeName: row.column_name,
             dataType: row.data_type,
@@ -1134,7 +1134,7 @@ export class DatabaseStorage implements IStorage {
                           connection.host?.includes('aws') || 
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
-        
+
         let pool;
         if (requiresSSL) {
           // Use connection string with SSL parameters for cloud databases
@@ -1166,10 +1166,10 @@ export class DatabaseStorage implements IStorage {
             AND table_type = 'BASE TABLE'
             ORDER BY table_name
           `, [schemaName]);
-          
+
           await client.release();
           await pool.end();
-          
+
           return result.rows.map((row: any) => row.table_name);
         } catch (queryError) {
           await client.release();
@@ -1184,7 +1184,7 @@ export class DatabaseStorage implements IStorage {
 
     // Simulate fetching tables for other connection types
     await this.simulateConnectionDelay();
-    
+
     // Return sample tables based on schema name
     const sampleTables: Record<string, string[]> = {
       'public': ['users', 'orders', 'products', 'customers', 'payments'],
@@ -1305,7 +1305,7 @@ export class DatabaseStorage implements IStorage {
     }
 
 
-    
+
 
     // Handle custom field filtering
     if (filters?.customField && filters?.customValue && filters.customField !== 'all') {
@@ -1362,14 +1362,14 @@ export class DatabaseStorage implements IStorage {
         SELECT * FROM data_dictionary_table 
         WHERE data_dictionary_key = $1
       `;
-      
+
       const result = await externalPool.query(query, [id]);
       await externalPool.end();
-      
+
       if (result.rows.length === 0) {
         return undefined;
       }
-      
+
       return result.rows[0] as DataDictionaryRecord;
     } catch (error) {
       console.error('External database get entry error:', error);
@@ -1399,7 +1399,7 @@ export class DatabaseStorage implements IStorage {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW(), $10, $11, $12, $13, $14, $15, $16)
         RETURNING *;
       `;
-      
+
       const values = [
         entry.configKey,
         entry.executionLayer,
@@ -1418,10 +1418,10 @@ export class DatabaseStorage implements IStorage {
         entry.isForeignKey || 'N',
         entry.activeFlag || 'Y'
       ];
-      
+
       const result = await externalPool.query(query, values);
       await externalPool.end();
-      
+
       console.log('Successfully inserted into external database with ID:', result.rows[0]?.data_dictionary_key);
       return result.rows[0] as DataDictionaryRecord;
     } catch (error) {
@@ -1519,10 +1519,10 @@ export class DatabaseStorage implements IStorage {
         WHERE data_dictionary_key = $${paramCount}
         RETURNING *;
       `;
-      
+
       const result = await externalPool.query(query, values);
       await externalPool.end();
-      
+
       console.log('Successfully updated entry in external database with ID:', id);
       return result.rows[0] as DataDictionaryRecord;
     } catch (error) {
@@ -1546,13 +1546,16 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.search) {
       conditions.push(
-        like(reconciliationConfigTable.sourceTable, `%${filters.search}%`)
+        or(
+          ilike(reconciliationConfigTable.sourceTable, `%${filters.search.toLowerCase()}%`),
+          ilike(reconciliationConfigTable.targetTable, `%${filters.search.toLowerCase()}%`)
+        )
       );
     }
 
     if (filters?.executionLayer && filters.executionLayer !== 'all') {
       conditions.push(
-        eq(reconciliationConfigTable.executionLayer, filters.executionLayer)
+        ilike(reconciliationConfigTable.executionLayer, filters.executionLayer.toLowerCase())
       );
     }
 
@@ -1564,7 +1567,7 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.reconType && filters.reconType !== 'all') {
       conditions.push(
-        eq(reconciliationConfigTable.reconType, filters.reconType)
+        ilike(reconciliationConfigTable.reconType, filters.reconType.toLowerCase())
       );
     }
 

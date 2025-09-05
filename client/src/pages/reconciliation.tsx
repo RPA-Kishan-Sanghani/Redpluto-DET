@@ -42,9 +42,9 @@ export function Reconciliation() {
     queryKey: ['/api/reconciliation-configs', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.executionLayer) params.append('executionLayer', filters.executionLayer);
-      if (filters.reconType) params.append('reconType', filters.reconType);
+      if (filters.search) params.append('search', filters.search.toLowerCase());
+      if (filters.executionLayer) params.append('executionLayer', filters.executionLayer.toLowerCase());
+      if (filters.reconType) params.append('reconType', filters.reconType.toLowerCase());
       if (filters.status) params.append('status', filters.status);
 
       const response = await fetch(`/api/reconciliation-configs?${params}`);
@@ -127,6 +127,7 @@ export function Reconciliation() {
   };
 
   const getReconTypeBadge = (reconType: string) => {
+    const lowerReconType = reconType.toLowerCase();
     const variants: Record<string, any> = {
       'count_check': 'default',
       'amount_check': 'secondary',
@@ -142,8 +143,8 @@ export function Reconciliation() {
     };
 
     return (
-      <Badge variant={variants[reconType] || 'outline'}>
-        {displayNames[reconType] || reconType}
+      <Badge variant={variants[lowerReconType] || 'outline'}>
+        {displayNames[lowerReconType] || reconType}
       </Badge>
     );
   };
@@ -209,9 +210,9 @@ export function Reconciliation() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Layers</SelectItem>
-                  <SelectItem value="Bronze">Bronze</SelectItem>
-                  <SelectItem value="Silver">Silver</SelectItem>
-                  <SelectItem value="Gold">Gold</SelectItem>
+                  <SelectItem value="bronze">Bronze</SelectItem>
+                  <SelectItem value="silver">Silver</SelectItem>
+                  <SelectItem value="gold">Gold</SelectItem>
                 </SelectContent>
               </Select>
 
