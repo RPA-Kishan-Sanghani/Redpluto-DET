@@ -270,11 +270,24 @@ export const dataQualityConfigTable = pgTable("data_quality_config_table", {
   tableName: varchar("table_name", { length: 25 }).notNull(),
   attributeName: varchar("attribute_name", { length: 250 }).notNull(),
   validationType: varchar("validation_type", { length: 50 }).notNull(),
+  referenceTableName: varchar("reference_table_name", { length: 25 }),
   defaultValue: varchar("default_value", { length: 25 }),
   errorTableTransferFlag: varchar("error_table_transfer_flag", { length: 5 }),
   thresholdPercentage: integer("threshold_percentage"),
   activeFlag: varchar("active_flag", { length: 5 }).default('Y'),
   customQuery: varchar("custom_query", { length: 500 }),
+  // Source fields
+  sourceSystem: varchar("source_system", { length: 50 }),
+  sourceConnectionId: integer("source_connection_id"),
+  sourceType: varchar("source_type", { length: 50 }),
+  sourceSchema: varchar("source_schema", { length: 50 }),
+  sourceTableName: varchar("source_table_name", { length: 50 }),
+  // Target fields
+  targetSystem: varchar("target_system", { length: 50 }),
+  targetConnectionId: integer("target_connection_id"),
+  targetType: varchar("target_type", { length: 50 }),
+  targetSchema: varchar("target_schema", { length: 50 }),
+  targetTableName: varchar("target_table_name", { length: 50 }),
 });
 
 export const insertDataQualityConfigSchema = createInsertSchema(dataQualityConfigTable).omit({

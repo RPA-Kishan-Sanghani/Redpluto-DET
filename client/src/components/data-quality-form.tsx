@@ -55,7 +55,7 @@ import {
 
 // Form validation schema
 const dataQualityFormSchema = z.object({
-  configKey: z.number().min(1, "Config key is required"),
+  configKey: z.number().optional(),
   executionLayer: z.string().min(1, "Execution layer is required"),
   tableName: z.string().min(1, "Table name is required"),
   attributeName: z.string().min(1, "Attribute name is required"),
@@ -65,7 +65,19 @@ const dataQualityFormSchema = z.object({
   errorTableTransferFlag: z.string().default("N"),
   thresholdPercentage: z.number().min(0).max(100).optional(),
   activeFlag: z.string().default("Y"),
-  customQuery: z.string().max(500, "Custom query must be less than 500 characters").optional(),
+  customQuery: z.string().optional(),
+  // Source fields
+  sourceSystem: z.string().optional(),
+  sourceConnectionId: z.number().optional(),
+  sourceType: z.string().optional(),
+  sourceSchema: z.string().optional(),
+  sourceTableName: z.string().optional(),
+  // Target fields
+  targetSystem: z.string().optional(),
+  targetConnectionId: z.number().optional(),
+  targetType: z.string().optional(),
+  targetSchema: z.string().optional(),
+  targetTableName: z.string().optional(),
 });
 
 type FormData = z.infer<typeof dataQualityFormSchema>;
@@ -126,6 +138,18 @@ export function DataQualityForm({
       thresholdPercentage: config?.thresholdPercentage || undefined,
       activeFlag: config?.activeFlag || "Y",
       customQuery: config?.customQuery || "",
+      // Source fields
+      sourceSystem: config?.sourceSystem || "",
+      sourceConnectionId: config?.sourceConnectionId || undefined,
+      sourceType: config?.sourceType || "",
+      sourceSchema: config?.sourceSchema || "",
+      sourceTableName: config?.sourceTableName || "",
+      // Target fields
+      targetSystem: config?.targetSystem || "",
+      targetConnectionId: config?.targetConnectionId || undefined,
+      targetType: config?.targetType || "",
+      targetSchema: config?.targetSchema || "",
+      targetTableName: config?.targetTableName || "",
     },
   });
 
@@ -219,9 +243,9 @@ export function DataQualityForm({
               <Shield className="h-4 w-4" />
               Validation
             </TabsTrigger>
-            <TabsTrigger value="advanced" className="flex items-center gap-2">
+            <TabsTrigger value="source-target" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
-              Advanced
+              Source/Target
             </TabsTrigger>
           </TabsList>
 
@@ -483,6 +507,160 @@ export function DataQualityForm({
                       </FormItem>
                     )}
                   />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Source/Target Configuration */}
+          <TabsContent value="source-target" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Source and Target Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Source Section */}
+                <div className="border-b pb-4 mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Source Configuration</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="sourceSystem"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source System</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter source system" {...field} data-testid="input-source-system" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sourceConnectionId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Database Connection ID</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="Enter database connection ID" {...field} data-testid="input-source-connection-id" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sourceType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source Type</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter source type" {...field} data-testid="input-source-type" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sourceSchema"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source Schema</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter source schema" {...field} data-testid="input-source-schema" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sourceTableName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source Table Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter source table name" {...field} data-testid="input-source-table-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Target Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Target Configuration</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="targetSystem"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target System</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter target system" {...field} data-testid="input-target-system" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetConnectionId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Database Connection ID</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="Enter database connection ID" {...field} data-testid="input-target-connection-id" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Type</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter target type" {...field} data-testid="input-target-type" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetSchema"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Schema</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter target schema" {...field} data-testid="input-target-schema" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetTableName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Table Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter target table name" {...field} data-testid="input-target-table-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
