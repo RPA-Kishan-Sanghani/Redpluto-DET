@@ -25,10 +25,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       
-      // Try to find user by username first, then by email
-      let user = await storage.getUserByUsername(username);
-      if (!user) {
+      // Determine if input is email or username
+      const isEmail = username.includes('@');
+      let user;
+      
+      if (isEmail) {
         user = await storage.getUserByEmail(username);
+      } else {
+        user = await storage.getUserByUsername(username);
       }
 
       if (user && user.password === password) {

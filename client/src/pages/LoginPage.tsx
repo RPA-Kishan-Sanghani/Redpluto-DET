@@ -43,7 +43,13 @@ export default function LoginPage() {
     };
 
     if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
+      newErrors.username = 'Username or Email is required';
+    } else {
+      // Username validation: no spaces, special characters except @,_
+      const usernameRegex = /^[a-zA-Z0-9_@]+$/;
+      if (!usernameRegex.test(formData.username)) {
+        newErrors.username = 'Username can only contain letters, numbers, _, and @.';
+      }
     }
 
     if (!formData.password.trim()) {
@@ -58,7 +64,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -67,12 +73,12 @@ export default function LoginPage() {
 
     try {
       await login(formData.username, formData.password, formData.rememberMe);
-      
+
       toast({
         title: "Login successful",
         description: "Welcome to Redpluto Analytics!",
       });
-      
+
       // Redirect to dashboard
       setLocation('/');
     } catch (error) {
@@ -88,7 +94,7 @@ export default function LoginPage() {
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear errors when user starts typing
     if (typeof value === 'string' && value.trim() && errors[field as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -108,7 +114,7 @@ export default function LoginPage() {
       {/* Pluto Background Overlay */}
       <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-900/80 backdrop-blur-sm"></div>
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/30"></div>
-      
+
       {/* Floating Animation Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400/30 rounded-full animate-pulse"></div>
@@ -128,7 +134,7 @@ export default function LoginPage() {
               Redpluto Analytics
             </span>
           </div>
-          
+
           <div className="flex items-center space-x-6">
             <Link 
               href="/help" 
@@ -171,12 +177,12 @@ export default function LoginPage() {
               {/* Username Field */}
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Username
+                  Username or Email
                 </Label>
                 <Input
                   id="username"
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder="Enter your username or email"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
                   className={`group transition-all duration-300 bg-slate-50/80 dark:bg-slate-700/80 backdrop-blur-sm border-slate-300 dark:border-slate-600 focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg focus:shadow-xl hover:scale-[1.01] focus:scale-[1.02] ${
