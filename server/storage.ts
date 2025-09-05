@@ -1616,7 +1616,21 @@ export class DatabaseStorage implements IStorage {
 
   // Data Quality Config implementations
   async getDataQualityConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]> {
-    let query = db.select().from(dataQualityConfigTable);
+    // Select only the core columns that definitely exist
+    let query = db.select({
+      dataQualityKey: dataQualityConfigTable.dataQualityKey,
+      configKey: dataQualityConfigTable.configKey,
+      executionLayer: dataQualityConfigTable.executionLayer,
+      tableName: dataQualityConfigTable.tableName,
+      attributeName: dataQualityConfigTable.attributeName,
+      validationType: dataQualityConfigTable.validationType,
+      referenceTableName: dataQualityConfigTable.referenceTableName,
+      defaultValue: dataQualityConfigTable.defaultValue,
+      errorTableTransferFlag: dataQualityConfigTable.errorTableTransferFlag,
+      thresholdPercentage: dataQualityConfigTable.thresholdPercentage,
+      activeFlag: dataQualityConfigTable.activeFlag,
+      customQuery: dataQualityConfigTable.customQuery,
+    }).from(dataQualityConfigTable);
 
     const conditions = [];
 
@@ -1653,9 +1667,24 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    return await query
+    const results = await query
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(dataQualityConfigTable.dataQualityKey));
+
+    // Map results to include the source/target fields as null since they don't exist in the database yet
+    return results.map(row => ({
+      ...row,
+      sourceSystem: null,
+      sourceConnectionId: null,
+      sourceType: null,
+      sourceSchema: null,
+      sourceTableName: null,
+      targetSystem: null,
+      targetConnectionId: null,
+      targetType: null,
+      targetSchema: null,
+      targetTableName: null,
+    }));
   }
 
   async getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined> {
