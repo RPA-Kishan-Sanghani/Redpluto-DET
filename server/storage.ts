@@ -1622,13 +1622,16 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.search) {
       conditions.push(
-        like(dataQualityConfigTable.tableName, `%${filters.search}%`)
+        or(
+          ilike(dataQualityConfigTable.tableName, `%${filters.search.toLowerCase()}%`),
+          ilike(dataQualityConfigTable.attributeName, `%${filters.search.toLowerCase()}%`)
+        )
       );
     }
 
     if (filters?.executionLayer && filters.executionLayer !== 'all') {
       conditions.push(
-        eq(dataQualityConfigTable.executionLayer, filters.executionLayer)
+        ilike(dataQualityConfigTable.executionLayer, filters.executionLayer.toLowerCase())
       );
     }
 
@@ -1640,7 +1643,7 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.validationType && filters.validationType !== 'all') {
       conditions.push(
-        eq(dataQualityConfigTable.validationType, filters.validationType)
+        ilike(dataQualityConfigTable.validationType, filters.validationType.toLowerCase())
       );
     }
 

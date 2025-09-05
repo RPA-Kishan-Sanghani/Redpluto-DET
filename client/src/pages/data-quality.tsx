@@ -42,10 +42,10 @@ export function DataQuality() {
     queryKey: ['/api/data-quality-configs', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.executionLayer) params.append('executionLayer', filters.executionLayer);
-      if (filters.validationType) params.append('validationType', filters.validationType);
-      if (filters.status) params.append('status', filters.status);
+      if (filters.search) params.append('search', filters.search.toLowerCase());
+      if (filters.executionLayer) params.append('executionLayer', filters.executionLayer.toLowerCase());
+      if (filters.validationType) params.append('validationType', filters.validationType.toLowerCase());
+      if (filters.status) params.append('status', filters.status.toLowerCase());
 
       const response = await fetch(`/api/data-quality-configs?${params}`);
       if (!response.ok) throw new Error('Failed to fetch data quality configs');
