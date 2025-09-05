@@ -122,23 +122,40 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   });
 
   // Watch form values for dynamic dropdowns
+  const selectedSourceSystem = form.watch('sourceSystem');
   const selectedConnectionId = form.watch('connectionId');
   const selectedSchema = form.watch('sourceSchemaName');
   const selectedSourceType = form.watch('sourceType');
   const selectedTargetType = form.watch('targetType');
+  const selectedLoadType = form.watch('loadType');
   
   // Watch target configuration values for dynamic dropdowns
   const selectedTargetSystem = form.watch('targetSystem');
   const selectedTargetConnectionId = form.watch('targetConnectionId');
   const selectedTargetSchema = form.watch('targetSchemaName');
 
-  // Fetch all connections
+  // Fetch connections filtered by source system
   const { data: connections = [] } = useQuery({
-    queryKey: ['/api/connections'],
+    queryKey: ['/api/connections', { sourceSystem: selectedSourceSystem }],
     queryFn: async () => {
+      if (!selectedSourceSystem) return [];
       const response = await fetch(`/api/connections`);
-      return response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-    }
+      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+      
+      // Filter connections by matching connection type with selected source system
+      return allConnections.filter(conn => 
+        conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
+        (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+        (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+        (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+        (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+        (selectedSourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+        (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+        (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+        (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
+      );
+    },
+    enabled: !!selectedSourceSystem
   });
 
   // Fetch schemas for selected connection
@@ -331,7 +348,28 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     )}
                   />
 
-                  
+                  <FormField
+                    control={form.control}
+                    name="sourceSystem"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Source System</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-source-system-form">
+                              <SelectValue placeholder="Select source system" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceSystems.map((system) => (
+                              <SelectItem key={system} value={system}>{system}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}
@@ -347,10 +385,11 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             form.setValue('sourceTableName', undefined);
                           }} 
                           value={field.value?.toString() || ''}
+                          disabled={!selectedSourceSystem}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-connection">
-                              <SelectValue placeholder="Select connection" />
+                              <SelectValue placeholder={selectedSourceSystem ? "Select connection" : "Select source system first"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -817,9 +856,116 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
+                  <FormField
+                    control={form.control}
+                    name="loadType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Load Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-load-type">
+                              <SelectValue placeholder="Select load type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {loadTypes.map((type) => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  
+                  <FormField
+                    control={form.control}
+                    name="effectiveDateColumn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Effective Date Column</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter effective date column" {...field} data-testid="input-effective-date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {selectedLoadType === 'SCD2' && (
+                    <FormField
+                      control={form.control}
+                      name="md5Columns"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>MD5 Columns</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter MD5 hash columns" {...field} data-testid="input-md5-columns" />
+                          </FormControl>
+                          <FormDescription>Columns used for change detection</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {(selectedLoadType === 'SCD1' || selectedLoadType === 'SCD2') && (
+                    <FormField
+                      control={form.control}
+                      name="executionSequence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Execution Sequence</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-execution-sequence">
+                                <SelectValue placeholder="Select execution sequence" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {executionSequences.map((sequence) => (
+                                <SelectItem key={sequence} value={sequence}>{sequence}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {selectedLoadType === 'SCD2' && (
+                    <FormField
+                      control={form.control}
+                      name="temporaryTargetTable"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Temporary Target Table</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {(selectedLoadType === 'SCD1' || selectedLoadType === 'SCD2') && (
+                    <FormField
+                      control={form.control}
+                      name="customCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Custom Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter custom processing code" {...field} data-testid="input-custom-code" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>
