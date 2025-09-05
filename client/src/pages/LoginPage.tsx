@@ -45,10 +45,10 @@ export default function LoginPage() {
     if (!formData.username.trim()) {
       newErrors.username = 'Username or Email is required';
     } else {
-      // Username validation: no spaces, special characters except @,_
-      const usernameRegex = /^[a-zA-Z0-9_@]+$/;
+      // Username validation: no spaces, special characters except @,_,.
+      const usernameRegex = /^[a-zA-Z0-9_@.]+$/;
       if (!usernameRegex.test(formData.username)) {
-        newErrors.username = 'Username can only contain letters, numbers, _, and @.';
+        newErrors.username = 'Username can only contain letters, numbers, _, @, and .';
       }
     }
 
