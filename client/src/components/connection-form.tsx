@@ -107,9 +107,10 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
       onSuccess();
     },
     onError: (error) => {
+      console.error('Connection save error:', error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: isEditing ? "Failed to Update Connection" : "Failed to Create Connection",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     },
@@ -129,10 +130,11 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
     onSuccess: (result) => {
       setTestResult(result);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Connection test error:', error);
       setTestResult({
         success: false,
-        message: 'Connection test failed',
+        message: error.message || 'Connection test failed',
       });
     },
   });
