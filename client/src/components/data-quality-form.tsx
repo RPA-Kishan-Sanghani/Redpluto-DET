@@ -136,8 +136,13 @@ export function DataQualityForm({
     queryFn: () => fetch("/api/metadata/connection_types").then((res) => res.json()) as Promise<string[]>,
   });
   const { data: sourceTypes = [] } = useQuery({
-    queryKey: ["/api/metadata/data_types"],
-    queryFn: () => fetch("/api/metadata/data_types").then((res) => res.json()) as Promise<string[]>,
+    queryKey: ["/api/metadata/source_type"],
+    queryFn: () => fetch("/api/metadata/source_type").then((res) => res.json()) as Promise<string[]>,
+  });
+
+  const { data: targetTypes = [] } = useQuery({
+    queryKey: ["/api/metadata/target_type"],
+    queryFn: () => fetch("/api/metadata/target_type").then((res) => res.json()) as Promise<string[]>,
   });
 
   // Initialize form with default values or existing config values
@@ -860,7 +865,7 @@ export function DataQualityForm({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {sourceTypes.map((type) => (
+                              {targetTypes.map((type) => (
                                 <SelectItem key={type} value={type}>{type}</SelectItem>
                               ))}
                             </SelectContent>
