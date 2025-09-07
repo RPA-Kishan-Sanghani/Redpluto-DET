@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/schema";
-import { insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
+import { insertUserSchema, insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {

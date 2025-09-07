@@ -24,8 +24,6 @@ export const users = pgTable("users", {
   password: varchar("password"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = z.object({

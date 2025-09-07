@@ -160,26 +160,80 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    try {
+      const [user] = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        password: users.password,
+        firstName: users.firstName,
+        lastName: users.lastName
+      }).from(users).where(eq(users.id, id));
+      return user || undefined;
+    } catch (error) {
+      console.error('Error fetching user by id:', error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    try {
+      const [user] = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        password: users.password,
+        firstName: users.firstName,
+        lastName: users.lastName
+      }).from(users).where(eq(users.username, username));
+      return user || undefined;
+    } catch (error) {
+      console.error('Error fetching user by username:', error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    try {
+      const [user] = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        password: users.password,
+        firstName: users.firstName,
+        lastName: users.lastName
+      }).from(users).where(eq(users.email, email));
+      return user || undefined;
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values({
+          username: insertUser.username,
+          email: insertUser.email,
+          password: insertUser.password,
+          firstName: insertUser.firstName,
+          lastName: insertUser.lastName
+        })
+        .returning({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          password: users.password,
+          firstName: users.firstName,
+          lastName: users.lastName
+        });
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new Error('Failed to create user in database');
+    }
   }
 
   async getDashboardMetrics(dateRange?: { start: Date; end: Date }, filters?: {
