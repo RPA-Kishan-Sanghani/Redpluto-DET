@@ -78,9 +78,7 @@ export function ConfigSettings() {
   // Delete connection mutation
   const deleteConnectionMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/connections/${id}`, {
-        method: "DELETE",
-      });
+      await apiRequest(`/api/connections/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/connections"] });
@@ -102,9 +100,7 @@ export function ConfigSettings() {
   // Delete pipeline mutation
   const deletePipelineMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/pipelines/${id}`, {
-        method: "DELETE",
-      });
+      await apiRequest(`/api/pipelines/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pipelines"] });
@@ -126,16 +122,14 @@ export function ConfigSettings() {
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/connections/${id}/test`, {
-        method: "POST",
-      });
+      const response = await apiRequest(`/api/connections/${id}/test`, "POST");
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Connection Test",
-        description: data.success ? "Connection successful!" : "Connection failed",
-        variant: data.success ? "default" : "destructive",
+        description: data?.success ? "Connection successful!" : "Connection failed",
+        variant: data?.success ? "default" : "destructive",
       });
       setTestingConnectionId(null);
     },
@@ -167,8 +161,9 @@ export function ConfigSettings() {
   };
 
   const handleClonePipeline = (pipeline: ConfigRecord) => {
-    const clonedPipeline = { ...pipeline, configKey: undefined };
-    setEditingPipeline(clonedPipeline);
+    const clonedPipeline = { ...pipeline };
+    delete (clonedPipeline as any).configKey;
+    setEditingPipeline(clonedPipeline as ConfigRecord);
     setIsPipelineDialogOpen(true);
   };
 
@@ -226,7 +221,8 @@ export function ConfigSettings() {
                       </DialogDescription>
                     </DialogHeader>
                     <ConnectionForm
-                      connection={editingConnection}
+                      initialData={editingConnection || undefined}
+                      isEditing={!!editingConnection}
                       onSuccess={handleConnectionSuccess}
                       onCancel={() => {
                         setIsConnectionDialogOpen(false);
@@ -240,7 +236,7 @@ export function ConfigSettings() {
             <CardContent>
               {connectionsLoading ? (
                 <div className="text-center py-8">Loading connections...</div>
-              ) : connections.length === 0 ? (
+              ) : (connections as SourceConnection[]).length === 0 ? (
                 <div className="text-center py-8">
                   <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No connections found</p>
@@ -261,7 +257,7 @@ export function ConfigSettings() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {connections.map((connection: SourceConnection) => (
+                    {(connections as SourceConnection[]).map((connection: SourceConnection) => (
                       <TableRow key={connection.connectionId}>
                         <TableCell className="font-medium">
                           {connection.connectionName}
@@ -361,7 +357,8 @@ export function ConfigSettings() {
                       </DialogDescription>
                     </DialogHeader>
                     <PipelineForm
-                      config={editingPipeline}
+                      initialData={editingPipeline || undefined}
+                      isEditing={!!editingPipeline}
                       onSuccess={handlePipelineSuccess}
                       onCancel={() => {
                         setIsPipelineDialogOpen(false);
@@ -375,7 +372,7 @@ export function ConfigSettings() {
             <CardContent>
               {pipelinesLoading ? (
                 <div className="text-center py-8">Loading pipelines...</div>
-              ) : pipelines.length === 0 ? (
+              ) : (pipelines as ConfigRecord[]).length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No saved work found</p>
@@ -397,13 +394,13 @@ export function ConfigSettings() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pipelines.map((pipeline: ConfigRecord) => (
+                    {(pipelines as ConfigRecord[]).map((pipeline: ConfigRecord) => (
                       <TableRow key={pipeline.configKey}>
                         <TableCell className="font-medium">
                           {pipeline.executionLayer}
                         </TableCell>
                         <TableCell>{pipeline.sourceSystem || "N/A"}</TableCell>
-                        <TableCell>{pipeline.targetSystem || "N/A"}</TableCell>
+                        <TableCell>{pipeline.sourceSystem || "N/A"}</TableCell>
                         <TableCell>{pipeline.loadType || "N/A"}</TableCell>
                         <TableCell>
                           <span
