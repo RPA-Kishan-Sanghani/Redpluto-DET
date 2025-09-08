@@ -17,6 +17,10 @@ export function SettingsPage() {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+  });
 
   const handleLogout = () => {
     logout();
@@ -28,11 +32,20 @@ export function SettingsPage() {
   };
 
   const handleSaveProfile = () => {
+    // Here you would typically make an API call to update the profile
+    // For now, we'll just show a success message
     setIsEditingProfile(false);
     toast({
       title: "Profile updated",
       description: "Your profile has been updated successfully.",
     });
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const getUserInitials = () => {
@@ -103,7 +116,16 @@ export function SettingsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    onClick={() => {
+                      if (isEditingProfile) {
+                        // Reset form data when canceling
+                        setProfileData({
+                          firstName: user?.firstName || "",
+                          lastName: user?.lastName || "",
+                        });
+                      }
+                      setIsEditingProfile(!isEditingProfile);
+                    }}
                   >
                     {isEditingProfile ? "Cancel" : "Edit Profile"}
                   </Button>
@@ -115,8 +137,9 @@ export function SettingsPage() {
                   <Label htmlFor="firstName">First Name</Label>
                   <Input
                     id="firstName"
-                    value={user?.firstName || ""}
+                    value={isEditingProfile ? profileData.firstName : (user?.firstName || "")}
                     disabled={!isEditingProfile}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
                     placeholder="Enter your first name"
                   />
                 </div>
@@ -124,8 +147,9 @@ export function SettingsPage() {
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input
                     id="lastName"
-                    value={user?.lastName || ""}
+                    value={isEditingProfile ? profileData.lastName : (user?.lastName || "")}
                     disabled={!isEditingProfile}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
                     placeholder="Enter your last name"
                   />
                 </div>
@@ -134,8 +158,9 @@ export function SettingsPage() {
                   <Input
                     id="username"
                     value={user?.username || ""}
-                    disabled={!isEditingProfile}
-                    placeholder="Enter your username"
+                    disabled={true}
+                    placeholder="Username cannot be changed"
+                    className="bg-gray-100 text-gray-500 cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -144,15 +169,25 @@ export function SettingsPage() {
                     id="email"
                     type="email"
                     value={user?.email || ""}
-                    disabled={!isEditingProfile}
-                    placeholder="Enter your email"
+                    disabled={true}
+                    placeholder="Email cannot be changed"
+                    className="bg-gray-100 text-gray-500 cursor-not-allowed"
                   />
                 </div>
               </div>
 
               {isEditingProfile && (
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setProfileData({
+                        firstName: user?.firstName || "",
+                        lastName: user?.lastName || "",
+                      });
+                      setIsEditingProfile(false);
+                    }}
+                  >
                     Cancel
                   </Button>
                   <Button onClick={handleSaveProfile}>
