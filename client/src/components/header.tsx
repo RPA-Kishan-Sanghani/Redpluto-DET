@@ -82,11 +82,17 @@ export default function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem data-testid="button-profile">
+                <DropdownMenuItem 
+                  onClick={() => setLocation('/settings')}
+                  data-testid="button-profile"
+                >
                   <User className="mr-3 h-4 w-4 text-gray-400" />
                   Your Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem data-testid="button-settings">
+                <DropdownMenuItem 
+                  onClick={() => setLocation('/settings')}
+                  data-testid="button-settings"
+                >
                   <Settings className="mr-3 h-4 w-4 text-gray-400" />
                   Settings
                 </DropdownMenuItem>

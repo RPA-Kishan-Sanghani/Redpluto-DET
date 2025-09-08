@@ -59,6 +59,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/signup" component={SignUpPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route path="/help" component={HelpPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
@@ -69,7 +70,6 @@ function Router() {
       <Route path="/data-dictionary/form/:id" component={() => <ProtectedRoute component={DataDictionaryFormPage} />} />
       <Route path="/data-quality" component={() => <ProtectedRoute component={DataQuality} />} />
       <Route path="/reconciliation" component={() => <ProtectedRoute component={Reconciliation} />} />
-      <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route component={NotFound} />
     </Switch>
   );
