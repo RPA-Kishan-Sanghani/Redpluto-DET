@@ -12,12 +12,12 @@ import {
 
 const navigationItems = [
   { path: '/', label: 'Dashboard', icon: Home, testId: 'link-dashboard' },
-  { path: '/config-settings', label: 'Config Settings', icon: Settings, testId: 'link-config-settings' },
   { path: '/source-connections', label: 'Source Connections', icon: DataIcon, testId: 'link-source-connections' },
   { path: '/pipelines', label: 'Data Pipeline', icon: GitBranch, testId: 'link-pipelines' },
   { path: '/data-dictionary', label: 'Data Dictionary', icon: FileText, testId: 'link-data-dictionary' },
   { path: '/reconciliation', label: 'Data Reconciliation', icon: RefreshCw, testId: 'link-data-reconciliation' },
   { path: '/data-quality', label: 'Data Quality', icon: BarChart3, testId: 'link-data-quality' },
+  { path: '/settings', label: 'Settings', icon: Settings, testId: 'link-settings' },
 ];
 
 export default function AppSidebar() {

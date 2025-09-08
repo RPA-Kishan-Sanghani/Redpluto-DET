@@ -12,7 +12,6 @@ import { DataDictionary } from "@/pages/data-dictionary";
 import { DataDictionaryFormPage } from "./pages/data-dictionary-form-page";
 import { Reconciliation } from "@/pages/reconciliation";
 import { DataQuality } from "@/pages/data-quality";
-import { ConfigSettings } from "@/pages/ConfigSettings";
 import LoginPage from "@/pages/LoginPage";
 import HelpPage from "@/pages/HelpPage";
 import AboutPage from "@/pages/AboutPage";
@@ -20,6 +19,7 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import SignUpPage from "@/pages/SignUpPage";
 import NotFound from "@/pages/not-found";
 import { useAuthState } from "@/hooks/useAuth";
+import SettingsPage from "@/pages/SettingsPage"; // Assuming SettingsPage is the new page
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuthState();
@@ -69,7 +69,7 @@ function Router() {
       <Route path="/data-dictionary/form/:id" component={() => <ProtectedRoute component={DataDictionaryFormPage} />} />
       <Route path="/data-quality" component={() => <ProtectedRoute component={DataQuality} />} />
       <Route path="/reconciliation" component={() => <ProtectedRoute component={Reconciliation} />} />
-      <Route path="/config-settings" component={() => <ProtectedRoute component={ConfigSettings} />} />
+      <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route component={NotFound} />
     </Switch>
   );
