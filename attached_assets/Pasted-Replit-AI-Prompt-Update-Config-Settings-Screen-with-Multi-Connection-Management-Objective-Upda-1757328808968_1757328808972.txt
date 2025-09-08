@@ -1,0 +1,112 @@
+Replit AI Prompt: Update Config Settings Screen with Multi-Connection Management
+
+Objective:
+Update a Config Settings module that enables users to:
+
+Add new database connections
+
+View list of saved connections
+
+Edit existing connections
+
+Delete connections
+
+Test connection before saving
+
+UI Layout
+
+Main Screen – Connection List
+
+Table/Grid showing all saved connections with columns:
+
+Connection Name
+
+Database Type
+
+Host
+
+Database/Schema
+
+Status (Active/Inactive)
+
+Actions (per row): Edit | Delete | Test Connection
+
+Buttons (top-right): + Add New Connection
+
+Add / Edit Connection Form (opens as popup/modal or drawer)
+
+Dropdown: Database Type (Postgres, MySQL, Oracle, Snowflake, BigQuery, etc.)
+
+Form Fields:
+
+Connection Name (unique identifier)
+
+Host / IP
+
+Port
+
+Database Name / Schema
+
+Username
+
+Password / Secret Key (masked input)
+
+Authentication Options:
+
+Username/Password
+
+OAuth/Service Account (toggle option for cloud DBs)
+
+Advanced Settings (Accordion – collapsible)
+
+SSL (Yes/No, upload cert if Yes)
+
+Timeout (numeric input, seconds)
+
+Connection Pool Size (numeric input)
+
+Footer Buttons:
+
+Test Connection → calls backend API, shows success/failure toast
+
+Save → saves into config_settings
+
+Cancel → closes modal
+
+Functional Requirements
+
+Dynamic Dropdowns: Database Type selection drives form changes (e.g., Service Account JSON for BigQuery).
+
+Form Validation: Required fields (Connection Name, DB Type, Host, Port, Database, Username, Password).
+
+Test Connection: Must run before Save; show success/failure notification.
+
+Secure Storage: Passwords/Secrets must be masked in UI and securely stored.
+
+Advanced Settings: Collapsed by default, expandable when needed.
+
+Multiple Connections: User can add unlimited connections, edit/delete existing ones.
+
+Acceptance Criteria
+
+User can view list of saved connections in a table with edit/delete/test actions.
+
+User can add new connections via popup form.
+
+User can edit existing connections (fields pre-populated).
+
+User can delete connections (with confirmation).
+
+Test Connection validates credentials and must succeed before Save.
+
+All dropdowns pull dynamic values from Metadata registry (if available).
+
+UI is 100% responsive and consistent with other modules (spacing, colors, typography).
+
+⚡ Deliverable:
+A responsive React screen with two parts:
+
+Connection List (grid/table)
+
+Add/Edit Connection Form (modal/drawer)
+with backend integration for save, edit, delete, and test connection.

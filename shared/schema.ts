@@ -310,3 +310,41 @@ export const updateDataQualityConfigSchema = createInsertSchema(dataQualityConfi
 export type DataQualityConfig = typeof dataQualityConfigTable.$inferSelect;
 export type InsertDataQualityConfig = z.infer<typeof insertDataQualityConfigSchema>;
 export type UpdateDataQualityConfig = z.infer<typeof updateDataQualityConfigSchema>;
+
+// Config Settings Connections Table (separate from source connections)
+export const configConnectionTable = pgTable("config_connections", {
+  connectionId: serial("connection_id").primaryKey(),
+  connectionName: varchar("connection_name", { length: 255 }).notNull().unique(),
+  databaseType: varchar("database_type", { length: 100 }).notNull(),
+  host: varchar("host", { length: 255 }).notNull(),
+  port: integer("port").notNull(),
+  databaseName: varchar("database_name", { length: 255 }).notNull(),
+  schemaName: varchar("schema_name", { length: 255 }),
+  username: varchar("username", { length: 255 }),
+  password: varchar("password", { length: 255 }),
+  authMethod: varchar("auth_method", { length: 50 }).notNull().default("credentials"), // credentials, oauth, service_account
+  serviceAccountJson: text("service_account_json"),
+  sslMode: varchar("ssl_mode", { length: 20 }).default("disabled"), // disabled, required, preferred
+  sslCertificate: text("ssl_certificate"),
+  connectionTimeout: integer("connection_timeout").default(30),
+  connectionPoolSize: integer("connection_pool_size").default(10),
+  status: varchar("status", { length: 20 }).notNull().default("Active"), // Active, Inactive
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertConfigConnectionSchema = createInsertSchema(configConnectionTable).omit({
+  connectionId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateConfigConnectionSchema = createInsertSchema(configConnectionTable).omit({
+  connectionId: true,
+  createdAt: true,
+  updatedAt: true,
+}).partial();
+
+export type ConfigConnection = typeof configConnectionTable.$inferSelect;
+export type InsertConfigConnection = z.infer<typeof insertConfigConnectionSchema>;
+export type UpdateConfigConnection = z.infer<typeof updateConfigConnectionSchema>;
