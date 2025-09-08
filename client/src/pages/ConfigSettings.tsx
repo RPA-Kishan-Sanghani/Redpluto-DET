@@ -98,10 +98,13 @@ export function ConfigSettings() {
 
   // Fetch config connections
   const { data: connections = [], isLoading: connectionsLoading } = useQuery({
-    queryKey: ["/api/config-connections"],
+    queryKey: ["/api/connections"],
     queryFn: async () => {
-      // For now, return mock data - you can implement the API later
-      return [] as ConfigConnection[];
+      const response = await fetch('/api/connections');
+      if (!response.ok) {
+        throw new Error('Failed to fetch connections');
+      }
+      return response.json();
     }
   });
 
@@ -144,22 +147,61 @@ export function ConfigSettings() {
   // Save connection mutation
   const saveConnectionMutation = useMutation({
     mutationFn: async (data: ConnectionFormData) => {
-      const url = editingConnection ? `/api/config-connections/${editingConnection.connectionId}` : '/api/config-connections';
+      console.log('Saving connection with data:', data);
+      
+      // Map the config connection data to source connection format
+      const connectionData = {
+        connectionName: data.connectionName,
+        connectionType: data.databaseType,
+        host: data.host,
+        port: data.port,
+        username: data.username,
+        password: data.password,
+        databaseName: data.databaseName,
+        status: data.status || 'Pending'
+      };
+      
+      const url = editingConnection ? `/api/connections/${editingConnection.connectionId}` : '/api/connections';
       const method = editingConnection ? 'PUT' : 'POST';
-      return await apiRequest(url, method, data);
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(connectionData),
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to save connection';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error('Server error response:', errorData);
+        } catch (e) {
+          console.error('Failed to parse error response');
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      console.log('Connection saved successfully:', result);
+      return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/config-connections"] });
+    onSuccess: (data) => {
+      console.log('Connection save success:', data);
+      queryClient.invalidateQueries({ queryKey: ["/api/connections"] });
       toast({
         title: "Success",
-        description: `Connection ${editingConnection ? 'updated' : 'created'} successfully`,
+        description: `Connection "${data.connectionName}" ${editingConnection ? 'updated' : 'created'} successfully`,
       });
       handleCloseDialog();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Connection save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save connection",
+        description: error.message || "Failed to save connection. Please check the console for details.",
         variant: "destructive",
       });
     },
@@ -168,20 +210,27 @@ export function ConfigSettings() {
   // Delete connection mutation
   const deleteConnectionMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/config-connections/${id}`, "DELETE");
+      const response = await fetch(`/api/connections/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete connection');
+      }
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/config-connections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/connections"] });
       toast({
         title: "Success",
         description: "Connection deleted successfully",
       });
       setDeleteConnectionId(null);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Delete connection error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete connection",
+        description: error.message || "Failed to delete connection",
         variant: "destructive",
       });
     },
@@ -190,23 +239,62 @@ export function ConfigSettings() {
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async (data: ConnectionFormData) => {
-      return await apiRequest('/api/config-connections/test', 'POST', data);
+      console.log('Testing connection with data:', data);
+      
+      // Map the config connection data to source connection format for testing
+      const testData = {
+        connectionName: data.connectionName,
+        connectionType: data.databaseType,
+        host: data.host,
+        port: data.port,
+        username: data.username,
+        password: data.password,
+        databaseName: data.databaseName,
+      };
+      
+      const response = await fetch('/api/connections/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData),
+      });
+      
+      console.log('Test response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMessage = 'Connection test failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.error('Test error response:', errorData);
+        } catch (e) {
+          console.error('Failed to parse test error response');
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      console.log('Test result:', result);
+      return result;
     },
     onSuccess: (result: any) => {
+      console.log('Test connection success:', result);
       setTestResult(result);
       toast({
         title: "Connection Test",
-        description: result.success ? "Connection successful!" : "Connection failed",
+        description: result.success ? result.message || "Connection successful!" : result.message || "Connection failed",
         variant: result.success ? "default" : "destructive",
       });
+      setTestingConnectionId(null);
     },
-    onError: () => {
-      setTestResult({ success: false, message: "Connection test failed" });
+    onError: (error) => {
+      console.error('Test connection error:', error);
+      setTestResult({ success: false, message: error.message || "Connection test failed" });
       toast({
-        title: "Connection Test",
-        description: "Connection test failed",
+        title: "Connection Test Failed",
+        description: error.message || "Failed to test connection. Please check your credentials and try again.",
         variant: "destructive",
       });
+      setTestingConnectionId(null);
     },
   });
 
@@ -221,23 +309,23 @@ export function ConfigSettings() {
     }
   };
 
-  const handleEditConnection = (connection: ConfigConnection) => {
+  const handleEditConnection = (connection: any) => {
     setEditingConnection(connection);
     form.reset({
       connectionName: connection.connectionName,
-      databaseType: connection.databaseType,
+      databaseType: connection.connectionType, // Map connectionType to databaseType
       host: connection.host,
       port: connection.port,
       databaseName: connection.databaseName,
-      schemaName: connection.schemaName || '',
+      schemaName: '',
       username: connection.username || '',
       password: connection.password || '',
-      authMethod: connection.authMethod as any,
-      serviceAccountJson: connection.serviceAccountJson || '',
-      sslMode: connection.sslMode || 'disabled',
-      sslCertificate: connection.sslCertificate || '',
-      connectionTimeout: connection.connectionTimeout || 30,
-      connectionPoolSize: connection.connectionPoolSize || 10,
+      authMethod: 'credentials',
+      serviceAccountJson: '',
+      sslMode: 'disabled',
+      sslCertificate: '',
+      connectionTimeout: 30,
+      connectionPoolSize: 10,
       status: connection.status,
     });
     setIsDialogOpen(true);
@@ -754,25 +842,20 @@ MIIDXTCCAkWgAwIBAgIJAKoK/heBjcOu...
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {connections.map((connection: ConfigConnection) => (
+                {connections.map((connection: any) => (
                   <TableRow key={connection.connectionId}>
                     <TableCell className="font-medium">
                       {connection.connectionName}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="text-xs">
-                        {connection.databaseType}
+                        {connection.connectionType}
                       </Badge>
                     </TableCell>
                     <TableCell>{connection.host}</TableCell>
                     <TableCell>
                       <div className="text-sm">
                         <div className="font-medium">{connection.databaseName}</div>
-                        {connection.schemaName && (
-                          <div className="text-xs text-muted-foreground">
-                            Schema: {connection.schemaName}
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>
