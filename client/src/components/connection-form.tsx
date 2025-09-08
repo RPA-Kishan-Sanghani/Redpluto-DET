@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TestTube2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, TestTube2, CheckCircle, XCircle, ChevronDown, Settings, Shield, Clock, Database as DatabaseIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { insertSourceConnectionSchema, type SourceConnection, type InsertSourceConnection } from "@shared/schema";
 import { z } from "zod";
@@ -25,35 +26,50 @@ interface ConnectionFormProps {
 }
 
 const CONNECTION_TYPES = [
-  { value: 'Database', label: 'Database', category: 'database' },
-  { value: 'MySQL', label: 'MySQL', category: 'database' },
-  { value: 'PostgreSQL', label: 'PostgreSQL', category: 'database' },
-  { value: 'SQL Server', label: 'SQL Server', category: 'database' },
-  { value: 'Oracle', label: 'Oracle', category: 'database' },
-  { value: 'MongoDB', label: 'MongoDB', category: 'database' },
-  { value: 'File', label: 'File Storage', category: 'file' },
+  // Traditional Databases
+  { value: 'PostgreSQL', label: 'PostgreSQL', category: 'database', defaultPort: 5432 },
+  { value: 'MySQL', label: 'MySQL', category: 'database', defaultPort: 3306 },
+  { value: 'Oracle', label: 'Oracle Database', category: 'database', defaultPort: 1521 },
+  { value: 'SQL Server', label: 'Microsoft SQL Server', category: 'database', defaultPort: 1433 },
+  { value: 'MongoDB', label: 'MongoDB', category: 'database', defaultPort: 27017 },
+  { value: 'Redis', label: 'Redis', category: 'database', defaultPort: 6379 },
+  { value: 'MariaDB', label: 'MariaDB', category: 'database', defaultPort: 3306 },
+  
+  // Cloud Databases
+  { value: 'Snowflake', label: 'Snowflake', category: 'cloud', requiresAccount: true },
+  { value: 'BigQuery', label: 'Google BigQuery', category: 'cloud', supportsOAuth: true },
+  { value: 'Redshift', label: 'Amazon Redshift', category: 'cloud', defaultPort: 5439 },
+  { value: 'Azure SQL', label: 'Azure SQL Database', category: 'cloud', supportsOAuth: true },
+  { value: 'Databricks', label: 'Databricks', category: 'cloud', supportsOAuth: true },
+  { value: 'Synapse', label: 'Azure Synapse', category: 'cloud', supportsOAuth: true },
+  
+  // File Systems
+  { value: 'File', label: 'File System', category: 'file' },
   { value: 'CSV', label: 'CSV Files', category: 'file' },
   { value: 'JSON', label: 'JSON Files', category: 'file' },
-  { value: 'XML', label: 'XML Files', category: 'file' },
+  { value: 'Parquet', label: 'Parquet Files', category: 'file' },
   { value: 'Excel', label: 'Excel Files', category: 'file' },
-  { value: 'API', label: 'REST API', category: 'api' },
-  { value: 'REST', label: 'REST API', category: 'api' },
+  
+  // Cloud Storage
+  { value: 'S3', label: 'Amazon S3', category: 'storage', supportsOAuth: true },
+  { value: 'Azure Blob', label: 'Azure Blob Storage', category: 'storage', supportsOAuth: true },
+  { value: 'GCS', label: 'Google Cloud Storage', category: 'storage', supportsOAuth: true },
+  
+  // APIs
+  { value: 'REST API', label: 'REST API', category: 'api' },
   { value: 'GraphQL', label: 'GraphQL API', category: 'api' },
-  { value: 'HTTP', label: 'HTTP Endpoint', category: 'api' },
-  { value: 'Azure', label: 'Microsoft Azure', category: 'cloud' },
-  { value: 'AWS', label: 'Amazon AWS', category: 'cloud' },
-  { value: 'GCP', label: 'Google Cloud', category: 'cloud' },
-  { value: 'Cloud', label: 'Generic Cloud', category: 'cloud' },
-  { value: 'FTP', label: 'FTP', category: 'other' },
-  { value: 'SFTP', label: 'SFTP', category: 'other' },
-  { value: 'Salesforce', label: 'Salesforce', category: 'other' },
-  { value: 'SSH', label: 'SSH', category: 'other' },
-  { value: 'Other', label: 'Other', category: 'other' },
+  
+  // Other Sources
+  { value: 'Salesforce', label: 'Salesforce', category: 'other', supportsOAuth: true },
+  { value: 'FTP', label: 'FTP', category: 'other', defaultPort: 21 },
+  { value: 'SFTP', label: 'SFTP', category: 'other', defaultPort: 22 },
 ];
 
 export default function ConnectionForm({ initialData, isEditing = false, onSuccess, onCancel }: ConnectionFormProps) {
   const [selectedType, setSelectedType] = useState<string>('');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'credentials' | 'oauth' | 'service_account'>('credentials');
   const { toast } = useToast();
 
   const form = useForm<ConnectionFormData>({
@@ -78,7 +94,20 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
   useEffect(() => {
     setSelectedType(watchedType);
     setTestResult(null);
-  }, [watchedType]);
+    
+    // Auto-fill port based on database type
+    const selectedDbType = CONNECTION_TYPES.find(type => type.value === watchedType);
+    if (selectedDbType?.defaultPort && !form.getValues('port')) {
+      form.setValue('port', selectedDbType.defaultPort);
+    }
+    
+    // Set default authentication method based on OAuth support
+    if (selectedDbType?.supportsOAuth) {
+      setAuthMethod('oauth');
+    } else {
+      setAuthMethod('credentials');
+    }
+  }, [watchedType, form]);
 
   // Create/Update connection mutation
   const saveConnectionMutation = useMutation({
@@ -161,11 +190,15 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
     saveConnectionMutation.mutate(data);
   };
 
-  const requiresDatabase = ['Database', 'MySQL', 'PostgreSQL', 'SQL Server', 'Oracle'].includes(selectedType);
-  const requiresFile = ['File', 'CSV', 'JSON', 'XML', 'Excel'].includes(selectedType);
-  const requiresAPI = ['API', 'REST', 'GraphQL', 'HTTP'].includes(selectedType);
-  const requiresCloud = ['Azure', 'AWS', 'GCP', 'Cloud'].includes(selectedType);
+  const selectedTypeConfig = CONNECTION_TYPES.find(type => type.value === selectedType);
+  const requiresDatabase = ['PostgreSQL', 'MySQL', 'Oracle', 'SQL Server', 'MongoDB', 'Redis', 'MariaDB'].includes(selectedType);
+  const requiresFile = ['File', 'CSV', 'JSON', 'Parquet', 'Excel'].includes(selectedType);
+  const requiresAPI = ['REST API', 'GraphQL'].includes(selectedType);
+  const requiresCloud = ['Snowflake', 'BigQuery', 'Redshift', 'Azure SQL', 'Databricks', 'Synapse'].includes(selectedType);
+  const requiresStorage = ['S3', 'Azure Blob', 'GCS'].includes(selectedType);
   const requiresFTP = ['FTP', 'SFTP'].includes(selectedType);
+  const supportsOAuth = selectedTypeConfig?.supportsOAuth || false;
+  const requiresAccount = selectedTypeConfig?.requiresAccount || false;
 
   return (
     <Form {...form}>
@@ -199,12 +232,39 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
                       <SelectValue placeholder="Select connection type" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="max-h-48">
-                    {CONNECTION_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-h-64">
+                    <div className="p-2">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Databases</div>
+                      {CONNECTION_TYPES.filter(type => type.category === 'database').map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </div>
+                    <div className="p-2 border-t">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Cloud Platforms</div>
+                      {CONNECTION_TYPES.filter(type => type.category === 'cloud').map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </div>
+                    <div className="p-2 border-t">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Storage & Files</div>
+                      {CONNECTION_TYPES.filter(type => ['file', 'storage'].includes(type.category)).map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </div>
+                    <div className="p-2 border-t">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">APIs & Others</div>
+                      {CONNECTION_TYPES.filter(type => ['api', 'other'].includes(type.category)).map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </div>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -213,10 +273,55 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
           />
         </div>
 
+        {/* Authentication Method Selection */}
+        {selectedType && supportsOAuth && (
+          <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+            <h3 className="font-medium text-gray-900 flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Authentication Method
+            </h3>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="authMethod"
+                  value="credentials"
+                  checked={authMethod === 'credentials'}
+                  onChange={(e) => setAuthMethod(e.target.value as any)}
+                />
+                Username/Password
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="authMethod"
+                  value="oauth"
+                  checked={authMethod === 'oauth'}
+                  onChange={(e) => setAuthMethod(e.target.value as any)}
+                />
+                OAuth 2.0
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="authMethod"
+                  value="service_account"
+                  checked={authMethod === 'service_account'}
+                  onChange={(e) => setAuthMethod(e.target.value as any)}
+                />
+                Service Account
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Connection-specific fields */}
         {selectedType && (
           <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-gray-900">Connection Details</h3>
+            <h3 className="font-medium text-gray-900 flex items-center gap-2">
+              <DatabaseIcon className="h-4 w-4" />
+              Connection Details
+            </h3>
             
             {(requiresDatabase || requiresAPI || requiresFTP) && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -337,22 +442,166 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
               />
             </div>
 
-            {requiresDatabase && (
+            {(requiresDatabase || requiresCloud) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="databaseName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {requiresCloud ? 'Database/Project' : 'Database Name'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder={requiresCloud ? "project_id or database" : "database_name"} 
+                          {...field} 
+                          data-testid="input-database-name" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cloudProvider"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Schema/Dataset</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder={requiresCloud ? "dataset_name" : "schema_name"} 
+                          {...field} 
+                          data-testid="input-schema-name" 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {requiresCloud ? 'Dataset or schema name' : 'Database schema name'}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
+            {requiresAccount && (
               <FormField
                 control={form.control}
-                name="databaseName"
+                name="host"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Database Name</FormLabel>
+                    <FormLabel>Account Identifier</FormLabel>
                     <FormControl>
-                      <Input placeholder="database_name" {...field} data-testid="input-database-name" />
+                      <Input 
+                        placeholder="account.region.snowflakecomputing.com" 
+                        {...field} 
+                        data-testid="input-account"
+                      />
                     </FormControl>
+                    <FormDescription>
+                      Your organization account identifier including region
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             )}
           </div>
+        )}
+
+        {/* Advanced Settings */}
+        {selectedType && (
+          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full flex items-center justify-between p-4"
+                data-testid="toggle-advanced-settings"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Advanced Settings
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 p-4 border border-t-0 rounded-b-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* SSL Settings */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    SSL Connection
+                  </label>
+                  <Select defaultValue="false" data-testid="select-ssl">
+                    <SelectTrigger>
+                      <SelectValue placeholder="SSL mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">Disabled</SelectItem>
+                      <SelectItem value="require">Required</SelectItem>
+                      <SelectItem value="prefer">Preferred</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Connection Timeout */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Connection Timeout (seconds)
+                  </label>
+                  <Input 
+                    type="number" 
+                    placeholder="30" 
+                    defaultValue="30"
+                    min="5"
+                    max="300"
+                    data-testid="input-timeout"
+                  />
+                </div>
+
+                {/* Connection Pool Size */}
+                {requiresDatabase && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Connection Pool Size
+                    </label>
+                    <Input 
+                      type="number" 
+                      placeholder="10" 
+                      defaultValue="10"
+                      min="1"
+                      max="100"
+                      data-testid="input-pool-size"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* SSL Certificate Upload */}
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button type="button" variant="ghost" size="sm" className="text-xs">
+                    Upload SSL Certificate (Optional)
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <Textarea
+                    placeholder="-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAKoK/heBjcOu...
+-----END CERTIFICATE-----"
+                    className="font-mono text-xs"
+                    rows={4}
+                    data-testid="textarea-ssl-cert"
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {/* Test Connection Section */}

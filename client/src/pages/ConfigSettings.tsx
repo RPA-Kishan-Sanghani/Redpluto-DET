@@ -251,6 +251,7 @@ export function ConfigSettings() {
                       <TableHead>Connection Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Host</TableHead>
+                      <TableHead>Database/Schema</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
@@ -262,8 +263,26 @@ export function ConfigSettings() {
                         <TableCell className="font-medium">
                           {connection.connectionName}
                         </TableCell>
-                        <TableCell>{connection.connectionType}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {connection.connectionType}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{connection.host || "N/A"}</TableCell>
+                        <TableCell>
+                          {connection.databaseName ? (
+                            <div className="text-sm">
+                              <div className="font-medium">{connection.databaseName}</div>
+                              {connection.cloudProvider && (
+                                <div className="text-xs text-muted-foreground">
+                                  Schema: {connection.cloudProvider}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            "N/A"
+                          )}
+                        </TableCell>
                         <TableCell>
                           <span
                             className={`px-2 py-1 rounded-full text-xs ${
@@ -357,8 +376,7 @@ export function ConfigSettings() {
                       </DialogDescription>
                     </DialogHeader>
                     <PipelineForm
-                      initialData={editingPipeline || undefined}
-                      isEditing={!!editingPipeline}
+                      pipeline={editingPipeline || undefined}
                       onSuccess={handlePipelineSuccess}
                       onCancel={() => {
                         setIsPipelineDialogOpen(false);
