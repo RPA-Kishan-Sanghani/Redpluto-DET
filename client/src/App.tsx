@@ -19,7 +19,7 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import SignUpPage from "@/pages/SignUpPage";
 import NotFound from "@/pages/not-found";
 import { useAuthState } from "@/hooks/useAuth";
-import SettingsPage from "@/pages/SettingsPage"; // Assuming SettingsPage is the new page
+import { SettingsPage } from "@/pages/SettingsPage";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuthState();
