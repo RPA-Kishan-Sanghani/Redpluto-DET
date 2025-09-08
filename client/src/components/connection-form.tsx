@@ -83,6 +83,7 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
   // Create/Update connection mutation
   const saveConnectionMutation = useMutation({
     mutationFn: async (data: ConnectionFormData) => {
+      console.log('Saving connection with data:', data);
       const url = isEditing ? `/api/connections/${initialData?.connectionId}` : '/api/connections';
       const method = isEditing ? 'PUT' : 'POST';
       
@@ -92,17 +93,29 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
         body: JSON.stringify(data),
       });
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save connection');
+        let errorMessage = 'Failed to save connection';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error('Server error response:', errorData);
+        } catch (e) {
+          console.error('Failed to parse error response');
+        }
+        throw new Error(errorMessage);
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log('Connection saved successfully:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Connection save success:', data);
       toast({
         title: isEditing ? "Connection Updated" : "Connection Created",
-        description: `Connection has been ${isEditing ? 'updated' : 'created'} successfully.`,
+        description: `Connection "${data.connectionName}" has been ${isEditing ? 'updated' : 'created'} successfully.`,
       });
       onSuccess();
     },
@@ -110,7 +123,7 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
       console.error('Connection save error:', error);
       toast({
         title: isEditing ? "Failed to Update Connection" : "Failed to Create Connection",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        description: error.message || "An unexpected error occurred. Please check the console for details and try again.",
         variant: "destructive",
       });
     },

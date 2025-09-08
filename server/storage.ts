@@ -713,11 +713,31 @@ export class DatabaseStorage implements IStorage {
 
   // Source connection methods
   async createConnection(connection: InsertSourceConnection): Promise<SourceConnection> {
-    const [created] = await db
-      .insert(sourceConnectionTable)
-      .values(connection)
-      .returning();
-    return created;
+    try {
+      console.log('Creating connection with data:', connection);
+      const [created] = await db
+        .insert(sourceConnectionTable)
+        .values({
+          connectionName: connection.connectionName,
+          connectionType: connection.connectionType,
+          host: connection.host || null,
+          port: connection.port || null,
+          username: connection.username || null,
+          password: connection.password || null,
+          databaseName: connection.databaseName || null,
+          filePath: connection.filePath || null,
+          apiKey: connection.apiKey || null,
+          cloudProvider: connection.cloudProvider || null,
+          status: connection.status || 'Pending',
+          lastSync: connection.lastSync || null
+        })
+        .returning();
+      console.log('Connection created successfully:', created);
+      return created;
+    } catch (error) {
+      console.error('Error creating connection in database:', error);
+      throw new Error(`Failed to create connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async getConnections(filters?: {
@@ -725,41 +745,62 @@ export class DatabaseStorage implements IStorage {
     search?: string;
     status?: string;
   }): Promise<SourceConnection[]> {
-    let query = db.select().from(sourceConnectionTable);
+    try {
+      let query = db.select({
+        connectionId: sourceConnectionTable.connectionId,
+        connectionName: sourceConnectionTable.connectionName,
+        connectionType: sourceConnectionTable.connectionType,
+        host: sourceConnectionTable.host,
+        port: sourceConnectionTable.port,
+        username: sourceConnectionTable.username,
+        password: sourceConnectionTable.password,
+        databaseName: sourceConnectionTable.databaseName,
+        filePath: sourceConnectionTable.filePath,
+        apiKey: sourceConnectionTable.apiKey,
+        cloudProvider: sourceConnectionTable.cloudProvider,
+        status: sourceConnectionTable.status,
+        lastSync: sourceConnectionTable.lastSync,
+        createdAt: sourceConnectionTable.createdAt,
+        updatedAt: sourceConnectionTable.updatedAt,
+      }).from(sourceConnectionTable);
 
-    const conditions = [];
+      const conditions = [];
 
-    if (filters?.category && filters.category !== 'all') {
-      const categoryMap: { [key: string]: string[] } = {
-        'database': ['Database', 'MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'MongoDB'],
-        'file': ['File', 'CSV', 'JSON', 'XML', 'Excel'],
-        'cloud': ['Azure', 'AWS', 'GCP', 'Cloud'],
-        'api': ['API', 'REST', 'GraphQL', 'HTTP'],
-        'other': ['FTP', 'SFTP', 'Salesforce', 'SSH', 'Other']
-      };
+      if (filters?.category && filters.category !== 'all') {
+        const categoryMap: { [key: string]: string[] } = {
+          'database': ['Database', 'MySQL', 'PostgreSQL', 'SQL Server', 'Oracle', 'MongoDB'],
+          'file': ['File', 'CSV', 'JSON', 'XML', 'Excel'],
+          'cloud': ['Azure', 'AWS', 'GCP', 'Cloud'],
+          'api': ['API', 'REST', 'GraphQL', 'HTTP'],
+          'other': ['FTP', 'SFTP', 'Salesforce', 'SSH', 'Other']
+        };
 
-      if (categoryMap[filters.category]) {
+        if (categoryMap[filters.category]) {
+          conditions.push(
+            inArray(sourceConnectionTable.connectionType, categoryMap[filters.category])
+          );
+        }
+      }
+
+      if (filters?.search) {
         conditions.push(
-          inArray(sourceConnectionTable.connectionType, categoryMap[filters.category])
+          like(sourceConnectionTable.connectionName, `%${filters.search}%`)
         );
       }
-    }
 
-    if (filters?.search) {
-      conditions.push(
-        like(sourceConnectionTable.connectionName, `%${filters.search}%`)
-      );
-    }
+      if (filters?.status && filters.status !== 'all') {
+        conditions.push(
+          eq(sourceConnectionTable.status, filters.status)
+        );
+      }
 
-    if (filters?.status && filters.status !== 'all') {
-      conditions.push(
-        eq(sourceConnectionTable.status, filters.status)
-      );
+      return await query
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(sourceConnectionTable.createdAt));
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+      throw new Error(`Failed to fetch connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    return await query
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(sourceConnectionTable.createdAt));
   }
 
   async getConnection(id: number): Promise<SourceConnection | undefined> {
@@ -1256,29 +1297,55 @@ export class DatabaseStorage implements IStorage {
 
   // Pipeline configuration methods
   async getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
-    let query = db.select().from(configTable);
+    try {
+      let query = db.select({
+        configKey: configTable.configKey,
+        executionLayer: configTable.executionLayer,
+        sourceSystem: configTable.sourceSystem,
+        sourceSchemaName: configTable.sourceSchemaName,
+        sourceTableName: configTable.sourceTableName,
+        sourceType: configTable.sourceType,
+        sourceConnectionId: configTable.sourceConnectionId,
+        targetSchemaName: configTable.targetSchemaName,
+        targetTableName: configTable.targetTableName,
+        targetType: configTable.targetType,
+        targetConnectionId: configTable.targetConnectionId,
+        loadType: configTable.loadType,
+        fileDelimiter: configTable.fileDelimiter,
+        activeFlag: configTable.activeFlag,
+        dynamicSchema: configTable.dynamicSchema,
+        fullRefreshFlag: configTable.fullRefreshFlag,
+        executionSequence: configTable.executionSequence,
+        effectiveDate: configTable.effectiveDate,
+        createdAt: configTable.createdAt,
+        updatedAt: configTable.updatedAt,
+      }).from(configTable);
 
-    const conditions = [];
+      const conditions = [];
 
-    if (filters?.search) {
-      conditions.push(like(configTable.sourceTableName, `%${filters.search}%`));
+      if (filters?.search) {
+        conditions.push(like(configTable.sourceTableName, `%${filters.search}%`));
+      }
+
+      if (filters?.executionLayer) {
+        conditions.push(eq(configTable.executionLayer, filters.executionLayer));
+      }
+
+      if (filters?.sourceSystem) {
+        conditions.push(eq(configTable.sourceSystem, filters.sourceSystem));
+      }
+
+      if (filters?.status) {
+        conditions.push(eq(configTable.activeFlag, filters.status));
+      }
+
+      return await query
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(configTable.createdAt));
+    } catch (error) {
+      console.error('Error fetching pipelines:', error);
+      throw new Error(`Failed to fetch pipelines: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    if (filters?.executionLayer) {
-      conditions.push(eq(configTable.executionLayer, filters.executionLayer));
-    }
-
-    if (filters?.sourceSystem) {
-      conditions.push(eq(configTable.sourceSystem, filters.sourceSystem));
-    }
-
-    if (filters?.status) {
-      conditions.push(eq(configTable.activeFlag, filters.status));
-    }
-
-    return await query
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(configTable.createdAt));
   }
 
   async getPipeline(id: number): Promise<ConfigRecord | undefined> {
