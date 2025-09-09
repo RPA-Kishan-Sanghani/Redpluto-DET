@@ -67,18 +67,6 @@ const dataQualityFormSchema = z.object({
   thresholdPercentage: z.number().min(0).max(100).optional(),
   activeFlag: z.string().default("Y"),
   customQuery: z.string().optional(),
-  // Source fields
-  sourceSystem: z.string().optional(),
-  sourceConnectionId: z.number().optional(),
-  sourceType: z.string().optional(),
-  sourceSchema: z.string().optional(),
-  sourceTableName: z.string().optional(),
-  // Target fields
-  targetSystem: z.string().optional(),
-  targetConnectionId: z.number().optional(),
-  targetType: z.string().optional(),
-  targetSchema: z.string().optional(),
-  targetTableName: z.string().optional(),
 });
 
 type FormData = z.infer<typeof dataQualityFormSchema>;
