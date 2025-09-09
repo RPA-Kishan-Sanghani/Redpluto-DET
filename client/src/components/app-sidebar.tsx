@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { Database, Home, Database as DataIcon, GitBranch, FileText, RefreshCw, BarChart3, Settings } from "lucide-react";
+import { Database, Home, Database as DataIcon, GitBranch, FileText, RefreshCw, BarChart3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +17,6 @@ const navigationItems = [
   { path: '/data-dictionary', label: 'Data Dictionary', icon: FileText, testId: 'link-data-dictionary' },
   { path: '/reconciliation', label: 'Data Reconciliation', icon: RefreshCw, testId: 'link-data-reconciliation' },
   { path: '/data-quality', label: 'Data Quality', icon: BarChart3, testId: 'link-data-quality' },
-  { path: '/settings', label: 'Settings', icon: Settings, testId: 'link-settings' },
 ];
 
 export default function AppSidebar() {
