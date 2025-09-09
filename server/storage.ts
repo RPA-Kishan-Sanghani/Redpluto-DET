@@ -1311,7 +1311,6 @@ export class DatabaseStorage implements IStorage {
         targetType: configTable.targetType,
         targetConnectionId: configTable.targetConnectionId,
         loadType: configTable.loadType,
-        fileDelimiter: configTable.fileDelimiter,
         activeFlag: configTable.activeFlag,
         dynamicSchema: configTable.dynamicSchema,
         fullRefreshFlag: configTable.fullRefreshFlag,
