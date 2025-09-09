@@ -1389,7 +1389,8 @@ export class DatabaseStorage implements IStorage {
       'data_type': ['int', 'bigint', 'varchar', 'text', 'char', 'decimal', 'float', 'double', 'boolean', 'date', 'datetime', 'timestamp', 'json', 'blob'],
       'is_not_null': ['Yes', 'No'],
       'is_primary_key': ['Yes', 'No'],
-      'is_foreign_key': ['Yes', 'No']
+      'is_foreign_key': ['Yes', 'No'],
+      'recon_type': ['Count Check', 'Amount Check', 'Sum Check', 'Data Check', 'Duplicate Check', 'Null Check']
     };
 
     return metadataMap[type] || [];

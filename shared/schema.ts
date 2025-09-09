@@ -261,6 +261,8 @@ export const reconciliationConfigTable = pgTable("reconciliation_config", {
 
 export const insertReconciliationConfigSchema = createInsertSchema(reconciliationConfigTable).omit({
   reconKey: true,
+}).extend({
+  configKey: z.number().optional(),
 });
 
 export const updateReconciliationConfigSchema = createInsertSchema(reconciliationConfigTable).omit({

@@ -49,7 +49,8 @@ import {
 
 // Form validation schema
 const reconciliationFormSchema = z.object({
-  executionLayer: z.string().min(1, "Execution layer is required"),
+  configKey: z.number().min(1, "Config Key is required").optional(),
+  executionLayer: z.string().min(1, "Execution Layer is required"),
   sourceSystem: z.string().optional(),
   sourceConnectionId: z.number().optional(),
   sourceType: z.string().optional(),
@@ -120,6 +121,7 @@ export function ReconciliationForm({
   const form = useForm<FormData>({
     resolver: zodResolver(reconciliationFormSchema),
     defaultValues: {
+      configKey: config?.configKey || undefined,
       executionLayer: config?.executionLayer || "",
       sourceSystem: config?.sourceSystem || "",
       sourceConnectionId: config?.sourceConnectionId || undefined,
@@ -162,7 +164,7 @@ export function ReconciliationForm({
       if (!selectedSourceSystem) return [];
       const response = await fetch(`/api/connections`);
       const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-      
+
       // Filter connections by matching connection type with selected source system
       return allConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
@@ -209,7 +211,7 @@ export function ReconciliationForm({
       if (!selectedTargetSystem) return [];
       const response = await fetch(`/api/connections`);
       const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-      
+
       // Filter connections by matching connection type with selected target system
       return allConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
