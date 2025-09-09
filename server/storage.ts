@@ -1321,7 +1321,7 @@ export class DatabaseStorage implements IStorage {
         primaryKey: configTable.primaryKey,
         activeFlag: configTable.activeFlag,
         enableDynamicSchema: configTable.enableDynamicSchema,
-        fullRefreshFlag: configTable.fullRefreshFlag,
+        fullDataRefreshFlag: configTable.fullDataRefreshFlag,
         executionSequence: configTable.executionSequence,
         effectiveDate: configTable.effectiveDate,
         md5Columns: configTable.md5Columns,
