@@ -1754,7 +1754,7 @@ export class DatabaseStorage implements IStorage {
 
   // Data Quality Config implementations
   async getDataQualityConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]> {
-    // Select only the core columns that definitely exist
+    // Select all columns including the new source/target fields
     let query = db.select({
       dataQualityKey: dataQualityConfigTable.dataQualityKey,
       configKey: dataQualityConfigTable.configKey,
@@ -1768,6 +1768,18 @@ export class DatabaseStorage implements IStorage {
       thresholdPercentage: dataQualityConfigTable.thresholdPercentage,
       activeFlag: dataQualityConfigTable.activeFlag,
       customQuery: dataQualityConfigTable.customQuery,
+      // Source configuration fields
+      sourceSystem: dataQualityConfigTable.sourceSystem,
+      sourceConnectionId: dataQualityConfigTable.sourceConnectionId,
+      sourceType: dataQualityConfigTable.sourceType,
+      sourceSchema: dataQualityConfigTable.sourceSchema,
+      sourceTableName: dataQualityConfigTable.sourceTableName,
+      // Target configuration fields
+      targetSystem: dataQualityConfigTable.targetSystem,
+      targetConnectionId: dataQualityConfigTable.targetConnectionId,
+      targetType: dataQualityConfigTable.targetType,
+      targetSchema: dataQualityConfigTable.targetSchema,
+      targetTableName: dataQualityConfigTable.targetTableName,
     }).from(dataQualityConfigTable);
 
     const conditions = [];
@@ -1809,20 +1821,7 @@ export class DatabaseStorage implements IStorage {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(dataQualityConfigTable.dataQualityKey));
 
-    // Map results to include the source/target fields as null since they don't exist in the database yet
-    return results.map(row => ({
-      ...row,
-      sourceSystem: null,
-      sourceConnectionId: null,
-      sourceType: null,
-      sourceSchema: null,
-      sourceTableName: null,
-      targetSystem: null,
-      targetConnectionId: null,
-      targetType: null,
-      targetSchema: null,
-      targetTableName: null,
-    }));
+    return results;
   }
 
   async getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined> {
