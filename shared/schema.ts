@@ -112,7 +112,7 @@ export const configTable = pgTable("config_table", {
   executionSequence: varchar("execution_sequence", { length: 20 }),
   enableDynamicSchema: varchar("enable_dynamic_schema", { length: 1 }).default("N"),
   activeFlag: varchar("active_flag", { length: 1 }).default("Y"),
-  fullRefreshFlag: varchar("full_data_refresh_flag", { length: 1 }).default("N"),
+  fullDataRefreshFlag: varchar("full_data_refresh_flag", { length: 1 }).default("N"),
   connectionId: integer("source_connection_id"),
   targetLayer: varchar("target_layer", { length: 50 }),
   targetSystem: varchar("target_system", { length: 100 }),
