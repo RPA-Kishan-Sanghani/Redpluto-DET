@@ -116,7 +116,6 @@ export function ConfigSettings() {
       host: '',
       port: undefined,
       databaseName: '',
-      schemaName: '',
       username: '',
       password: '',
       authMethod: 'credentials',
@@ -317,7 +316,6 @@ export function ConfigSettings() {
       host: connection.host,
       port: connection.port,
       databaseName: connection.databaseName,
-      schemaName: '',
       username: connection.username || '',
       password: connection.password || '',
       authMethod: 'credentials',
@@ -549,8 +547,8 @@ export function ConfigSettings() {
                           )}
                         </div>
 
-                        {/* Database and Schema */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Database Name */}
+                        <div className="grid grid-cols-1 gap-4">
                           <FormField
                             control={form.control}
                             name="databaseName"
@@ -560,20 +558,6 @@ export function ConfigSettings() {
                                 <FormControl>
                                   <Input placeholder="database_name" {...field} data-testid="input-database-name" />
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="schemaName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Schema</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="schema_name" {...field} data-testid="input-schema-name" />
-                                </FormControl>
-                                <FormDescription>Optional: Database schema name</FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
