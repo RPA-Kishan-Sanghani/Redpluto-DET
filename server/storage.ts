@@ -1312,7 +1312,7 @@ export class DatabaseStorage implements IStorage {
         targetConnectionId: configTable.targetConnectionId,
         loadType: configTable.loadType,
         activeFlag: configTable.activeFlag,
-        dynamicSchema: configTable.dynamicSchema,
+        enableDynamicSchema: configTable.enableDynamicSchema,
         fullRefreshFlag: configTable.fullRefreshFlag,
         executionSequence: configTable.executionSequence,
         effectiveDate: configTable.effectiveDate,

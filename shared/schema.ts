@@ -103,7 +103,7 @@ export const configTable = pgTable("config_table", {
   loadType: varchar("load_type", { length: 50 }),
   fileDelimiter: varchar("file_delimiter", { length: 10 }),
   activeFlag: varchar("active_flag", { length: 1 }).default("Y"),
-  dynamicSchema: varchar("dynamic_schema", { length: 1 }).default("N"),
+  enableDynamicSchema: varchar("enable_dynamic_schema", { length: 1 }).default("N"),
   fullRefreshFlag: varchar("full_refresh_flag", { length: 1 }).default("N"),
   executionSequence: varchar("execution_sequence", { length: 20 }),
   effectiveDate: varchar("effective_date", { length: 50 }),
@@ -199,7 +199,7 @@ export type InsertErrorRecord = z.infer<typeof insertErrorSchema>;
 export type SourceConnection = typeof sourceConnectionTable.$inferSelect;
 export type InsertSourceConnection = z.infer<typeof insertSourceConnectionSchema>;
 export type UpdateSourceConnection = z.infer<typeof updateSourceConnectionSchema>;
-export type ConfigRecord = typeof configTable.$inferSelect;
+export type ConfigRecord = typeof configTable.$inferSelect & { enableDynamicSchema: string | null };
 export type InsertConfigRecord = z.infer<typeof insertConfigSchema>;
 export type UpdateConfigRecord = z.infer<typeof updateConfigSchema>;
 
