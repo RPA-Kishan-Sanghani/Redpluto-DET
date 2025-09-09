@@ -104,7 +104,7 @@ export const configTable = pgTable("config_table", {
   fileDelimiter: varchar("file_delimiter", { length: 10 }),
   activeFlag: varchar("active_flag", { length: 1 }).default("Y"),
   enableDynamicSchema: varchar("enable_dynamic_schema", { length: 1 }).default("N"),
-  fullRefreshFlag: varchar("full_refresh_flag", { length: 1 }).default("N"),
+  fullRefreshFlag: varchar("full_data_refresh_flag", { length: 1 }).default("N"),
   executionSequence: varchar("execution_sequence", { length: 20 }),
   effectiveDate: varchar("effective_date", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
