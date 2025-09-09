@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -7,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TestTube2, CheckCircle, XCircle, ChevronDown, Settings, Shield, Clock, Database as DatabaseIcon } from "lucide-react";
+import { Loader2, TestTube2, CheckCircle, XCircle, Shield, Database as DatabaseIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { insertSourceConnectionSchema, type SourceConnection, type InsertSourceConnection } from "@shared/schema";
 import { z } from "zod";
@@ -68,7 +66,7 @@ const CONNECTION_TYPES = [
 export default function ConnectionForm({ initialData, isEditing = false, onSuccess, onCancel }: ConnectionFormProps) {
   const [selectedType, setSelectedType] = useState<string>('');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  
   const [authMethod, setAuthMethod] = useState<'credentials' | 'oauth' | 'service_account'>('credentials');
   const { toast } = useToast();
 
@@ -511,98 +509,7 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
           </div>
         )}
 
-        {/* Advanced Settings */}
-        {selectedType && (
-          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-            <CollapsibleTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full flex items-center justify-between p-4"
-                data-testid="toggle-advanced-settings"
-              >
-                <span className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Advanced Settings
-                </span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 p-4 border border-t-0 rounded-b-lg">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* SSL Settings */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    SSL Connection
-                  </label>
-                  <Select defaultValue="false" data-testid="select-ssl">
-                    <SelectTrigger>
-                      <SelectValue placeholder="SSL mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="false">Disabled</SelectItem>
-                      <SelectItem value="require">Required</SelectItem>
-                      <SelectItem value="prefer">Preferred</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Connection Timeout */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Connection Timeout (seconds)
-                  </label>
-                  <Input 
-                    type="number" 
-                    placeholder="30" 
-                    defaultValue="30"
-                    min="5"
-                    max="300"
-                    data-testid="input-timeout"
-                  />
-                </div>
-
-                {/* Connection Pool Size */}
-                {requiresDatabase && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Connection Pool Size
-                    </label>
-                    <Input 
-                      type="number" 
-                      placeholder="10" 
-                      defaultValue="10"
-                      min="1"
-                      max="100"
-                      data-testid="input-pool-size"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* SSL Certificate Upload */}
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <Button type="button" variant="ghost" size="sm" className="text-xs">
-                    Upload SSL Certificate (Optional)
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <Textarea
-                    placeholder="-----BEGIN CERTIFICATE-----
-MIIDXTCCAkWgAwIBAgIJAKoK/heBjcOu...
------END CERTIFICATE-----"
-                    className="font-mono text-xs"
-                    rows={4}
-                    data-testid="textarea-ssl-cert"
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+        
 
         {/* Test Connection Section */}
         {selectedType && (
