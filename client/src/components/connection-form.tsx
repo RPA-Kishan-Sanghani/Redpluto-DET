@@ -441,47 +441,25 @@ export default function ConnectionForm({ initialData, isEditing = false, onSucce
             </div>
 
             {(requiresDatabase || requiresCloud) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="databaseName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {requiresCloud ? 'Database/Project' : 'Database Name'}
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder={requiresCloud ? "project_id or database" : "database_name"} 
-                          {...field} 
-                          data-testid="input-database-name" 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="cloudProvider"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Schema/Dataset</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder={requiresCloud ? "dataset_name" : "schema_name"} 
-                          {...field} 
-                          data-testid="input-schema-name" 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {requiresCloud ? 'Dataset or schema name' : 'Database schema name'}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="databaseName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {requiresCloud ? 'Database/Project' : 'Database Name'}
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder={requiresCloud ? "project_id or database" : "database_name"} 
+                        {...field} 
+                        data-testid="input-database-name" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             {requiresAccount && (
