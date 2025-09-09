@@ -313,7 +313,7 @@ export function DataQualityForm({
         await updateMutation.mutateAsync(data);
       } else {
         const createData = {
-          configKey: data.configKey || 1, // Provide a default value
+          configKey: data.configKey,
           executionLayer: data.executionLayer,
           tableName: data.tableName,
           attributeName: data.attributeName,
@@ -324,16 +324,6 @@ export function DataQualityForm({
           thresholdPercentage: data.thresholdPercentage,
           activeFlag: data.activeFlag,
           customQuery: data.customQuery,
-          sourceSystem: data.sourceSystem,
-          sourceConnectionId: data.sourceConnectionId,
-          sourceType: data.sourceType,
-          sourceSchema: data.sourceSchema,
-          sourceTableName: data.sourceTableName,
-          targetSystem: data.targetSystem,
-          targetConnectionId: data.targetConnectionId,
-          targetType: data.targetType,
-          targetSchema: data.targetSchema,
-          targetTableName: data.targetTableName,
         };
         await createMutation.mutateAsync(createData);
       }
