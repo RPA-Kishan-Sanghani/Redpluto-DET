@@ -1363,8 +1363,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord> {
-    const [created] = await db.insert(configTable).values(pipeline).returning();
-    return created;
+    try {
+      console.log('Creating pipeline with data:', JSON.stringify(pipeline, null, 2));
+      const [created] = await db.insert(configTable).values(pipeline).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating pipeline:', error);
+      throw new Error(`Failed to create pipeline: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined> {
