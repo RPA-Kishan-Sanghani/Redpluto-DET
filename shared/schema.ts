@@ -106,7 +106,7 @@ export const configTable = pgTable("config_table", {
   enableDynamicSchema: varchar("enable_dynamic_schema", { length: 1 }).default("N"),
   fullRefreshFlag: varchar("full_data_refresh_flag", { length: 1 }).default("N"),
   executionSequence: varchar("execution_sequence", { length: 20 }),
-  effectiveDate: varchar("effective_date", { length: 50 }),
+  effectiveDate: varchar("effective_date_column", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
