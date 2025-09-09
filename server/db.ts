@@ -26,4 +26,4 @@ console.log('External database config:', JSON.stringify(externalDbConfig, null, 
 console.log('Environment DATABASE_URL deleted:', !process.env.DATABASE_URL);
 
 export const pool = new Pool(externalDbConfig);
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle({ client: pool, schema, logger: true });
