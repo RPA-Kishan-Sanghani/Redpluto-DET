@@ -1300,7 +1300,6 @@ export class DatabaseStorage implements IStorage {
     try {
       let query = db.select({
         configKey: configTable.configKey,
-        connectionId: configTable.connectionId,
         executionLayer: configTable.executionLayer,
         sourceSystem: configTable.sourceSystem,
         sourceSchemaName: configTable.sourceSchemaName,
