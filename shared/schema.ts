@@ -115,7 +115,7 @@ export const configTable = pgTable("config_table", {
   fullRefreshFlag: varchar("full_data_refresh_flag", { length: 1 }).default("N"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  connectionId: integer("connection_id"),
+  connectionId: integer("source_connection_id"),
   targetLayer: varchar("target_layer", { length: 50 }),
   targetSystem: varchar("target_system", { length: 100 }),
   targetConnectionId: integer("target_connection_id"),
