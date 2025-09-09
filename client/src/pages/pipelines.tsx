@@ -131,7 +131,18 @@ export function Pipelines() {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-8">
-          <p className="text-red-500">Error loading pipelines. Please try again.</p>
+          <p className="text-red-500 font-semibold">Database Connection Error:</p>
+          <p className="text-red-600 text-sm mt-2">
+            {error instanceof Error ? error.message : 'Error loading pipelines. Please try again.'}
+          </p>
+          <div className="mt-4">
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] })}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Retry Connection
+            </Button>
+          </div>
         </div>
       </div>
     );
