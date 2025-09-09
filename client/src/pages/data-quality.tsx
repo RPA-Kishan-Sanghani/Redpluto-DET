@@ -120,6 +120,44 @@ export function DataQuality() {
     setEditingConfig(null);
   };
 
+  // Function to insert dummy data for testing external database connection
+  const insertDummyData = async () => {
+    try {
+      const dummyConfig = {
+        configKey: 1,
+        executionLayer: "Bronze",
+        tableName: "test_table",
+        attributeName: "test_column",
+        validationType: "Null Check",
+        referenceTableName: "",
+        defaultValue: "test_default",
+        errorTableTransferFlag: "Y",
+        thresholdPercentage: 95.0,
+        activeFlag: "Y",
+        customQuery: "SELECT COUNT(*) FROM test_table WHERE test_column IS NULL"
+      };
+
+      const response = await apiRequest("POST", "/api/data-quality-configs", dummyConfig);
+      
+      if (response.ok) {
+        const result = await response.json();
+        queryClient.invalidateQueries({ queryKey: ["/api/data-quality-configs"] });
+        toast({
+          title: "Success",
+          description: `Dummy data inserted successfully! Connected to external database at 4.240.90.166. Record ID: ${result.dataQualityKey}`,
+        });
+      } else {
+        throw new Error("Failed to insert dummy data");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to connect to external database: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string | null) => {
     const activeFlag = status === 'Y' ? 'Active' : status === 'N' ? 'Inactive' : 'Unknown';
     const variant = activeFlag === 'Active' ? 'default' : activeFlag === 'Inactive' ? 'secondary' : 'destructive';
@@ -168,6 +206,15 @@ export function DataQuality() {
               data-testid="button-refresh-configs"
             >
               Refresh
+            </Button>
+            <Button
+              variant="outline"
+              onClick={insertDummyData}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              data-testid="button-test-db-connection"
+            >
+              <Database className="h-4 w-4 mr-2" />
+              Test DB Connection
             </Button>
             <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700" data-testid="button-add-data-quality">
               <Plus className="h-4 w-4" />Add Quality Config
