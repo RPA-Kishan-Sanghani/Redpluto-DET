@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthState } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { ConfigSettings } from "./ConfigSettings";
+
 
 export function SettingsPage() {
   const { user, logout } = useAuthState();
@@ -76,14 +76,10 @@ export function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
-          </TabsTrigger>
-          <TabsTrigger value="config" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Config Settings
           </TabsTrigger>
         </TabsList>
 
@@ -244,10 +240,7 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Config Settings Tab */}
-        <TabsContent value="config">
-          <ConfigSettings />
-        </TabsContent>
+        
       </Tabs>
     </div>
   );
