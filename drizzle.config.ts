@@ -1,14 +1,14 @@
+
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
-}
+// External PostgreSQL database configuration
+const DATABASE_URL = "postgresql://rpdet_az:Rpdet#1234@4.240.90.166:5432/config_db";
 
 export default defineConfig({
   out: "./migrations",
   schema: "./shared/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: DATABASE_URL,
   },
 });
