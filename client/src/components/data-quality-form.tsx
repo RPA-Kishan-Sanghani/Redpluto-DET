@@ -118,13 +118,11 @@ export function DataQualityForm({
 
   // Validation types
   const validationTypes = [
-    "NOT_NULL",
-    "UNIQUE", 
-    "DATA_TYPE",
-    "RANGE",
-    "REGEX",
-    "CUSTOM",
-    "REFERENCE"
+    "Null Check",
+    "List Value Check", 
+    "Duplicate Check",
+    "File Format Check",
+    "Referential Integrity Check"
   ];
 
   // Initialize form with default values or existing config values
@@ -166,8 +164,8 @@ export function DataQualityForm({
   const selectedTargetConnectionId = form.watch('targetConnectionId');
   const selectedTargetSchema = form.watch('targetSchema');
   
-  const showReferenceTable = selectedValidationType === 'REFERENCE';
-  const showThresholdPercentage = ['RANGE', 'CUSTOM'].includes(selectedValidationType || '');
+  const showReferenceTable = selectedValidationType === 'Referential Integrity Check';
+  const showThresholdPercentage = ['List Value Check', 'File Format Check'].includes(selectedValidationType || '');
 
   // Filter connections based on selected system
   const sourceConnections = allConnections.filter(conn => 
@@ -384,7 +382,7 @@ export function DataQualityForm({
                       <SelectContent>
                         {validationTypes.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {type.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                            {type}
                           </SelectItem>
                         ))}
                       </SelectContent>
