@@ -224,6 +224,18 @@ export function DataQualityForm({
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
 
+  // Fetch target table columns for selected target table
+  const selectedTargetTableName = form.watch('targetTableName');
+  const { data: targetTableColumns = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTableName, 'columns'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTableName) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTableName}/columns`);
+      return response.json();
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTableName
+  });
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: InsertDataQualityConfig) => {
@@ -352,22 +364,6 @@ export function DataQualityForm({
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              
-
-              <FormField
-                control={form.control}
-                name="attributeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Attribute Name <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter attribute name" data-testid="input-attribute-name" />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -834,7 +830,11 @@ export function DataQualityForm({
                   <FormItem>
                     <FormLabel>Target Table Name</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Reset attribute name when table changes
+                        form.setValue('attributeName', '');
+                      }} 
                       value={field.value || ''}
                       disabled={!selectedTargetSchema}
                     >
@@ -846,6 +846,33 @@ export function DataQualityForm({
                       <SelectContent>
                         {targetTables.map((table) => (
                           <SelectItem key={table} value={table}>{table}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="attributeName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Attribute Name <span className="text-red-500">*</span></FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || ''}
+                      disabled={!selectedTargetTableName}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-attribute-name">
+                          <SelectValue placeholder={selectedTargetTableName ? "Select column" : "Select table first"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {targetTableColumns.map((column) => (
+                          <SelectItem key={column} value={column}>{column}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
