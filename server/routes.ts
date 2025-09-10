@@ -706,15 +706,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/data-quality-configs", async (req, res) => {
     try {
+      console.log('Received data quality config data:', JSON.stringify(req.body, null, 2));
       const validatedData = insertDataQualityConfigSchema.parse(req.body);
+      console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       const config = await storage.createDataQualityConfig(validatedData);
       res.status(201).json(config);
     } catch (error: any) {
       console.error('Error creating data quality config:', error);
       if (error.name === 'ZodError') {
+        console.error('Validation errors:', error.errors);
         return res.status(400).json({ error: 'Invalid data quality config data', details: error.errors });
       }
-      res.status(500).json({ error: 'Failed to create data quality config' });
+      res.status(500).json({ error: 'Failed to create data quality config', details: error.message });
     }
   });
 

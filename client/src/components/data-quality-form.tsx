@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,7 +47,7 @@ import {
 const dataQualityFormSchema = z.object({
   configKey: z.number().optional(),
   executionLayer: z.string().min(1, "Execution layer is required"),
-  tableName: z.string().min(1, "Table name is required"),
+  tableName: z.string().optional(),
   attributeName: z.string().min(1, "Attribute name is required"),
   validationType: z.string().min(1, "Validation type is required"),
   referenceTableName: z.string().optional(),
@@ -155,6 +156,16 @@ export function DataQualityForm({
     },
   });
 
+  // Watch target table name to sync with tableName field
+  const selectedTargetTableName = form.watch('targetTableName');
+  
+  // Update tableName when targetTableName changes
+  React.useEffect(() => {
+    if (selectedTargetTableName) {
+      form.setValue('tableName', selectedTargetTableName);
+    }
+  }, [selectedTargetTableName, form]);
+
   // Watch form values for dynamic behavior
   const selectedValidationType = form.watch('validationType');
   const selectedSourceSystem = form.watch('sourceSystem');
@@ -223,7 +234,6 @@ export function DataQualityForm({
   });
 
   // Fetch target table columns for selected target table
-  const selectedTargetTableName = form.watch('targetTableName');
   const { data: targetTableColumns = [] } = useQuery({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTableName, 'columns'],
     queryFn: async () => {
@@ -288,34 +298,42 @@ export function DataQualityForm({
     setIsLoading(true);
     try {
       console.log('Form submitted with data:', data);
+      
+      // Ensure tableName is set from targetTableName if not provided
+      const processedData = {
+        ...data,
+        tableName: data.tableName || data.targetTableName || "",
+      };
+      
       if (config) {
-        await updateMutation.mutateAsync(data);
+        await updateMutation.mutateAsync(processedData);
       } else {
         const createData: InsertDataQualityConfig = {
-          configKey: data.configKey,
-          executionLayer: data.executionLayer,
-          tableName: data.tableName,
-          attributeName: data.attributeName,
-          validationType: data.validationType,
-          referenceTableName: data.referenceTableName,
-          defaultValue: data.defaultValue,
-          errorTableTransferFlag: data.errorTableTransferFlag,
-          thresholdPercentage: data.thresholdPercentage,
-          activeFlag: data.activeFlag,
-          customQuery: data.customQuery,
+          configKey: processedData.configKey,
+          executionLayer: processedData.executionLayer,
+          tableName: processedData.tableName,
+          attributeName: processedData.attributeName,
+          validationType: processedData.validationType,
+          referenceTableName: processedData.referenceTableName || null,
+          defaultValue: processedData.defaultValue || null,
+          errorTableTransferFlag: processedData.errorTableTransferFlag || "N",
+          thresholdPercentage: processedData.thresholdPercentage || null,
+          activeFlag: processedData.activeFlag || "Y",
+          customQuery: processedData.customQuery || null,
           // Source configuration
-          sourceSystem: data.sourceSystem,
-          sourceConnectionId: data.sourceConnectionId,
-          sourceType: data.sourceType,
-          sourceSchema: data.sourceSchema,
-          sourceTableName: data.sourceTableName,
+          sourceSystem: processedData.sourceSystem || null,
+          sourceConnectionId: processedData.sourceConnectionId || null,
+          sourceType: processedData.sourceType || null,
+          sourceSchema: processedData.sourceSchema || null,
+          sourceTableName: processedData.sourceTableName || null,
           // Target configuration
-          targetSystem: data.targetSystem,
-          targetConnectionId: data.targetConnectionId,
-          targetType: data.targetType,
-          targetSchema: data.targetSchema,
-          targetTableName: data.targetTableName,
+          targetSystem: processedData.targetSystem || null,
+          targetConnectionId: processedData.targetConnectionId || null,
+          targetType: processedData.targetType || null,
+          targetSchema: processedData.targetSchema || null,
+          targetTableName: processedData.targetTableName || null,
         };
+        console.log('Processed create data:', createData);
         await createMutation.mutateAsync(createData);
       }
     } catch (error) {
