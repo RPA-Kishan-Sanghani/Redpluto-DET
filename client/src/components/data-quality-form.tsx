@@ -357,19 +357,7 @@ export function DataQualityForm({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="tableName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Table Name <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter table name" data-testid="input-table-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
 
               <FormField
                 control={form.control}
