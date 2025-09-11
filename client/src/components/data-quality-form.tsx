@@ -47,7 +47,7 @@ import {
 const dataQualityFormSchema = z.object({
   configKey: z.number().optional(),
   executionLayer: z.string().min(1, "Execution layer is required"),
-  tableName: z.string().min(1, "Table name is required"),
+  tableName: z.string().optional(), // Optional since derived from sourceTableName
   attributeName: z.string().min(1, "Attribute name is required"),
   validationType: z.string().min(1, "Validation type is required"),
   referenceTableName: z.string().optional(),
@@ -254,10 +254,10 @@ export function DataQualityForm({
     try {
       console.log('Form submitted with data:', data);
       
-      // Ensure tableName is set from targetTableName if not provided
+      // Use sourceTableName as tableName since we removed the separate tableName field
       const processedData = {
         ...data,
-        tableName: data.tableName || data.targetTableName || "",
+        tableName: data.sourceTableName || "",
       };
       
       if (config) {
@@ -275,18 +275,6 @@ export function DataQualityForm({
           thresholdPercentage: processedData.thresholdPercentage || null,
           activeFlag: processedData.activeFlag || "Y",
           customQuery: processedData.customQuery || null,
-          // Source configuration
-          sourceSystem: processedData.sourceSystem || null,
-          sourceConnectionId: processedData.sourceConnectionId || null,
-          sourceType: processedData.sourceType || null,
-          sourceSchema: processedData.sourceSchema || null,
-          sourceTableName: processedData.sourceTableName || null,
-          // Target configuration
-          targetSystem: processedData.targetSystem || null,
-          targetConnectionId: processedData.targetConnectionId || null,
-          targetType: processedData.targetType || null,
-          targetSchema: processedData.targetSchema || null,
-          targetTableName: processedData.targetTableName || null,
         };
         console.log('Processed create data:', createData);
         await createMutation.mutateAsync(createData);
