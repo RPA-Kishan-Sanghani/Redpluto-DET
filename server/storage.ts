@@ -269,8 +269,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.status) {
-      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' : 
-                         filters.status.toLowerCase() === 'success' ? 'Success' : 
+      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' :
+                         filters.status.toLowerCase() === 'success' ? 'Success' :
                          filters.status;
       conditions.push(eq(auditTable.status, statusValue));
     }
@@ -354,8 +354,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.status) {
-      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' : 
-                         filters.status.toLowerCase() === 'success' ? 'Success' : 
+      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' :
+                         filters.status.toLowerCase() === 'success' ? 'Success' :
                          filters.status;
       conditions.push(eq(auditTable.status, statusValue));
     }
@@ -954,8 +954,8 @@ export class DatabaseStorage implements IStorage {
       try {
         // Create connection to the external PostgreSQL database
         // Check if this is a cloud database that requires SSL
-        const requiresSSL = connection.host?.includes('neon.tech') || 
-                          connection.host?.includes('aws') || 
+        const requiresSSL = connection.host?.includes('neon.tech') ||
+                          connection.host?.includes('aws') ||
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
 
@@ -984,8 +984,8 @@ export class DatabaseStorage implements IStorage {
         const client = await pool.connect();
         try {
           const result = await client.query(`
-            SELECT schema_name 
-            FROM information_schema.schemata 
+            SELECT schema_name
+            FROM information_schema.schemata
             WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
             ORDER BY schema_name
           `);
@@ -1033,8 +1033,8 @@ export class DatabaseStorage implements IStorage {
       try {
         // Create connection to the external PostgreSQL database
         // Check if this is a cloud database that requires SSL
-        const requiresSSL = connection.host?.includes('neon.tech') || 
-                          connection.host?.includes('aws') || 
+        const requiresSSL = connection.host?.includes('neon.tech') ||
+                          connection.host?.includes('aws') ||
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
 
@@ -1063,9 +1063,9 @@ export class DatabaseStorage implements IStorage {
         const client = await pool.connect();
         try {
           const result = await client.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_schema = $1 
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = $1
             AND table_name = $2
             ORDER BY ordinal_position
           `, [schemaName, tableName]);
@@ -1085,7 +1085,7 @@ export class DatabaseStorage implements IStorage {
       }
     } else {
       // Return mock columns for other connection types
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+      await this.simulateConnectionDelay();
       return ['id', 'name', 'email', 'phone', 'address', 'city', 'state', 'country', 'postal_code', 'created_at', 'updated_at'];
     }
   }
@@ -1103,8 +1103,8 @@ export class DatabaseStorage implements IStorage {
       try {
         // Create connection to the external PostgreSQL database
         // Check if this is a cloud database that requires SSL
-        const requiresSSL = connection.host?.includes('neon.tech') || 
-                          connection.host?.includes('aws') || 
+        const requiresSSL = connection.host?.includes('neon.tech') ||
+                          connection.host?.includes('aws') ||
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
 
@@ -1133,7 +1133,7 @@ export class DatabaseStorage implements IStorage {
         const client = await pool.connect();
         try {
           const result = await client.query(`
-            SELECT 
+            SELECT
               c.column_name,
               c.data_type,
               c.character_maximum_length,
@@ -1147,31 +1147,31 @@ export class DatabaseStorage implements IStorage {
             LEFT JOIN (
               SELECT kcu.column_name, kcu.table_schema, kcu.table_name
               FROM information_schema.table_constraints tc
-              JOIN information_schema.key_column_usage kcu 
+              JOIN information_schema.key_column_usage kcu
                 ON tc.constraint_name = kcu.constraint_name
                 AND tc.table_schema = kcu.table_schema
               WHERE tc.constraint_type = 'PRIMARY KEY'
-            ) pk ON c.column_name = pk.column_name 
-                AND c.table_schema = pk.table_schema 
+            ) pk ON c.column_name = pk.column_name
+                AND c.table_schema = pk.table_schema
                 AND c.table_name = pk.table_name
             LEFT JOIN (
-              SELECT 
-                kcu.column_name, 
-                kcu.table_schema, 
+              SELECT
+                kcu.column_name,
+                kcu.table_schema,
                 kcu.table_name,
                 ccu.table_name as foreign_table_name
               FROM information_schema.table_constraints tc
-              JOIN information_schema.key_column_usage kcu 
+              JOIN information_schema.key_column_usage kcu
                 ON tc.constraint_name = kcu.constraint_name
                 AND tc.table_schema = kcu.table_schema
               JOIN information_schema.constraint_column_usage ccu
                 ON ccu.constraint_name = tc.constraint_name
                 AND ccu.table_schema = tc.table_schema
               WHERE tc.constraint_type = 'FOREIGN KEY'
-            ) fk ON c.column_name = fk.column_name 
-                AND c.table_schema = fk.table_schema 
+            ) fk ON c.column_name = fk.column_name
+                AND c.table_schema = fk.table_schema
                 AND c.table_name = fk.table_name
-            WHERE c.table_schema = $1 
+            WHERE c.table_schema = $1
             AND c.table_name = $2
             ORDER BY c.ordinal_position
           `, [schemaName, tableName]);
@@ -1225,8 +1225,8 @@ export class DatabaseStorage implements IStorage {
       try {
         // Create connection to the external PostgreSQL database
         // Check if this is a cloud database that requires SSL
-        const requiresSSL = connection.host?.includes('neon.tech') || 
-                          connection.host?.includes('aws') || 
+        const requiresSSL = connection.host?.includes('neon.tech') ||
+                          connection.host?.includes('aws') ||
                           connection.host?.includes('gcp') ||
                           connection.host?.includes('azure');
 
@@ -1255,8 +1255,8 @@ export class DatabaseStorage implements IStorage {
         const client = await pool.connect();
         try {
           const result = await client.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
+            SELECT table_name
+            FROM information_schema.tables
             WHERE table_schema = $1
             AND table_type = 'BASE TABLE'
             ORDER BY table_name
@@ -1497,7 +1497,7 @@ export class DatabaseStorage implements IStorage {
       });
 
       const query = `
-        SELECT * FROM data_dictionary_table 
+        SELECT * FROM data_dictionary_table
         WHERE data_dictionary_key = $1
       `;
 
@@ -1569,7 +1569,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
-    // FORCE connection to external PostgreSQL database  
+    // FORCE connection to external PostgreSQL database
     try {
       const externalPool = new Pool({
         host: '4.240.90.166',
@@ -1652,7 +1652,7 @@ export class DatabaseStorage implements IStorage {
       values.push(id);
 
       const query = `
-        UPDATE data_dictionary_table 
+        UPDATE data_dictionary_table
         SET ${updateFields.join(', ')}
         WHERE data_dictionary_key = $${paramCount}
         RETURNING *;
@@ -1809,14 +1809,9 @@ export class DatabaseStorage implements IStorage {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(dataQualityConfigTable.dataQualityKey));
 
-    // Add null values for the source/target fields that don't exist in the database yet
+    // Add null values for the target fields for application compatibility
     return results.map(result => ({
       ...result,
-      sourceSystem: null,
-      sourceConnectionId: null,
-      sourceType: null,
-      sourceSchema: null,
-      sourceTableName: null,
       targetSystem: null,
       targetConnectionId: null,
       targetType: null,

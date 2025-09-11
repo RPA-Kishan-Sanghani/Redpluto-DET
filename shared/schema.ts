@@ -297,18 +297,6 @@ export const dataQualityConfigTable = pgTable("data_quality_config_table", {
   thresholdPercentage: doublePrecision("threshold_percentage"),
   activeFlag: varchar("active_flag", { length: 5 }),
   customQuery: varchar("custom_query", { length: 500 }),
-  // Source configuration fields
-  sourceSystem: varchar("source_system", { length: 100 }),
-  sourceConnectionId: integer("source_connection_id"),
-  sourceType: varchar("source_type", { length: 50 }),
-  sourceSchema: varchar("source_schema", { length: 100 }),
-  sourceTableName: varchar("source_table_name", { length: 100 }),
-  // Target configuration fields
-  targetSystem: varchar("target_system", { length: 100 }),
-  targetConnectionId: integer("target_connection_id"),
-  targetType: varchar("target_type", { length: 50 }),
-  targetSchema: varchar("target_schema", { length: 100 }),
-  targetTableName: varchar("target_table_name", { length: 100 }),
 });
 
 export const insertDataQualityConfigSchema = createInsertSchema(dataQualityConfigTable).omit({
@@ -319,9 +307,17 @@ export const updateDataQualityConfigSchema = createInsertSchema(dataQualityConfi
   dataQualityKey: true,
 }).partial();
 
-export type DataQualityConfig = typeof dataQualityConfigTable.$inferSelect;
-export type InsertDataQualityConfig = z.infer<typeof insertDataQualityConfigSchema>;
-export type UpdateDataQualityConfig = z.infer<typeof updateDataQualityConfigSchema>;
+// Base type from the actual database table
+export type DataQualityConfigBase = typeof dataQualityConfigTable.$inferSelect;
+
+// Extended type with target fields for application use (replacing source fields)
+export type DataQualityConfig = DataQualityConfigBase & {
+  targetSystem?: string | null;
+  targetConnectionId?: number | null;
+  targetType?: string | null;
+  targetSchema?: string | null;
+  targetTableName?: string | null;
+};
 
 // Config Settings Connections Table (separate from source connections)
 export const configConnectionTable = pgTable("config_connections", {
