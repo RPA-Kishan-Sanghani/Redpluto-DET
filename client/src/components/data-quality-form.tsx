@@ -47,7 +47,7 @@ import {
 const dataQualityFormSchema = z.object({
   configKey: z.number().optional(),
   executionLayer: z.string().min(1, "Execution layer is required"),
-  tableName: z.string().optional(),
+  tableName: z.string().min(1, "Table name is required"),
   attributeName: z.string().min(1, "Attribute name is required"),
   validationType: z.string().min(1, "Validation type is required"),
   referenceTableName: z.string().optional(),
@@ -156,93 +156,13 @@ export function DataQualityForm({
     },
   });
 
-  // Watch target table name to sync with tableName field
-  const selectedTargetTableName = form.watch('targetTableName');
   
-  // Update tableName when targetTableName changes
-  React.useEffect(() => {
-    if (selectedTargetTableName) {
-      form.setValue('tableName', selectedTargetTableName);
-    }
-  }, [selectedTargetTableName, form]);
 
   // Watch form values for dynamic behavior
   const selectedValidationType = form.watch('validationType');
-  const selectedSourceSystem = form.watch('sourceSystem');
-  const selectedSourceConnectionId = form.watch('sourceConnectionId');
-  const selectedSourceSchema = form.watch('sourceSchema');
-  const selectedTargetSystem = form.watch('targetSystem');
-  const selectedTargetConnectionId = form.watch('targetConnectionId');
-  const selectedTargetSchema = form.watch('targetSchema');
   
   const showReferenceTable = selectedValidationType === 'Referential Integrity Check';
   const showThresholdPercentage = ['List Value Check', 'File Format Check'].includes(selectedValidationType || '');
-
-  // Filter connections based on selected system
-  const sourceConnections = allConnections.filter(conn => 
-    !selectedSourceSystem || 
-    conn.connectionType?.toLowerCase() === selectedSourceSystem.toLowerCase()
-  );
-
-  const targetConnections = allConnections.filter(conn => 
-    !selectedTargetSystem || 
-    conn.connectionType?.toLowerCase() === selectedTargetSystem.toLowerCase()
-  );
-
-  // Fetch source schemas for selected source connection
-  const { data: sourceSchemas = [] } = useQuery({
-    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas'],
-    queryFn: async () => {
-      if (!selectedSourceConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
-      return response.json();
-    },
-    enabled: !!selectedSourceConnectionId
-  });
-
-  // Fetch source tables for selected source schema
-  const { data: sourceTables = [] } = useQuery({
-    queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas', selectedSourceSchema, 'tables'],
-    queryFn: async () => {
-      if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
-      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
-      return response.json();
-    },
-    enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
-  });
-
-  // Fetch target schemas for selected target connection
-  const { data: targetSchemas = [] } = useQuery({
-    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
-      return response.json();
-    },
-    enabled: !!selectedTargetConnectionId
-  });
-
-  // Fetch target tables for selected target schema
-  const { data: targetTables = [] } = useQuery({
-    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
-      return response.json();
-    },
-    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
-  });
-
-  // Fetch target table columns for selected target table
-  const { data: targetTableColumns = [] } = useQuery({
-    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTableName, 'columns'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTableName) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTableName}/columns`);
-      return response.json();
-    },
-    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTableName
-  });
 
   // Create mutation
   const createMutation = useMutation({
@@ -416,22 +336,23 @@ export function DataQualityForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Source Table Name</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
-                      disabled={!selectedSourceSchema}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-source-table-basic">
-                          <SelectValue placeholder={selectedSourceSchema ? "Select table" : "Select schema first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceTables.map((table) => (
-                          <SelectItem key={table} value={table}>{table}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter source table name" data-testid="input-source-table" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tableName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Table Name <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter table name" data-testid="input-table-name" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -443,22 +364,9 @@ export function DataQualityForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Attribute Name <span className="text-red-500">*</span></FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
-                      disabled={!selectedTargetTableName}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-attribute-name-basic">
-                          <SelectValue placeholder={selectedTargetTableName ? "Select column" : "Select table first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {targetTableColumns.map((column) => (
-                          <SelectItem key={column} value={column}>{column}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter attribute name" data-testid="input-attribute-name" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -601,331 +509,7 @@ export function DataQualityForm({
           </CardContent>
         </Card>
 
-        {/* Source Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Source Configuration
-            </CardTitle>
-            <CardDescription>Configure the data source settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="sourceSystem"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source System</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Reset dependent fields when source system changes
-                        form.setValue('sourceConnectionId', undefined);
-                        form.setValue('sourceSchema', '');
-                        form.setValue('sourceTableName', '');
-                      }} 
-                      value={field.value || ''}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-source-system">
-                          <SelectValue placeholder="Select source system" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceSystems.map((system) => (
-                          <SelectItem key={system} value={system}>{system}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sourceConnectionId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Database Connection</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value ? parseInt(value) : undefined);
-                        // Reset dependent fields when connection changes
-                        form.setValue('sourceSchema', '');
-                        form.setValue('sourceTableName', '');
-                      }} 
-                      value={field.value?.toString() || ''}
-                      disabled={!selectedSourceSystem}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-source-connection">
-                          <SelectValue placeholder={selectedSourceSystem ? "Select connection" : "Select source system first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceConnections.map((connection) => (
-                          <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
-                            {connection.connectionName} ({connection.connectionType})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sourceType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-source-type">
-                          <SelectValue placeholder="Select source type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceTypes.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sourceSchema"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source Schema</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Reset table when schema changes
-                        form.setValue('sourceTableName', '');
-                      }} 
-                      value={field.value || ''}
-                      disabled={!selectedSourceConnectionId}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-source-schema">
-                          <SelectValue placeholder={selectedSourceConnectionId ? "Select schema" : "Select connection first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceSchemas.map((schema) => (
-                          <SelectItem key={schema} value={schema}>{schema}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sourceTableName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source Table Name</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
-                      disabled={!selectedSourceSchema}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-source-table">
-                          <SelectValue placeholder={selectedSourceSchema ? "Select table" : "Select schema first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceTables.map((table) => (
-                          <SelectItem key={table} value={table}>{table}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Target Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Target Configuration
-            </CardTitle>
-            <CardDescription>Configure the data target settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="targetSystem"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target System</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Reset dependent fields when target system changes
-                        form.setValue('targetConnectionId', undefined);
-                        form.setValue('targetSchema', '');
-                        form.setValue('targetTableName', '');
-                      }} 
-                      value={field.value || ''}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-target-system">
-                          <SelectValue placeholder="Select target system" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceSystems.map((system) => (
-                          <SelectItem key={system} value={system}>{system}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="targetConnectionId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Database Connection</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value ? parseInt(value) : undefined);
-                        // Reset dependent fields when connection changes
-                        form.setValue('targetSchema', '');
-                        form.setValue('targetTableName', '');
-                      }} 
-                      value={field.value?.toString() || ''}
-                      disabled={!selectedTargetSystem}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-target-connection">
-                          <SelectValue placeholder={selectedTargetSystem ? "Select connection" : "Select target system first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {targetConnections.map((connection) => (
-                          <SelectItem key={connection.connectionId} value={connection.connectionId.toString()}>
-                            {connection.connectionName} ({connection.connectionType})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="targetType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-target-type">
-                          <SelectValue placeholder="Select target type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sourceTypes.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="targetSchema"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Schema</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Reset table when schema changes
-                        form.setValue('targetTableName', '');
-                      }} 
-                      value={field.value || ''}
-                      disabled={!selectedTargetConnectionId}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-target-schema">
-                          <SelectValue placeholder={selectedTargetConnectionId ? "Select schema" : "Select connection first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {targetSchemas.map((schema) => (
-                          <SelectItem key={schema} value={schema}>{schema}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="targetTableName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Table Name</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Reset attribute name when table changes
-                        form.setValue('attributeName', '');
-                      }} 
-                      value={field.value || ''}
-                      disabled={!selectedTargetSchema}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-target-table">
-                          <SelectValue placeholder={selectedTargetSchema ? "Select table" : "Select schema first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {targetTables.map((table) => (
-                          <SelectItem key={table} value={table}>{table}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Form Actions */}
         <div className="flex items-center justify-end space-x-2 pt-6 border-t">
