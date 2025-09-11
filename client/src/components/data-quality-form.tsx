@@ -409,6 +409,60 @@ export function DataQualityForm({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="sourceTableName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Source Table Name</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || ''}
+                      disabled={!selectedSourceSchema}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-source-table-basic">
+                          <SelectValue placeholder={selectedSourceSchema ? "Select table" : "Select schema first"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {sourceTables.map((table) => (
+                          <SelectItem key={table} value={table}>{table}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="attributeName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Attribute Name <span className="text-red-500">*</span></FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || ''}
+                      disabled={!selectedTargetTableName}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-attribute-name-basic">
+                          <SelectValue placeholder={selectedTargetTableName ? "Select column" : "Select table first"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {targetTableColumns.map((column) => (
+                          <SelectItem key={column} value={column}>{column}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
         </Card>
@@ -862,33 +916,6 @@ export function DataQualityForm({
                       <SelectContent>
                         {targetTables.map((table) => (
                           <SelectItem key={table} value={table}>{table}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="attributeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Attribute Name <span className="text-red-500">*</span></FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
-                      disabled={!selectedTargetTableName}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-attribute-name">
-                          <SelectValue placeholder={selectedTargetTableName ? "Select column" : "Select table first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {targetTableColumns.map((column) => (
-                          <SelectItem key={column} value={column}>{column}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
