@@ -1834,9 +1834,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig> {
+    // Only insert fields that exist in the external database
+    const insertData = {
+      configKey: config.configKey,
+      executionLayer: config.executionLayer,
+      tableName: config.tableName,
+      attributeName: config.attributeName,
+      validationType: config.validationType,
+      referenceTableName: config.referenceTableName,
+      defaultValue: config.defaultValue,
+      errorTableTransferFlag: config.errorTableTransferFlag,
+      thresholdPercentage: config.thresholdPercentage,
+      activeFlag: config.activeFlag,
+      customQuery: config.customQuery,
+    };
+
     const [created] = await db
       .insert(dataQualityConfigTable)
-      .values(config)
+      .values(insertData)
       .returning();
     return created;
   }
