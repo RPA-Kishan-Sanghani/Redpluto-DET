@@ -1829,8 +1829,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig> {
-    // Only insert fields that exist in the external database
+    // Get the maximum existing data_quality_key
+    const maxKeyResult = await db
+      .select({ maxKey: sql`COALESCE(MAX(${dataQualityConfigTable.dataQualityKey}), 0)` })
+      .from(dataQualityConfigTable);
+    
+    const nextKey = (maxKeyResult[0]?.maxKey || 0) + 1;
+
+    // Only insert fields that exist in the external database, with explicit primary key
     const insertData = {
+      dataQualityKey: nextKey,
       configKey: config.configKey,
       executionLayer: config.executionLayer,
       tableName: config.tableName,
