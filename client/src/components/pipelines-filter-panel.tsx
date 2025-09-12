@@ -139,6 +139,10 @@ export default function PipelinesFilterPanel({
                   <SelectItem value="postgresql">PostgreSQL</SelectItem>
                   <SelectItem value="oracle">Oracle</SelectItem>
                   <SelectItem value="snowflake">Snowflake</SelectItem>
+                  <SelectItem value="excel">Excel</SelectItem>
+                  <SelectItem value="parquet">Parquet</SelectItem>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1342,8 +1342,10 @@ export class DatabaseStorage implements IStorage {
         );
       }
 
-      if (filters?.sourceSystem) {
-        conditions.push(eq(configTable.sourceSystem, filters.sourceSystem));
+      if (filters?.sourceSystem && filters.sourceSystem !== 'all') {
+        conditions.push(
+          sql`LOWER(${configTable.sourceSystem}) = LOWER(${filters.sourceSystem})`
+        );
       }
 
       if (filters?.status) {
