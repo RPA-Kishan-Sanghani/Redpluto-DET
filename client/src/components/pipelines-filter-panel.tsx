@@ -115,9 +115,9 @@ export default function PipelinesFilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Layers</SelectItem>
-                  <SelectItem value="Bronze">Bronze</SelectItem>
-                  <SelectItem value="Silver">Silver</SelectItem>
-                  <SelectItem value="Gold">Gold</SelectItem>
+                  <SelectItem value="bronze">Bronze</SelectItem>
+                  <SelectItem value="silver">Silver</SelectItem>
+                  <SelectItem value="gold">Gold</SelectItem>
                 </SelectContent>
               </Select>
             </div>

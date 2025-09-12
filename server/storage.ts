@@ -1336,8 +1336,10 @@ export class DatabaseStorage implements IStorage {
         conditions.push(like(configTable.sourceTableName, `%${filters.search}%`));
       }
 
-      if (filters?.executionLayer) {
-        conditions.push(eq(configTable.executionLayer, filters.executionLayer));
+      if (filters?.executionLayer && filters.executionLayer !== 'all') {
+        conditions.push(
+          sql`LOWER(${configTable.executionLayer}) = LOWER(${filters.executionLayer})`
+        );
       }
 
       if (filters?.sourceSystem) {
@@ -1833,7 +1835,7 @@ export class DatabaseStorage implements IStorage {
     const maxKeyResult = await db
       .select({ maxKey: sql`COALESCE(MAX(${dataQualityConfigTable.dataQualityKey}), 0)` })
       .from(dataQualityConfigTable);
-    
+
     const nextKey = (maxKeyResult[0]?.maxKey || 0) + 1;
 
     // Only insert fields that exist in the external database, with explicit primary key
