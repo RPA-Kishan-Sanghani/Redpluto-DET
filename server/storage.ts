@@ -1348,7 +1348,7 @@ export class DatabaseStorage implements IStorage {
         );
       }
 
-      if (filters?.status) {
+      if (filters?.status && filters.status !== 'all') {
         conditions.push(eq(configTable.activeFlag, filters.status));
       }
 

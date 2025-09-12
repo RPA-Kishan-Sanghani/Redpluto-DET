@@ -159,9 +159,8 @@ export default function PipelinesFilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="Y">Active</SelectItem>
+                  <SelectItem value="N">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
