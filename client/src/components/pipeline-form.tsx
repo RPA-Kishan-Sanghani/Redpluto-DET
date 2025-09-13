@@ -563,29 +563,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="targetLayer"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Layer</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-target-layer">
-                              <SelectValue placeholder="Select target layer" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {executionLayers.map((layer) => (
-                              <SelectItem key={layer} value={layer}>{layer}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="targetSystem"
                     render={({ field }) => (
                       <FormItem>
