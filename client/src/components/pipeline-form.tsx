@@ -669,28 +669,85 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       <FormField
                         control={form.control}
                         name="targetTableName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Target Table</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value || ''}
-                              disabled={!selectedTargetConnectionId || !selectedTargetSchema}
-                            >
-                              <FormControl>
-                                <SelectTrigger data-testid="select-target-table">
-                                  <SelectValue placeholder="Select target table" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {targetTables.map((table) => (
-                                  <SelectItem key={table} value={table}>{table}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const [showAddNewTable, setShowAddNewTable] = useState(false);
+                          const [newTableName, setNewTableName] = useState("");
+
+                          return (
+                            <FormItem>
+                              <FormLabel>Target Table</FormLabel>
+                              {showAddNewTable ? (
+                                <div className="flex space-x-2">
+                                  <FormControl>
+                                    <Input
+                                      value={newTableName}
+                                      onChange={(e) => setNewTableName(e.target.value)}
+                                      placeholder="Enter new table name"
+                                      data-testid="input-new-target-table"
+                                    />
+                                  </FormControl>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (newTableName.trim()) {
+                                        field.onChange(newTableName.trim());
+                                        setShowAddNewTable(false);
+                                        setNewTableName("");
+                                      }
+                                    }}
+                                    data-testid="button-save-target-table"
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setShowAddNewTable(false);
+                                      setNewTableName("");
+                                    }}
+                                    data-testid="button-cancel-target-table"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex space-x-2">
+                                  <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value || ''}
+                                    disabled={!selectedTargetConnectionId || !selectedTargetSchema}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger data-testid="select-target-table" className="flex-1">
+                                        <SelectValue placeholder="Select target table" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {targetTables.map((table) => (
+                                        <SelectItem key={table} value={table}>{table}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddNewTable(true)}
+                                    disabled={!selectedTargetConnectionId || !selectedTargetSchema}
+                                    data-testid="button-add-target-table"
+                                  >
+                                    Add New
+                                  </Button>
+                                </div>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       <FormField
