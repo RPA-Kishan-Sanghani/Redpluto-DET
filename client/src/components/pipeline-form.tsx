@@ -128,6 +128,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedSourceType = form.watch('sourceType');
   const selectedTargetType = form.watch('targetType');
   const selectedLoadType = form.watch('loadType');
+  const selectedExecutionLayer = form.watch('executionLayer');
   
   // Watch target configuration values for dynamic dropdowns
   const selectedTargetSystem = form.watch('targetSystem');
@@ -240,6 +241,26 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
+
+  // Filter load types based on execution layer
+  const getFilteredLoadTypes = () => {
+    if (selectedExecutionLayer === 'Bronze') {
+      return loadTypes.filter(type => type === 'Incremental' || type === 'Truncate');
+    }
+    return loadTypes;
+  };
+
+  const filteredLoadTypes = getFilteredLoadTypes();
+
+  // Effect to reset load type when execution layer changes
+  useEffect(() => {
+    if (selectedExecutionLayer === 'Bronze') {
+      const currentLoadType = form.getValues('loadType');
+      if (currentLoadType && currentLoadType !== 'Incremental' && currentLoadType !== 'Truncate') {
+        form.setValue('loadType', '');
+      }
+    }
+  }, [selectedExecutionLayer, form]);
 
   // Create or update mutation
   const savePipelineMutation = useMutation({
@@ -896,14 +917,23 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Load Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Clear load type if it's not in the filtered list
+                            if (selectedExecutionLayer === 'Bronze' && value !== 'Incremental' && value !== 'Truncate') {
+                              field.onChange('');
+                            }
+                          }} 
+                          defaultValue={field.value || ''}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-load-type">
                               <SelectValue placeholder="Select load type" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {loadTypes.map((type) => (
+                            {filteredLoadTypes.map((type) => (
                               <SelectItem key={type} value={type}>{type}</SelectItem>
                             ))}
                           </SelectContent>
