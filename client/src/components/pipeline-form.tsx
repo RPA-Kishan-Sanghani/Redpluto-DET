@@ -714,6 +714,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                     onClick={() => {
                                       if (newTableName.trim()) {
                                         field.onChange(newTableName.trim());
+                                        // Clear primary key when target table changes
+                                        form.setValue('primaryKey', '');
                                         setShowAddNewTable(false);
                                         setNewTableName("");
                                       }
@@ -738,7 +740,11 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                               ) : (
                                 <div className="flex space-x-2">
                                   <Select 
-                                    onValueChange={field.onChange} 
+                                    onValueChange={(value) => {
+                                      field.onChange(value || '');
+                                      // Clear primary key when target table changes
+                                      form.setValue('primaryKey', '');
+                                    }} 
                                     defaultValue={field.value || ''}
                                     disabled={!selectedTargetConnectionId || !selectedTargetSchema}
                                   >
