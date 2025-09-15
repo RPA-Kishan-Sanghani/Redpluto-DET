@@ -781,13 +781,14 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         control={form.control}
                         name="primaryKey"
                         render={({ field }) => {
-                          const selectedColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                          // Only split if field.value exists and is not empty
+                          const selectedColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
                           
                           const handleColumnToggle = (column: string) => {
-                            const currentColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                            const currentColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
                             if (currentColumns.includes(column)) {
                               const newColumns = currentColumns.filter(col => col !== column);
-                              field.onChange(newColumns.join(','));
+                              field.onChange(newColumns.length > 0 ? newColumns.join(',') : '');
                             } else {
                               const newColumns = [...currentColumns, column];
                               field.onChange(newColumns.join(','));
@@ -795,9 +796,9 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                           };
 
                           const removeColumn = (column: string) => {
-                            const currentColumns = field.value ? field.value.split(',').filter(Boolean) : [];
+                            const currentColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
                             const newColumns = currentColumns.filter(col => col !== column);
-                            field.onChange(newColumns.join(','));
+                            field.onChange(newColumns.length > 0 ? newColumns.join(',') : '');
                           };
 
                           return (
