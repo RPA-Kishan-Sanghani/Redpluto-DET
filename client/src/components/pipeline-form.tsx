@@ -58,9 +58,10 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       md5Columns: pipeline?.md5Columns || undefined,
       customCode: pipeline?.customCode || undefined,
       executionSequence: pipeline?.executionSequence || undefined,
-      enableDynamicSchema: pipeline?.enableDynamicSchema || undefined,
-      activeFlag: pipeline?.activeFlag || undefined,
-      fullDataRefreshFlag: pipeline?.fullDataRefreshFlag || undefined,
+      // Advanced settings with default values for new entries
+      enableDynamicSchema: pipeline?.enableDynamicSchema || 'N',
+      activeFlag: pipeline?.activeFlag || 'Y',
+      fullDataRefreshFlag: pipeline?.fullDataRefreshFlag || 'Y',
     }
   });
 
