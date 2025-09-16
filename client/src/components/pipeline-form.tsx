@@ -1005,79 +1005,90 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       control={form.control}
                       name="md5Columns"
                       render={({ field }) => {
-                        // Only split if field.value exists and is not empty
-                        const selectedColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
+                        // Set all columns as selected by default when target table changes
+                        const currentValue = field.value || '';
+                        const allColumnsSelected = targetColumns.length > 0 && currentValue === targetColumns.join(',');
                         
-                        const handleColumnToggle = (column: string) => {
-                          const currentColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
-                          if (currentColumns.includes(column)) {
-                            const newColumns = currentColumns.filter(col => col !== column);
-                            field.onChange(newColumns.length > 0 ? newColumns.join(',') : '');
-                          } else {
-                            const newColumns = [...currentColumns, column];
-                            field.onChange(newColumns.join(','));
+                        // Auto-select all columns when target table is selected and no previous selection exists
+                        React.useEffect(() => {
+                          if (targetColumns.length > 0 && !currentValue) {
+                            field.onChange(targetColumns.join(','));
                           }
-                        };
+                        }, [targetColumns, currentValue, field]);
 
-                        const removeColumn = (column: string) => {
-                          const currentColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
-                          const newColumns = currentColumns.filter(col => col !== column);
-                          field.onChange(newColumns.length > 0 ? newColumns.join(',') : '');
+                        const handleSelectionChange = (value: string) => {
+                          if (value === 'all') {
+                            field.onChange(targetColumns.join(','));
+                          } else if (value === 'none') {
+                            field.onChange('');
+                          }
                         };
 
                         return (
                           <FormItem>
                             <FormLabel>MD5 Columns</FormLabel>
                             <FormControl>
-                              <div className="space-y-2">
-                                {/* Selected columns display */}
-                                {selectedColumns.length > 0 && (
-                                  <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
-                                    {selectedColumns.map((column) => (
-                                      <div key={column} className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
-                                        <span>{column}</span>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-4 w-4 p-0 hover:bg-primary-foreground/20"
-                                          onClick={() => removeColumn(column)}
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    ))}
+                              <div className="space-y-3">
+                                {/* Radio button selection */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="radio"
+                                      id="md5-all"
+                                      name="md5-selection"
+                                      checked={allColumnsSelected}
+                                      onChange={() => handleSelectionChange('all')}
+                                      disabled={!selectedTargetTable || targetColumns.length === 0}
+                                      className="h-4 w-4 text-primary border-gray-300 focus:ring-2 focus:ring-primary"
+                                    />
+                                    <label htmlFor="md5-all" className="text-sm font-medium">
+                                      Select All Columns
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="radio"
+                                      id="md5-none"
+                                      name="md5-selection"
+                                      checked={!allColumnsSelected && !currentValue}
+                                      onChange={() => handleSelectionChange('none')}
+                                      disabled={!selectedTargetTable || targetColumns.length === 0}
+                                      className="h-4 w-4 text-primary border-gray-300 focus:ring-2 focus:ring-primary"
+                                    />
+                                    <label htmlFor="md5-none" className="text-sm font-medium">
+                                      No Columns Selected
+                                    </label>
+                                  </div>
+                                </div>
+
+                                {/* Display selected columns */}
+                                {currentValue && (
+                                  <div className="p-3 border rounded-md bg-muted/50">
+                                    <div className="text-sm font-medium mb-2">Selected Columns:</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {currentValue.split(',').filter(Boolean).map((column) => (
+                                        <div key={column} className="bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
+                                          {column}
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                                 
-                                {/* Column selection dropdown */}
-                                <Select onValueChange={handleColumnToggle} disabled={!selectedTargetTable || targetColumns.length === 0}>
-                                  <SelectTrigger data-testid="select-md5-columns">
-                                    <SelectValue placeholder={
-                                      !selectedTargetTable 
-                                        ? "Select a target table first" 
-                                        : targetColumns.length === 0 
-                                          ? "Loading columns..." 
-                                          : "Select columns for MD5 hash"
-                                    } />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {targetColumns.map((column) => (
-                                      <SelectItem key={column} value={column}>
-                                        <div className="flex items-center space-x-2">
-                                          <Checkbox
-                                            checked={selectedColumns.includes(column)}
-                                            readOnly
-                                          />
-                                          <span>{column}</span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                {/* Status message */}
+                                <div className="text-sm text-muted-foreground">
+                                  {!selectedTargetTable 
+                                    ? "Select a target table first" 
+                                    : targetColumns.length === 0 
+                                      ? "Loading columns..." 
+                                      : allColumnsSelected 
+                                        ? `All ${targetColumns.length} columns selected for MD5 hash`
+                                        : "No columns selected for MD5 hash"
+                                  }
+                                </div>
                               </div>
                             </FormControl>
-                            <FormDescription>Select one or more columns for change detection</FormDescription>
+                            <FormDescription>Choose whether to include all columns for change detection</FormDescription>
                             <FormMessage />
                           </FormItem>
                         );
