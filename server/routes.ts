@@ -400,10 +400,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const allowedTypes = (dataTypes as string).split(',').map(type => type.toLowerCase());
         const filteredColumns = metadata.filter((col: any) => {
           const colType = col.dataType?.toLowerCase() || '';
-          return allowedTypes.some(allowedType => 
-            colType.includes(allowedType) || 
-            colType.startsWith(allowedType)
-          );
+          return allowedTypes.some(allowedType => {
+            // More comprehensive matching for date/time types
+            if (allowedType === 'date') {
+              return colType.includes('date') || colType === 'date';
+            }
+            if (allowedType === 'datetime') {
+              return colType.includes('datetime') || colType.includes('timestamp') || 
+                     colType === 'datetime' || colType === 'datetime2' || 
+                     colType === 'smalldatetime';
+            }
+            if (allowedType === 'timestamp') {
+              return colType.includes('timestamp') || colType.includes('datetime') ||
+                     colType === 'timestamp' || colType === 'timestamptz' ||
+                     colType.startsWith('timestamp');
+            }
+            // Fallback to original logic
+            return colType.includes(allowedType) || colType.startsWith(allowedType);
+          });
         });
         res.json(filteredColumns.map((col: any) => ({ 
           columnName: col.columnName, 
