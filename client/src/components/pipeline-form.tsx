@@ -243,6 +243,17 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
 
+  // Fetch date/datetime columns for effective date column dropdown
+  const { data: dateTimeColumns = [] } = useQuery({
+    queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'datetime-columns'],
+    queryFn: async () => {
+      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns-with-types?dataTypes=date,datetime,timestamp`);
+      return response.json() as Array<{ columnName: string; dataType: string }>;
+    },
+    enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
+  });
+
   // Filter load types based on execution layer
   const getFilteredLoadTypes = () => {
     if (selectedExecutionLayer === 'Bronze') {
@@ -957,9 +968,33 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Effective Date Column</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter effective date column" {...field} data-testid="input-effective-date" />
-                        </FormControl>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value || undefined)} 
+                          value={field.value || ''}
+                          disabled={!selectedTargetTable || dateTimeColumns.length === 0}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-effective-date-column">
+                              <SelectValue placeholder={
+                                !selectedTargetTable 
+                                  ? "Select a target table first" 
+                                  : dateTimeColumns.length === 0 
+                                    ? "No date/datetime columns found" 
+                                    : "Select effective date column"
+                              } />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {dateTimeColumns.map((column) => (
+                              <SelectItem key={column.columnName} value={column.columnName}>
+                                <div className="flex flex-col">
+                                  <span>{column.columnName}</span>
+                                  <span className="text-xs text-muted-foreground">{column.dataType}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

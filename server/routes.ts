@@ -385,6 +385,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get database columns with data types for filtering
+  app.get("/api/connections/:id/schemas/:schema/tables/:table/columns-with-types", async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const schemaName = req.params.schema;
+      const tableName = req.params.table;
+      const { dataTypes } = req.query;
+      
+      const metadata = await storage.getDatabaseColumnMetadata(connectionId, schemaName, tableName);
+      
+      // If dataTypes filter is provided, filter columns by data type
+      if (dataTypes) {
+        const allowedTypes = (dataTypes as string).split(',').map(type => type.toLowerCase());
+        const filteredColumns = metadata.filter((col: any) => {
+          const colType = col.dataType?.toLowerCase() || '';
+          return allowedTypes.some(allowedType => 
+            colType.includes(allowedType) || 
+            colType.startsWith(allowedType)
+          );
+        });
+        res.json(filteredColumns.map((col: any) => ({ 
+          columnName: col.columnName, 
+          dataType: col.dataType 
+        })));
+      } else {
+        res.json(metadata.map((col: any) => ({ 
+          columnName: col.columnName, 
+          dataType: col.dataType 
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching columns with types:', error);
+      res.status(500).json({ error: 'Failed to fetch columns with types' });
+    }
+  });
+
   // Pipeline configuration endpoints
   // Get all pipelines with optional filtering
   app.get("/api/pipelines", async (req, res) => {
