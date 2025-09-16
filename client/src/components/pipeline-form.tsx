@@ -1178,15 +1178,95 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     <FormField
                       control={form.control}
                       name="temporaryTargetTable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Temporary Target Table</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter temporary table name" {...field} data-testid="input-temp-table" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const [showAddNewTempTable, setShowAddNewTempTable] = useState(false);
+                        const [newTempTableName, setNewTempTableName] = useState("");
+                        
+                        // Fetch existing temporary tables
+                        const { data: existingTempTables = [] } = useQuery({
+                          queryKey: ['/api/temporary-tables'],
+                          queryFn: async () => {
+                            const response = await fetch('/api/temporary-tables');
+                            return response.json() as string[];
+                          }
+                        });
+
+                        return (
+                          <FormItem>
+                            <FormLabel>Temporary Target Table</FormLabel>
+                            {showAddNewTempTable ? (
+                              <div className="flex space-x-2">
+                                <FormControl>
+                                  <Input
+                                    value={newTempTableName}
+                                    onChange={(e) => setNewTempTableName(e.target.value)}
+                                    placeholder="Enter new temporary table name"
+                                    data-testid="input-new-temp-table"
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (newTempTableName.trim()) {
+                                      field.onChange(newTempTableName.trim());
+                                      setShowAddNewTempTable(false);
+                                      setNewTempTableName("");
+                                    }
+                                  }}
+                                  data-testid="button-save-temp-table"
+                                >
+                                  Save
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setShowAddNewTempTable(false);
+                                    setNewTempTableName("");
+                                  }}
+                                  data-testid="button-cancel-temp-table"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex space-x-2">
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  value={field.value || ''}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-temp-table" className="flex-1">
+                                      <SelectValue placeholder="Select existing temporary table" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {existingTempTables.map((table) => (
+                                      <SelectItem key={table} value={table}>{table}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setShowAddNewTempTable(true)}
+                                  data-testid="button-add-temp-table"
+                                >
+                                  Add New
+                                </Button>
+                              </div>
+                            )}
+                            <FormDescription>
+                              Select an existing temporary table or create a new one for SCD2 processing
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   )}
 

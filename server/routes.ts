@@ -819,6 +819,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get existing temporary tables
+  app.get("/api/temporary-tables", async (req, res) => {
+    try {
+      // Get distinct temporary target table names from config_table where they are not null/empty
+      const tempTables = await db.execute(sql`
+        SELECT DISTINCT temporary_target_table 
+        FROM config_table 
+        WHERE temporary_target_table IS NOT NULL 
+        AND temporary_target_table != ''
+        ORDER BY temporary_target_table
+      `);
+      
+      const tableNames = tempTables.rows.map((row: any) => row.temporary_target_table);
+      res.json(tableNames);
+    } catch (error) {
+      console.error('Error fetching temporary tables:', error);
+      res.status(500).json({ error: 'Failed to fetch temporary tables' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
