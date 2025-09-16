@@ -969,7 +969,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       <FormItem>
                         <FormLabel>Effective Date Column</FormLabel>
                         <Select 
-                          onValueChange={(value) => field.onChange(value || undefined)} 
+                          onValueChange={field.onChange} 
                           value={field.value || ''}
                           disabled={!selectedTargetTable || dateTimeColumns.length === 0}
                         >
