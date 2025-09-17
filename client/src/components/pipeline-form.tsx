@@ -16,7 +16,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { insertConfigSchema } from '@shared/schema';
 import type { ConfigRecord, InsertConfigRecord } from '@shared/schema';
 import { z } from 'zod';
-import { Database, FileText, Settings, Target, Upload, X } from 'lucide-react';
+import { Database, FileText, Settings, Target, Upload, X, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type FormData = InsertConfigRecord;
 
@@ -1276,7 +1277,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       name="customCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Custom Code</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            Custom Code
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>.py file only</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="Enter custom processing code" {...field} data-testid="input-custom-code" />
                           </FormControl>
