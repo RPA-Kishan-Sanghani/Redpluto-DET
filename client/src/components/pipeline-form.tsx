@@ -876,7 +876,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                       <p>Final target table name after processing.</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                </Tooltip>
                               </TooltipProvider>
                             </FormLabel>
                               {showAddNewTable ? (
