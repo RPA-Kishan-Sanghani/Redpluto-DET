@@ -131,7 +131,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedTargetType = form.watch('targetType');
   const selectedLoadType = form.watch('loadType');
   const selectedExecutionLayer = form.watch('executionLayer');
-  
+
   // Watch target configuration values for dynamic dropdowns
   const selectedTargetSystem = form.watch('targetSystem');
   const selectedTargetConnectionId = form.watch('targetConnectionId');
@@ -144,7 +144,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       if (!selectedSourceSystem) return [];
       const response = await fetch(`/api/connections`);
       const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-      
+
       // Filter connections by matching connection type with selected source system
       return allConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
@@ -191,7 +191,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       if (!selectedTargetSystem) return [];
       const response = await fetch(`/api/connections`);
       const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-      
+
       // Filter connections by matching connection type with selected target system
       return allConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
@@ -364,7 +364,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="executionLayer"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Execution Layer</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Execution Layer
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Processing layer where the pipeline runs (Bronze, Silver, or Gold).</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-execution-layer-form">
@@ -387,7 +399,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="sourceSystem"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Source System</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Source System
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Type of source system (e.g., MySQL, Parquet, Excel, CSV, JSON).</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-source-system-form">
@@ -410,7 +434,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="connectionId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Database Connection</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Database Connection
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Select the database connection for the source system.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value ? parseInt(value) : undefined);
@@ -444,7 +480,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="sourceType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Source Type</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Source Type
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Defines whether the source is a database table or a file.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-source-type-form">
@@ -470,7 +518,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="sourceSchemaName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Source Schema Name</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Source Schema Name
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Schema name of the source database (for RDBMS).</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <Select 
                               onValueChange={(value) => {
                                 field.onChange(value || undefined);
@@ -501,7 +561,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="sourceTableName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Source Table Name</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Source Table Name
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Table name in the source database.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <Select 
                               onValueChange={(value) => field.onChange(value || undefined)} 
                               value={field.value || ''}
@@ -533,7 +605,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="sourceFilePath"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Source File Path</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Source File Path
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Path/location of source files (for file-based sources only).</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter source file path" {...field} data-testid="input-source-path" />
                             </FormControl>
@@ -547,7 +631,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="sourceFileName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Source File Name</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Source File Name
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>File name or naming pattern for ingestion.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter source file name" {...field} data-testid="input-source-filename" />
                             </FormControl>
@@ -561,7 +657,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="sourceFileDelimiter"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Source File Delimiter</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Source File Delimiter
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Character used to separate values in files.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-source-delimiter">
@@ -600,7 +708,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="targetSystem"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target System</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Target System
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Type of target system (e.g., MySQL, Parquet, Excel, CSV, JSON).</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-target-system">
@@ -623,7 +743,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="targetConnectionId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Database Connection</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Database Connection
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Select the database connection for the target system.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => field.onChange(Number(value))} 
                           defaultValue={field.value?.toString() || ''}
@@ -652,7 +784,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="targetType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Type</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Type
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Defines whether the target is a database table or a file.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-target-type">
@@ -678,7 +822,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="targetSchemaName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Target Schema</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Target Schema
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Schema name of the target database.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <Select 
                               onValueChange={field.onChange} 
                               defaultValue={field.value || ''}
@@ -709,7 +865,20 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
                           return (
                             <FormItem>
-                              <FormLabel>Target Table</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                Target Table
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Final target table name after processing.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                               {showAddNewTable ? (
                                 <div className="flex space-x-2">
                                   <FormControl>
@@ -796,7 +965,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         render={({ field }) => {
                           // Only split if field.value exists and is not empty
                           const selectedColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
-                          
+
                           const handleColumnToggle = (column: string) => {
                             const currentColumns = field.value && field.value.trim() ? field.value.split(',').filter(Boolean) : [];
                             if (currentColumns.includes(column)) {
@@ -816,7 +985,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
                           return (
                             <FormItem>
-                              <FormLabel>Primary Key</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                Primary Key
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>One or multiple comma-separated columns used as primary key.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </FormLabel>
                               <FormControl>
                                 <div className="space-y-2">
                                   {/* Selected columns display */}
@@ -838,7 +1019,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                       ))}
                                     </div>
                                   )}
-                                  
+
                                   {/* Column selection dropdown */}
                                   <Select onValueChange={handleColumnToggle} disabled={!selectedTargetTable || targetColumns.length === 0}>
                                     <SelectTrigger data-testid="select-primary-key">
@@ -883,7 +1064,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="targetFilePath"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Target File Path</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Target File Path
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Path where output files will be stored.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter target file path" {...field} data-testid="input-target-path" />
                             </FormControl>
@@ -897,7 +1090,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         name="targetFileDelimiter"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Target File Delimiter</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Target File Delimiter
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Character to separate values in target files.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-target-delimiter">
@@ -936,7 +1141,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="loadType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Load Type</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Load Type
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Type of load.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -968,7 +1185,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="effectiveDateColumn"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Effective Date Column</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Effective Date Column
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Date column used for incremental load tracking.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value || ''}
@@ -1008,7 +1237,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       render={({ field }) => {
                         const currentValue = field.value || '';
                         const selectedColumns = currentValue ? currentValue.split(',').filter(Boolean) : [];
-                        
+
                         // Auto-select all columns when target table is selected and no previous selection exists
                         React.useEffect(() => {
                           if (targetColumns.length > 0 && !currentValue) {
@@ -1040,7 +1269,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
                         return (
                           <FormItem>
-                            <FormLabel>MD5 Columns</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              MD5 Columns
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Columns included in checksum (MD5) to detect changes.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             <FormControl>
                               <div className="space-y-3">
                                 {/* Quick selection options */}
@@ -1130,7 +1371,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                     </div>
                                   </div>
                                 )}
-                                
+
                                 {/* Status message */}
                                 <div className="text-sm text-muted-foreground">
                                   {!selectedTargetTable 
@@ -1156,7 +1397,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       name="executionSequence"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Execution Sequence</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            Execution Sequence
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>When to run custom code (before or after SCD logic)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                             <FormControl>
                               <SelectTrigger data-testid="select-execution-sequence">
@@ -1182,7 +1435,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       render={({ field }) => {
                         const [showAddNewTempTable, setShowAddNewTempTable] = useState(false);
                         const [newTempTableName, setNewTempTableName] = useState("");
-                        
+
                         // Fetch existing temporary tables
                         const { data: existingTempTables = [] } = useQuery({
                           queryKey: ['/api/temporary-tables'],
@@ -1194,7 +1447,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
                         return (
                           <FormItem>
-                            <FormLabel>Temporary Target Table</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Temporary Target Table
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Temporary staging table (used in SCD2 processing).</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
                             {showAddNewTempTable ? (
                               <div className="flex space-x-2">
                                 <FormControl>
@@ -1316,7 +1581,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="activeFlag"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Active Status</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Active Status
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Whether this config is active (Y = load, N = skip).</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-active-status">
@@ -1338,7 +1615,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="enableDynamicSchema"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Dynamic Schema</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Dynamic Schema
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Flag for schema evolution (Y = allow, N = stop on change).</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-dynamic-schema">
@@ -1360,7 +1649,19 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     name="fullDataRefreshFlag"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Data Refresh</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Full Data Refresh
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>For Silver layer: whether to fully reload target table data.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-full-refresh">
