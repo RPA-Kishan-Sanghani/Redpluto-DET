@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, X, MoreVertical, Loader2, Edit, Trash2 } from "lucide-react";
+import { Plus, Save, X, MoreVertical, Loader2, Edit, Trash2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const dataDictionarySchema = z.object({
   executionLayer: z.string().min(1, "Layer is required"),
@@ -586,14 +587,19 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              Column Metadata
-              {isLoadingMetadata && (
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Fetching metadata...</span>
-                </div>
-              )}
-            </CardTitle>
+              <div className="flex items-center gap-2">
+                Column Metadata
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Define and manage metadata for database columns including data types, constraints, and descriptions</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div></CardTitle>
           </CardHeader>
           <CardContent>
             {!watchedValues.sourceTableName ? (
