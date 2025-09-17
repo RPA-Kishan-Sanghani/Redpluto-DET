@@ -24,6 +24,7 @@ const dataDictionarySchema = z.object({
   sourceTableName: z.string().min(1, "Source object is required"),
   targetSystem: z.string().min(1, "Target system is required"),
   targetConnectionId: z.number().min(1, "Target connection is required"),
+  targetLayer: z.string().min(1, "Target layer is required"),
   targetSchemaName: z.string().min(1, "Target schema is required"),
   targetTableName: z.string().min(1, "Target object is required"),
 });
@@ -66,6 +67,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       sourceTableName: entry?.tableName || "",
       targetSystem: "",
       targetConnectionId: 0,
+      targetLayer: "",
       targetSchemaName: "",
       targetTableName: "",
     },
@@ -84,6 +86,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         sourceTableName: entry.tableName || "",
         targetSystem: "",
         targetConnectionId: 0,
+        targetLayer: "",
         targetSchemaName: "",
         targetTableName: "",
       });
@@ -468,6 +471,24 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                       <SelectItem key={conn.connectionId} value={conn.connectionId.toString()}>
                         {conn.connectionName}
                       </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Layer */}
+              <div className="space-y-2">
+                <Label htmlFor="target-layer">Target Layer</Label>
+                <Select
+                  value={watchedValues.targetLayer || ""}
+                  onValueChange={(value) => form.setValue('targetLayer', value)}
+                >
+                  <SelectTrigger data-testid="select-target-layer">
+                    <SelectValue placeholder="Select target layer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {executionLayers.map((layer) => (
+                      <SelectItem key={layer} value={layer}>{layer}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
