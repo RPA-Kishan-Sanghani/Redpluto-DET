@@ -331,19 +331,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold">Pipeline Configuration</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Configure data pipeline settings including source, target, processing rules, and advanced options</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
         <Tabs defaultValue="source" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="source" className="flex items-center gap-2">

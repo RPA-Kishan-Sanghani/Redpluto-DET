@@ -46,7 +46,6 @@ import {
   Save,
   X,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Form validation schema
 const reconciliationFormSchema = z.object({
@@ -350,19 +349,7 @@ export function ReconciliationForm({
           <TabsContent value="general" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  General Configuration
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Set up reconciliation rules to validate data consistency between source and target systems</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </CardTitle>
+                <CardTitle>General Configuration</CardTitle>
                 <CardDescription>Basic reconciliation settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

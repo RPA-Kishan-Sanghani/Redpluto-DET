@@ -41,9 +41,7 @@ import {
   Loader2,
   Save,
   X,
-  Info,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Form validation schema matching the database exactly
 const dataQualityFormSchema = z.object({
@@ -303,16 +301,6 @@ export function DataQualityForm({
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
               Basic Configuration
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Configure data quality validation rules to ensure data integrity and consistency across your pipeline</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </CardTitle>
             <CardDescription>Configure the data quality validation settings</CardDescription>
           </CardHeader>
