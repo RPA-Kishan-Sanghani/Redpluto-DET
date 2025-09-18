@@ -100,20 +100,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
 
-  // Filter target connections based on selected target system
-  const targetConnections = allConnections.filter(conn => 
-    !watchedValues.targetSystem || 
-    conn.connectionType?.toLowerCase() === watchedValues.targetSystem.toLowerCase() ||
-    (watchedValues.targetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
-    (watchedValues.targetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
-    (watchedValues.targetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
-    (watchedValues.targetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
-    (watchedValues.targetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
-    (watchedValues.targetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
-    (watchedValues.targetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
-    (watchedValues.targetSystem === 'Salesforce' && conn.connectionType === 'API')
-  );
-
   // Fetch execution layers
   const { data: executionLayers = [] } = useQuery({
     queryKey: ['/api/metadata/execution_layer'],
@@ -156,6 +142,20 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     (watchedValues.sourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
     (watchedValues.sourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
     (watchedValues.sourceSystem === 'Salesforce' && conn.connectionType === 'API')
+  );
+
+  // Filter target connections based on selected target system
+  const targetConnections = allConnections.filter(conn => 
+    !watchedValues.targetSystem || 
+    conn.connectionType?.toLowerCase() === watchedValues.targetSystem.toLowerCase() ||
+    (watchedValues.targetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (watchedValues.targetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (watchedValues.targetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (watchedValues.targetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+    (watchedValues.targetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+    (watchedValues.targetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+    (watchedValues.targetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+    (watchedValues.targetSystem === 'Salesforce' && conn.connectionType === 'API')
   );
 
   // Fetch source schemas
