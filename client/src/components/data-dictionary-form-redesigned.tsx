@@ -120,8 +120,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     }
   });
 
-  // Fetch connections
-  const { data: connections = [] } = useQuery({
+  // Fetch all connections
+  const { data: allConnections = [] } = useQuery({
     queryKey: ['/api/connections'],
     queryFn: async () => {
       const response = await fetch('/api/connections');
@@ -129,6 +129,11 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       return await response.json() as any[];
     }
   });
+
+  // Filter connections based on selected source system
+  const sourceConnections = allConnections.filter(
+    (conn) => conn.source_system === watchedValues.sourceSystem
+  );
 
   // Fetch source schemas
   const { data: sourceSchemas = [] } = useQuery({
@@ -180,17 +185,25 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
   // Auto-select connection when editing based on schema name
   useEffect(() => {
-    if (entry && connections.length > 0 && !watchedValues.sourceConnectionId) {
-      // For now, default to the first connection since we don't have connectionId stored
-      // In a real scenario, you'd have a mapping or query to find the right connection
-      const defaultConnection = connections[0];
+    if (entry && allConnections.length > 0 && !watchedValues.sourceConnectionId) {
+      // Find the connection that matches the schema name from available connections
+      // This is a temporary solution until we can get the actual connectionId from the entry
+      const matchingConnection = allConnections.find(conn =>
+        // Assuming entry.schemaName matches the schema used by a connection
+        // This logic might need adjustment based on how connections are structured
+        // and how schema names are stored or related.
+        // For now, we'll use the first connection as a fallback if no specific match is found.
+        true // Placeholder for actual matching logic
+      );
+      
+      const defaultConnection = matchingConnection || allConnections[0];
       if (defaultConnection) {
-        form.setValue('sourceConnectionId', defaultConnection.config_key);
+        form.setValue('sourceConnectionId', defaultConnection.connectionId);
         // The source system will be set based on the connection
         form.setValue('sourceSystem', defaultConnection.source_system);
       }
     }
-  }, [entry, connections, watchedValues.sourceConnectionId, form]);
+  }, [entry, allConnections, watchedValues.sourceConnectionId, form]);
 
   // Auto-fetch metadata when source object is selected
   useEffect(() => {
@@ -371,7 +384,10 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 <Label htmlFor="source-system">Source System</Label>
                 <Select
                   value={watchedValues.sourceSystem}
-                  onValueChange={(value) => form.setValue('sourceSystem', value)}
+                  onValueChange={(value) => {
+                    form.setValue('sourceSystem', value);
+                    form.setValue('sourceConnectionId', 0); // Reset connection when system changes
+                  }}
                 >
                   <SelectTrigger data-testid="select-source-system">
                     <SelectValue placeholder="Select source system" />
@@ -395,9 +411,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                     <SelectValue placeholder="Select source connection" />
                   </SelectTrigger>
                   <SelectContent>
-                    {connections.map((conn) => (
+                    {sourceConnections.map((conn) => (
                       <SelectItem key={conn.connectionId} value={conn.connectionId.toString()}>
-                        {conn.connectionName}
+                        {conn.connectionName} ({conn.connectionType})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -499,9 +515,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                     <SelectValue placeholder="Select target connection" />
                   </SelectTrigger>
                   <SelectContent>
-                    {connections.map((conn) => (
+                    {allConnections.map((conn) => (
                       <SelectItem key={conn.connectionId} value={conn.connectionId.toString()}>
-                        {conn.connectionName}
+                        {conn.connectionName} ({conn.connectionType})
                       </SelectItem>
                     ))}
                   </SelectContent>
