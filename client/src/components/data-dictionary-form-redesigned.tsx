@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, X, MoreVertical, Loader2, Edit, Trash2 } from "lucide-react";
+import { Plus, Save, X, MoreVertical, Loader2, Edit, Trash2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 
 const dataDictionarySchema = z.object({
@@ -326,8 +327,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   };
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Top Section - Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-[500px]">
           {/* Left Column - Source */}
@@ -338,7 +340,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             <CardContent className="p-3 space-y-3">
               {/* Select Layer */}
               <div className="space-y-2">
-                <Label htmlFor="execution-layer">Select Layer</Label>
+                <Label htmlFor="execution-layer" className="flex items-center gap-2">
+                  Select Layer
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Processing layer where this table belongs (Bronze, Silver, Gold).</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
                 <Select
                   value={watchedValues.executionLayer}
                   onValueChange={(value) => form.setValue('executionLayer', value)}
@@ -394,7 +406,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
               {/* Source Schema */}
               <div className="space-y-2">
-                <Label htmlFor="source-schema">Source Schema</Label>
+                <Label htmlFor="source-schema" className="flex items-center gap-2">
+                  Source Schema
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Name of the database schema.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
                 <Select
                   value={watchedValues.sourceSchemaName}
                   onValueChange={(value) => form.setValue('sourceSchemaName', value)}
@@ -412,7 +434,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
               {/* Source Object */}
               <div className="space-y-2">
-                <Label htmlFor="source-object">Source Object</Label>
+                <Label htmlFor="source-object" className="flex items-center gap-2">
+                  Source Object
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Name of the database table.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
                 <Select
                   value={watchedValues.sourceTableName}
                   onValueChange={(value) => form.setValue('sourceTableName', value)}
@@ -496,7 +528,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
               {/* Target Schema */}
               <div className="space-y-2">
-                <Label htmlFor="target-schema">Target Schema</Label>
+                <Label htmlFor="target-schema" className="flex items-center gap-2">
+                  Target Schema
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Name of the database schema.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
                 <Select
                   value={watchedValues.targetSchemaName}
                   onValueChange={(value) => form.setValue('targetSchemaName', value)}
@@ -514,7 +556,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
               {/* Target Object */}
               <div className="space-y-2">
-                <Label htmlFor="target-object">Target Object</Label>
+                <Label htmlFor="target-object" className="flex items-center gap-2">
+                  Target Object
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Name of the database table.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
                 {showAddTargetObject ? (
                   <div className="flex space-x-2">
                     <Input
@@ -613,15 +665,111 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Attribute Name</TableHead>
-                      <TableHead>Data Type</TableHead>
-                      <TableHead>Precision</TableHead>
-                      <TableHead>Length</TableHead>
-                      <TableHead>Scale</TableHead>
-                      <TableHead>Primary Key</TableHead>
-                      <TableHead>Foreign Key</TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Attribute Name
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Name of the column/field.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Data Type
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Data type of the column (e.g., VARCHAR, INT, DATE).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Precision
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Total number of digits for numeric fields.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Length
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Maximum length allowed for the column (if applicable).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Scale
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Number of digits after the decimal point (for numeric fields).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Primary Key
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Marks column as part of the primary key (Y/N).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Foreign Key
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Marks column as a foreign key (Y/N).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
                       <TableHead>Foreign Key Table</TableHead>
-                      <TableHead>Column Description</TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-2">
+                          Column Description
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Business-friendly description of the column.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -828,7 +976,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             )}
           </Button>
         </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </TooltipProvider>
   );
 }
