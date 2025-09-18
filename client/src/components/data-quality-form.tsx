@@ -29,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type {
@@ -41,6 +42,7 @@ import {
   Loader2,
   Save,
   X,
+  Info,
 } from "lucide-react";
 
 // Form validation schema matching the database exactly
@@ -311,7 +313,19 @@ export function DataQualityForm({
                 name="executionLayer"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Execution Layer <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Execution Layer <span className="text-red-500">*</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Processing layer for validation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-execution-layer">
@@ -334,7 +348,19 @@ export function DataQualityForm({
                 name="validationType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Validation Type <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Validation Type <span className="text-red-500">*</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Type of validation rule</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-validation-type">
@@ -360,7 +386,19 @@ export function DataQualityForm({
                 name="targetSystem"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target System</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Target System
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>System type for target connection</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select 
                       onValueChange={(value) => {
                         field.onChange(value);
@@ -394,7 +432,19 @@ export function DataQualityForm({
                 name="targetConnectionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Database Connection</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Target Database Connection
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Database connection for target system</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select 
                       onValueChange={(value) => {
                         field.onChange(value ? parseInt(value) : undefined);
@@ -430,7 +480,19 @@ export function DataQualityForm({
                 name="targetSchema"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Schema</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Target Schema
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Database schema containing the target table</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select 
                       onValueChange={(value) => {
                         field.onChange(value || '');
@@ -463,7 +525,19 @@ export function DataQualityForm({
                 name="targetTableName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Table Name</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Target Table Name
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Table to validate</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select 
                       onValueChange={(value) => {
                         field.onChange(value || '');
@@ -495,7 +569,19 @@ export function DataQualityForm({
                 name="attributeName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Attribute Name <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Attribute Name <span className="text-red-500">*</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Column(s) to validate</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value || ''}
@@ -537,7 +623,19 @@ export function DataQualityForm({
                   name="referenceTableName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reference Table Name</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Reference Table Name
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reference table for lookups</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Enter reference table name" data-testid="input-reference-table" />
                       </FormControl>
@@ -552,7 +650,19 @@ export function DataQualityForm({
                 name="defaultValue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Default Value</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Default Value
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Default value for replacement</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Enter default value" data-testid="input-default-value" />
                     </FormControl>
@@ -567,7 +677,19 @@ export function DataQualityForm({
                   name="thresholdPercentage"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Threshold Percentage</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Threshold Percentage
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Maximum allowed error percentage</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <FormControl>
                         <Input 
                           {...field} 
@@ -590,7 +712,19 @@ export function DataQualityForm({
                 name="errorTableTransferFlag"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Transfer to Error Table</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Transfer to Error Table
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Flag to transfer errors to error table</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value || 'N'}>
                       <FormControl>
                         <SelectTrigger data-testid="select-error-transfer">
@@ -612,7 +746,19 @@ export function DataQualityForm({
                 name="activeFlag"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Status
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Active indicator</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value || 'Y'}>
                       <FormControl>
                         <SelectTrigger data-testid="select-active-flag">
@@ -638,7 +784,19 @@ export function DataQualityForm({
               name="customQuery"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Custom Query</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Custom Query
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Custom validation SQL</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </FormLabel>
                   <FormControl>
                     <Textarea 
                       {...field} 
