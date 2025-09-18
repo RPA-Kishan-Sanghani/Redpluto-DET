@@ -195,7 +195,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         // For now, we'll use the first connection as a fallback if no specific match is found.
         true // Placeholder for actual matching logic
       );
-      
+
       const defaultConnection = matchingConnection || allConnections[0];
       if (defaultConnection) {
         form.setValue('sourceConnectionId', defaultConnection.connectionId);
