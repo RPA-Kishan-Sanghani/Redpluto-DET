@@ -916,7 +916,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                             value={column.columnDescription}
                             onChange={(e) => updateColumn(index, 'columnDescription', e.target.value)}
                             placeholder="Enter column description..."
-                            className="min-h-[60px] resize-none"
+                            className="min-h-[100px] w-64 resize-both"
                             maxLength={1000}
                             data-testid={`textarea-description-${index}`}
                           />
