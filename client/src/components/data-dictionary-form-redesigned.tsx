@@ -100,6 +100,20 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
 
+  // Filter target connections based on selected target system
+  const targetConnections = allConnections.filter(conn => 
+    !watchedValues.targetSystem || 
+    conn.connectionType?.toLowerCase() === watchedValues.targetSystem.toLowerCase() ||
+    (watchedValues.targetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (watchedValues.targetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (watchedValues.targetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (watchedValues.targetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+    (watchedValues.targetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+    (watchedValues.targetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+    (watchedValues.targetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+    (watchedValues.targetSystem === 'Salesforce' && conn.connectionType === 'API')
+  );
+
   // Fetch execution layers
   const { data: executionLayers = [] } = useQuery({
     queryKey: ['/api/metadata/execution_layer'],
@@ -131,8 +145,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   });
 
   // Filter connections based on selected source system
-  const sourceConnections = allConnections.filter(
-    (conn) => conn.source_system === watchedValues.sourceSystem
+  const sourceConnections = allConnections.filter(conn => 
+    !watchedValues.sourceSystem || 
+    conn.connectionType?.toLowerCase() === watchedValues.sourceSystem.toLowerCase() ||
+    (watchedValues.sourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+    (watchedValues.sourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+    (watchedValues.sourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+    (watchedValues.sourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+    (watchedValues.sourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+    (watchedValues.sourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+    (watchedValues.sourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+    (watchedValues.sourceSystem === 'Salesforce' && conn.connectionType === 'API')
   );
 
   // Fetch source schemas
@@ -387,6 +410,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                   onValueChange={(value) => {
                     form.setValue('sourceSystem', value);
                     form.setValue('sourceConnectionId', 0); // Reset connection when system changes
+                    // Reset dependent fields
+                    form.setValue('sourceSchemaName', '');
+                    form.setValue('sourceTableName', '');
                   }}
                 >
                   <SelectTrigger data-testid="select-source-system">
@@ -405,10 +431,16 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 <Label htmlFor="source-connection">Source Connection</Label>
                 <Select
                   value={watchedValues.sourceConnectionId?.toString() || ""}
-                  onValueChange={(value) => form.setValue('sourceConnectionId', parseInt(value))}
+                  onValueChange={(value) => {
+                    form.setValue('sourceConnectionId', parseInt(value));
+                    // Reset dependent fields when connection changes
+                    form.setValue('sourceSchemaName', '');
+                    form.setValue('sourceTableName', '');
+                  }}
+                  disabled={!watchedValues.sourceSystem}
                 >
                   <SelectTrigger data-testid="select-source-connection">
-                    <SelectValue placeholder="Select source connection" />
+                    <SelectValue placeholder={watchedValues.sourceSystem ? "Select source connection" : "Select source system first"} />
                   </SelectTrigger>
                   <SelectContent>
                     {sourceConnections.map((conn) => (
@@ -491,7 +523,13 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 <Label htmlFor="target-system">Target System</Label>
                 <Select
                   value={watchedValues.targetSystem}
-                  onValueChange={(value) => form.setValue('targetSystem', value)}
+                  onValueChange={(value) => {
+                    form.setValue('targetSystem', value);
+                    form.setValue('targetConnectionId', 0); // Reset connection when system changes
+                    // Reset dependent fields
+                    form.setValue('targetSchemaName', '');
+                    form.setValue('targetTableName', '');
+                  }}
                 >
                   <SelectTrigger data-testid="select-target-system">
                     <SelectValue placeholder="Select target system" />
@@ -509,13 +547,19 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 <Label htmlFor="target-connection">Target Connection</Label>
                 <Select
                   value={watchedValues.targetConnectionId?.toString() || ""}
-                  onValueChange={(value) => form.setValue('targetConnectionId', parseInt(value))}
+                  onValueChange={(value) => {
+                    form.setValue('targetConnectionId', parseInt(value));
+                    // Reset dependent fields when connection changes
+                    form.setValue('targetSchemaName', '');
+                    form.setValue('targetTableName', '');
+                  }}
+                  disabled={!watchedValues.targetSystem}
                 >
                   <SelectTrigger data-testid="select-target-connection">
-                    <SelectValue placeholder="Select target connection" />
+                    <SelectValue placeholder={watchedValues.targetSystem ? "Select target connection" : "Select target system first"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {allConnections.map((conn) => (
+                    {targetConnections.map((conn) => (
                       <SelectItem key={conn.connectionId} value={conn.connectionId.toString()}>
                         {conn.connectionName} ({conn.connectionType})
                       </SelectItem>
