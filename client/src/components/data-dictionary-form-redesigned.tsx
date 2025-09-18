@@ -837,7 +837,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                     {columns.map((column, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">
-                          {column.attributeName}
+                          <Input
+                            value={column.attributeName}
+                            onChange={(e) => updateColumn(index, 'attributeName', e.target.value)}
+                            className="font-medium border-0 p-1 focus:border focus:border-input focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            data-testid={`input-attribute-name-${index}`}
+                          />
                         </TableCell>
                         <TableCell>
                           <Input
@@ -956,6 +961,16 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                                   newColumn,
                                   ...prev.slice(index + 1)
                                 ]);
+                                
+                                // Focus on the new column's attribute name field after a short delay
+                                setTimeout(() => {
+                                  const newColumnIndex = index + 1;
+                                  const attributeNameInput = document.querySelector(`[data-testid="input-attribute-name-${newColumnIndex}"]`) as HTMLInputElement;
+                                  if (attributeNameInput) {
+                                    attributeNameInput.focus();
+                                    attributeNameInput.select(); // Select the text for easy editing
+                                  }
+                                }, 100);
                               }}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Column After
