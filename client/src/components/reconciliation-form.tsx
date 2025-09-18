@@ -46,6 +46,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Form validation schema
 const reconciliationFormSchema = z.object({
@@ -323,8 +324,9 @@ export function ReconciliationForm({
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <TooltipProvider>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general" className="flex items-center gap-2">
@@ -359,7 +361,17 @@ export function ReconciliationForm({
                     name="executionLayer"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Execution Layer *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Execution Layer *
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Layer where reconciliation is performed (e.g., Bronze, Silver, Gold).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value || ""}
@@ -389,7 +401,17 @@ export function ReconciliationForm({
                     name="reconType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reconciliation Type *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Reconciliation Type *
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Type of reconciliation to perform (e.g., count, sum, value check).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value || ""}
@@ -414,7 +436,17 @@ export function ReconciliationForm({
                     name="activeFlag"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Active Flag</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Active Flag
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Indicates if this reconciliation rule is active (Y/N).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value || "Y"}
@@ -532,7 +564,17 @@ export function ReconciliationForm({
                     name="sourceSchema"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Source Schema Name</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Source Schema Name
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Name of the source database schema.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value || '');
@@ -563,7 +605,17 @@ export function ReconciliationForm({
                     name="sourceTable"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Source Table Name</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Source Table Name
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Name of the source table.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => field.onChange(value || '')} 
                           value={field.value || ''}
@@ -591,7 +643,17 @@ export function ReconciliationForm({
                   name="sourceQuery"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Source Query *</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Source Query *
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Custom SQL query to run on the source system.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
                       <FormDescription>
                         SQL query to execute against the source data
                       </FormDescription>
@@ -705,7 +767,17 @@ export function ReconciliationForm({
                     name="targetSchema"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Schema Name</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Schema Name
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Name of the target database schema.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value || '');
@@ -736,7 +808,17 @@ export function ReconciliationForm({
                     name="targetTable"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Table Name</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Table Name
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Name of the target table.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <Select 
                           onValueChange={(value) => field.onChange(value || '')} 
                           value={field.value || ''}
@@ -764,7 +846,17 @@ export function ReconciliationForm({
                   name="targetQuery"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Target Query *</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Target Query *
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Custom SQL query to run on the target system.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
                       <FormDescription>
                         SQL query to execute against the target data
                       </FormDescription>
@@ -798,7 +890,17 @@ export function ReconciliationForm({
                     name="attribute"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Attribute</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Attribute
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Specific column used for value-based reconciliation.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <FormDescription>
                           Column name for value-based reconciliation
                         </FormDescription>
@@ -836,7 +938,17 @@ export function ReconciliationForm({
                     name="thresholdPercentage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Threshold Percentage</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Threshold Percentage
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Maximum allowed difference between source and target (in %).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
                         <FormDescription>
                           Acceptable variance percentage (0-100)
                         </FormDescription>
@@ -891,7 +1003,8 @@ export function ReconciliationForm({
             {config ? "Update Configuration" : "Save Configuration"}
           </Button>
         </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </TooltipProvider>
   );
 }
