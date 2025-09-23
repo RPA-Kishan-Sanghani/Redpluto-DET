@@ -322,7 +322,12 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      await savePipelineMutation.mutateAsync(data);
+      // Convert execution layer to lowercase before saving
+      const processedData = {
+        ...data,
+        executionLayer: data.executionLayer?.toLowerCase()
+      };
+      await savePipelineMutation.mutateAsync(processedData);
     } finally {
       setIsLoading(false);
     }
