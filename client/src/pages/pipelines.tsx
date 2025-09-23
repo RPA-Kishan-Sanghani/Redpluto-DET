@@ -29,7 +29,7 @@ export function Pipelines() {
   const [openPipelines, setOpenPipelines] = useState<Set<number>>(new Set());
   const [editingPipeline, setEditingPipeline] = useState<ConfigRecord | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -42,7 +42,7 @@ export function Pipelines() {
       if (filters.executionLayer) params.append('executionLayer', filters.executionLayer);
       if (filters.sourceSystem) params.append('sourceSystem', filters.sourceSystem);
       if (filters.status) params.append('status', filters.status);
-      
+
       const response = await fetch(`/api/pipelines?${params}`);
       if (!response.ok) throw new Error('Failed to fetch pipelines');
       return response.json() as ConfigRecord[];
@@ -197,6 +197,9 @@ export function Pipelines() {
                             <CardTitle className="text-lg" data-testid={`text-pipeline-name-${pipeline.configKey}`}>
                               {pipeline.sourceTableName || `Pipeline ${pipeline.configKey}`}
                             </CardTitle>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              Config Key: {pipeline.configKey}
+                            </Badge>
                             {pipeline.sourceSchemaName && (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Schema: {pipeline.sourceSchemaName}
@@ -222,6 +225,10 @@ export function Pipelines() {
                             <span className="flex items-center">
                               <Settings className="h-3 w-3 mr-1" />
                               {pipeline.loadType || 'N/A'}
+                            </span>
+                            <span className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {pipeline.createdAt ? new Date(pipeline.createdAt).toLocaleDateString() : 'N/A'}
                             </span>
                           </CardDescription>
                         </div>
@@ -276,7 +283,7 @@ export function Pipelines() {
                     </div>
                   </CardHeader>
                 </CollapsibleTrigger>
-                
+
                 <CollapsibleContent>
                   <CardContent className="pt-0 border-t bg-gray-50 dark:bg-gray-900">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -318,7 +325,7 @@ export function Pipelines() {
               </Collapsible>
             </Card>
           ))}
-          
+
           {allPipelines.length > 0 && (
             <DataPagination
               currentPage={currentPage}
