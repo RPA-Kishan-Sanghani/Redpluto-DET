@@ -477,6 +477,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pipelines", async (req, res) => {
     try {
       const validatedData = insertConfigSchema.parse(req.body);
+      // Ensure execution layer is lowercase
+      if (validatedData.executionLayer) {
+        validatedData.executionLayer = validatedData.executionLayer.toLowerCase();
+      }
       const pipeline = await storage.createPipeline(validatedData);
       res.status(201).json(pipeline);
     } catch (error: any) {
@@ -493,6 +497,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = updateConfigSchema.parse(req.body);
+      // Ensure execution layer is lowercase
+      if (validatedData.executionLayer) {
+        validatedData.executionLayer = validatedData.executionLayer.toLowerCase();
+      }
       const pipeline = await storage.updatePipeline(id, validatedData);
 
       if (!pipeline) {
