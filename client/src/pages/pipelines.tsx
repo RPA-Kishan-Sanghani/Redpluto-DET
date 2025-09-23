@@ -200,6 +200,16 @@ export function Pipelines() {
                             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                               Config Key: {pipeline.configKey}
                             </Badge>
+                            {pipeline.sourceSchemaName && (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                Schema: {pipeline.sourceSchemaName}
+                              </Badge>
+                            )}
+                            {pipeline.targetTableName && (
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                Target: {pipeline.targetTableName}
+                              </Badge>
+                            )}
                             {getStatusBadge(pipeline.activeFlag)}
                             {pipeline.executionLayer && (
                               <Badge variant="outline" className="capitalize">
