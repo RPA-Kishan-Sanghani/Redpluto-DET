@@ -194,6 +194,11 @@ export function Pipelines() {
                       <div className="flex items-center space-x-4 text-left">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
+                            {pipeline.sourceTableName && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                Table: {pipeline.sourceTableName}
+                              </Badge>
+                            )}
                             {pipeline.sourceSchemaName && (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Schema: {pipeline.sourceSchemaName}
