@@ -197,9 +197,6 @@ export function Pipelines() {
                             <CardTitle className="text-lg" data-testid={`text-pipeline-name-${pipeline.configKey}`}>
                               {pipeline.sourceTableName || `Pipeline ${pipeline.configKey}`}
                             </CardTitle>
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                              Config Key: {pipeline.configKey}
-                            </Badge>
                             {pipeline.sourceSchemaName && (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Schema: {pipeline.sourceSchemaName}
@@ -226,12 +223,6 @@ export function Pipelines() {
                               <Settings className="h-3 w-3 mr-1" />
                               {pipeline.loadType || 'N/A'}
                             </span>
-                            {pipeline.createdAt && (
-                              <span className="flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {new Date(pipeline.createdAt).toLocaleDateString()}
-                              </span>
-                            )}
                           </CardDescription>
                         </div>
                       </div>
