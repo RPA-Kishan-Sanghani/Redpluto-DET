@@ -487,6 +487,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.targetType) {
         validatedData.targetType = validatedData.targetType.toLowerCase();
       }
+      // Convert load type to _load suffix for truncate and incremental
+      if (validatedData.loadType && (validatedData.loadType.toLowerCase() === 'truncate' || validatedData.loadType.toLowerCase() === 'incremental')) {
+        validatedData.loadType = `${validatedData.loadType.toLowerCase()}_load`;
+      }
       const pipeline = await storage.createPipeline(validatedData);
       res.status(201).json(pipeline);
     } catch (error: any) {
@@ -512,6 +516,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (validatedData.targetType) {
         validatedData.targetType = validatedData.targetType.toLowerCase();
+      }
+      // Convert load type to _load suffix for truncate and incremental
+      if (validatedData.loadType && (validatedData.loadType.toLowerCase() === 'truncate' || validatedData.loadType.toLowerCase() === 'incremental')) {
+        validatedData.loadType = `${validatedData.loadType.toLowerCase()}_load`;
       }
       const pipeline = await storage.updatePipeline(id, validatedData);
 

@@ -59,7 +59,11 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       targetSchemaName: pipeline?.targetSchemaName || undefined,
       temporaryTargetTable: pipeline?.temporaryTargetTable || undefined,
       targetTableName: pipeline?.targetTableName || undefined,
-      loadType: pipeline?.loadType || undefined,
+      loadType: pipeline?.loadType ? 
+        (pipeline.loadType === 'truncate_load' ? 'Truncate' : 
+         pipeline.loadType === 'incremental_load' ? 'Incremental' : 
+         pipeline.loadType) : 
+        undefined,
       primaryKey: pipeline?.primaryKey || undefined,
       effectiveDateColumn: pipeline?.effectiveDateColumn || undefined,
       md5Columns: pipeline?.md5Columns || undefined,
@@ -134,7 +138,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedConnectionId = form.watch('connectionId');
   const selectedSchema = form.watch('sourceSchemaName');
   const selectedSourceType = form.watch('sourceType');
-  const selectedTargetType = form.watch('targetType');
   const selectedLoadType = form.watch('loadType');
   const selectedExecutionLayer = form.watch('executionLayer');
 
@@ -328,12 +331,18 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      // Convert execution layer, source type, and target type to lowercase before saving
+      // Convert execution layer, source type, target type, and load type before saving
+      let processedLoadType = data.loadType;
+      if (data.loadType && (data.loadType === 'Truncate' || data.loadType === 'Incremental')) {
+        processedLoadType = `${data.loadType.toLowerCase()}_load`;
+      }
+
       const processedData = {
         ...data,
         executionLayer: data.executionLayer?.toLowerCase(),
         sourceType: data.sourceType?.toLowerCase(),
-        targetType: data.targetType?.toLowerCase()
+        targetType: data.targetType?.toLowerCase(),
+        loadType: processedLoadType
       };
       await savePipelineMutation.mutateAsync(processedData);
     } finally {
@@ -1263,15 +1272,15 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                           if (enableDynamicSchema === 'Y' && targetColumns.length > 0 && selectedColumns.length > 0) {
                             // Get columns that exist in both selected and target columns
                             const validColumns = selectedColumns.filter(col => targetColumns.includes(col));
-                            
+
                             // Get new columns that are in target but not in selected
                             const newColumns = targetColumns.filter(col => !selectedColumns.includes(col));
-                            
+
                             // If there are changes (removed or added columns), update the field
                             if (validColumns.length !== selectedColumns.length || newColumns.length > 0) {
                               const updatedColumns = [...validColumns, ...newColumns];
                               field.onChange(updatedColumns.join(','));
-                              
+
                               // Show toast notification about the automatic adjustment
                               if (validColumns.length !== selectedColumns.length || newColumns.length > 0) {
                                 toast({
