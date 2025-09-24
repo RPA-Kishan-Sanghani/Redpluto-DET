@@ -35,7 +35,9 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const form = useForm<FormData>({
     resolver: zodResolver(insertConfigSchema),
     defaultValues: {
-      executionLayer: pipeline?.executionLayer || undefined,
+      executionLayer: pipeline?.executionLayer ? 
+        pipeline.executionLayer.charAt(0).toUpperCase() + pipeline.executionLayer.slice(1).toLowerCase() : 
+        undefined,
       sourceSystem: pipeline?.sourceSystem || undefined,
       connectionId: pipeline?.connectionId || undefined,
       sourceType: pipeline?.sourceType || undefined,
