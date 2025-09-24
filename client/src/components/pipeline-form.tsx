@@ -138,6 +138,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedConnectionId = form.watch('connectionId');
   const selectedSchema = form.watch('sourceSchemaName');
   const selectedSourceType = form.watch('sourceType');
+  const selectedTargetType = form.watch('targetType');
   const selectedLoadType = form.watch('loadType');
   const selectedExecutionLayer = form.watch('executionLayer');
 
