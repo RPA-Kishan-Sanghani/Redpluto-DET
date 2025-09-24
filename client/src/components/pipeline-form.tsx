@@ -51,7 +51,9 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       targetLayer: pipeline?.targetLayer || undefined,
       targetSystem: pipeline?.targetSystem || undefined,
       targetConnectionId: pipeline?.targetConnectionId || undefined,
-      targetType: pipeline?.targetType || undefined,
+      targetType: pipeline?.targetType ? 
+        pipeline.targetType.charAt(0).toUpperCase() + pipeline.targetType.slice(1).toLowerCase() : 
+        undefined,
       targetFilePath: pipeline?.targetFilePath || undefined,
       targetFileDelimiter: pipeline?.targetFileDelimiter || undefined,
       targetSchemaName: pipeline?.targetSchemaName || undefined,
@@ -326,11 +328,12 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      // Convert execution layer and source type to lowercase before saving
+      // Convert execution layer, source type, and target type to lowercase before saving
       const processedData = {
         ...data,
         executionLayer: data.executionLayer?.toLowerCase(),
-        sourceType: data.sourceType?.toLowerCase()
+        sourceType: data.sourceType?.toLowerCase(),
+        targetType: data.targetType?.toLowerCase()
       };
       await savePipelineMutation.mutateAsync(processedData);
     } finally {

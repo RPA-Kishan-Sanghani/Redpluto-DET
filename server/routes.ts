@@ -24,11 +24,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       // Determine if input is email or username
       const isEmail = username.includes('@');
       let user;
-      
+
       if (isEmail) {
         user = await storage.getUserByEmail(username);
       } else {
@@ -392,9 +392,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schemaName = req.params.schema;
       const tableName = req.params.table;
       const { dataTypes } = req.query;
-      
+
       const metadata = await storage.getDatabaseColumnMetadata(connectionId, schemaName, tableName);
-      
+
       // If dataTypes filter is provided, filter columns by data type
       if (dataTypes) {
         const allowedTypes = (dataTypes as string).split(',').map(type => type.toLowerCase());
@@ -477,12 +477,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pipelines", async (req, res) => {
     try {
       const validatedData = insertConfigSchema.parse(req.body);
-      // Ensure execution layer and source type are lowercase
+      // Ensure execution layer, source type, and target type are lowercase
       if (validatedData.executionLayer) {
         validatedData.executionLayer = validatedData.executionLayer.toLowerCase();
       }
       if (validatedData.sourceType) {
         validatedData.sourceType = validatedData.sourceType.toLowerCase();
+      }
+      if (validatedData.targetType) {
+        validatedData.targetType = validatedData.targetType.toLowerCase();
       }
       const pipeline = await storage.createPipeline(validatedData);
       res.status(201).json(pipeline);
@@ -500,12 +503,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = updateConfigSchema.parse(req.body);
-      // Ensure execution layer and source type are lowercase
+      // Ensure execution layer, source type, and target type are lowercase
       if (validatedData.executionLayer) {
         validatedData.executionLayer = validatedData.executionLayer.toLowerCase();
       }
       if (validatedData.sourceType) {
         validatedData.sourceType = validatedData.sourceType.toLowerCase();
+      }
+      if (validatedData.targetType) {
+        validatedData.targetType = validatedData.targetType.toLowerCase();
       }
       const pipeline = await storage.updatePipeline(id, validatedData);
 
@@ -844,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         AND temporary_target_table != ''
         ORDER BY temporary_target_table
       `);
-      
+
       const tableNames = tempTables.rows.map((row: any) => row.temporary_target_table);
       res.json(tableNames);
     } catch (error) {
