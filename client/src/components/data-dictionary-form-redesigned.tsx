@@ -80,7 +80,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       // Find the connection that matches the schema name from available connections
       // This is a temporary solution until we can get the actual connectionId from the entry
       form.reset({
-        executionLayer: entry.executionLayer || "",
+        executionLayer: entry.executionLayer ? 
+          entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
+          "",
         sourceSystem: "", // Will be determined by connection
         sourceConnectionId: 0, // Will be set when we find the matching connection
         sourceSchemaName: entry.schemaName || "",
@@ -266,7 +268,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         // EDITING MODE: Update the existing entry
         const entryData = {
           configKey: entry.configKey || 1,
-          executionLayer: (data.executionLayer || '').substring(0, 50),
+          executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
           schemaName: (data.sourceSchemaName || '').substring(0, 100),
           tableName: (data.sourceTableName || '').substring(0, 100),
           attributeName: (columns[0]?.attributeName || entry.attributeName || '').substring(0, 100),
@@ -300,7 +302,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         const promises = columns.map(column => {
           const entryData = {
             configKey: 1,
-            executionLayer: (data.executionLayer || '').substring(0, 50),
+            executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
             schemaName: (data.sourceSchemaName || '').substring(0, 100),
             tableName: (data.sourceTableName || '').substring(0, 100),
             attributeName: (column.attributeName || '').substring(0, 100),
