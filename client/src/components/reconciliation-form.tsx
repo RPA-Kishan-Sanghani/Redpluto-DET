@@ -123,7 +123,9 @@ export function ReconciliationForm({
     resolver: zodResolver(reconciliationFormSchema),
     defaultValues: {
       configKey: config?.configKey || undefined,
-      executionLayer: config?.executionLayer || "",
+      executionLayer: config?.executionLayer ? 
+        config.executionLayer.charAt(0).toUpperCase() + config.executionLayer.slice(1).toLowerCase() : 
+        "",
       sourceSystem: config?.sourceSystem || "",
       sourceConnectionId: config?.sourceConnectionId || undefined,
       sourceType: config?.sourceType || "",
@@ -311,10 +313,16 @@ export function ReconciliationForm({
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
+      // Convert execution layer to lowercase before saving
+      const processedData = {
+        ...data,
+        executionLayer: data.executionLayer ? data.executionLayer.toLowerCase() : ""
+      };
+
       if (config) {
-        await updateMutation.mutateAsync(data);
+        await updateMutation.mutateAsync(processedData);
       } else {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync(processedData);
       }
     } catch (error) {
       console.error("Form submission error:", error);
