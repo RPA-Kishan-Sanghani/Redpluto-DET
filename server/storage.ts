@@ -1733,13 +1733,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
-    // Remove recon_key from config if it exists, let the database handle auto-increment
-    const { ...configData } = config;
+    // Explicitly remove any recon_key field and let database auto-increment
+    const { reconKey, ...configData } = config as any;
+    
+    console.log('Creating reconciliation config with data:', configData);
     
     const [created] = await db
       .insert(reconciliationConfigTable)
       .values(configData)
       .returning();
+      
+    console.log('Created reconciliation config with auto-generated recon_key:', created.reconKey);
     return created;
   }
 

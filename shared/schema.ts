@@ -254,7 +254,7 @@ export type UpdateDataDictionaryRecord = z.infer<typeof updateDataDictionarySche
 
 // Reconciliation Config Table
 export const reconciliationConfigTable = pgTable("reconciliation_config", {
-  reconKey: serial("recon_key").primaryKey(),
+  reconKey: serial("recon_key").primaryKey().notNull(),
   configKey: integer("config_key"),
   executionLayer: varchar("execution_layer", { length: 20 }).notNull(),
   sourceSchema: varchar("source_schema", { length: 20 }),
