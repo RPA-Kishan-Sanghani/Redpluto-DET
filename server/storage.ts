@@ -146,6 +146,7 @@ export interface IStorage {
   // Reconciliation config methods
   getReconciliationConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]>;
   getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined>;
+  getNextReconciliationConfigKey(): Promise<number>;
   createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
   updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
   deleteReconciliationConfig(id: number): Promise<boolean>;
@@ -1754,6 +1755,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(reconciliationConfigTable.reconKey, id))
       .returning();
     return updated || undefined;
+  }
+
+  async getNextReconciliationConfigKey(): Promise<number> {
+    try {
+      const result = await db
+        .select({ maxKey: sql<number>`COALESCE(MAX(${reconciliationConfigTable.reconKey}), 0)` })
+        .from(reconciliationConfigTable);
+      
+      const maxKey = result[0]?.maxKey ?? 0;
+      return maxKey + 1;
+    } catch (error) {
+      console.error('Error getting next reconciliation config key:', error);
+      return 1; // Default to 1 if there's an error or no records
+    }
   }
 
   async deleteReconciliationConfig(id: number): Promise<boolean> {

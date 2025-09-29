@@ -50,7 +50,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 // Form validation schema
 const reconciliationFormSchema = z.object({
-  configKey: z.number().min(1, "Config Key is required").optional(),
+  configKey: z.number().optional(),
   executionLayer: z.string().min(1, "Execution Layer is required"),
   sourceSystem: z.string().optional(),
   sourceConnectionId: z.number().optional(),
@@ -116,6 +116,18 @@ export function ReconciliationForm({
     queryKey: ["/api/metadata/source_type"],
     queryFn: () =>
       fetch("/api/metadata/source_type").then((res) => res.json()) as Promise<string[]>,
+  });
+
+  // Fetch next auto-increment value for recon_key (for new records)
+  const { data: nextReconKey } = useQuery({
+    queryKey: ["/api/reconciliation-configs/next-key"],
+    queryFn: async () => {
+      const response = await fetch("/api/reconciliation-configs/next-key");
+      if (!response.ok) throw new Error('Failed to fetch next recon key');
+      const data = await response.json();
+      return data.nextKey as number;
+    },
+    enabled: !config, // Only fetch for new records
   });
 
   // Initialize form with default values or existing config values
@@ -335,6 +347,29 @@ export function ReconciliationForm({
     <TooltipProvider>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Recon Key Display */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Configuration ID
+            </CardTitle>
+            <CardDescription>Auto-generated unique identifier</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="text-lg px-4 py-2">
+                {config ? `Recon Key: ${config.reconKey}` : `Next Recon Key: ${nextReconKey || 'Loading...'}`}
+              </Badge>
+              {!config && (
+                <span className="text-sm text-muted-foreground">
+                  This will be auto-assigned when you save
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general" className="flex items-center gap-2">
