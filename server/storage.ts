@@ -1734,14 +1734,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
-    // Explicitly remove any recon_key field and let database auto-increment
-    const { reconKey, ...configData } = config as any;
+    // Create a clean object with only the fields that should be inserted (no reconKey)
+    const insertData = {
+      ...(config.configKey !== undefined && { configKey: config.configKey }),
+      executionLayer: config.executionLayer,
+      ...(config.sourceSchema && { sourceSchema: config.sourceSchema }),
+      ...(config.sourceTable && { sourceTable: config.sourceTable }),
+      ...(config.targetSchema && { targetSchema: config.targetSchema }),
+      ...(config.targetTable && { targetTable: config.targetTable }),
+      reconType: config.reconType,
+      ...(config.attribute && { attribute: config.attribute }),
+      ...(config.sourceQuery && { sourceQuery: config.sourceQuery }),
+      ...(config.targetQuery && { targetQuery: config.targetQuery }),
+      ...(config.thresholdPercentage !== undefined && { thresholdPercentage: config.thresholdPercentage }),
+      activeFlag: config.activeFlag || 'Y',
+    };
     
-    console.log('Creating reconciliation config with data:', configData);
+    console.log('Creating reconciliation config with data:', insertData);
     
     const [created] = await db
       .insert(reconciliationConfigTable)
-      .values(configData)
+      .values(insertData)
       .returning();
       
     console.log('Created reconciliation config with auto-generated recon_key:', created.reconKey);
