@@ -1734,31 +1734,71 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
-    // Create a clean object with only the fields that should be inserted (no reconKey)
-    const insertData = {
-      ...(config.configKey !== undefined && { configKey: config.configKey }),
+    // Build insert data explicitly, only including non-undefined/non-null values  
+    const insertData: Record<string, any> = {
       executionLayer: config.executionLayer,
-      ...(config.sourceSchema && { sourceSchema: config.sourceSchema }),
-      ...(config.sourceTable && { sourceTable: config.sourceTable }),
-      ...(config.targetSchema && { targetSchema: config.targetSchema }),
-      ...(config.targetTable && { targetTable: config.targetTable }),
       reconType: config.reconType,
-      ...(config.attribute && { attribute: config.attribute }),
-      ...(config.sourceQuery && { sourceQuery: config.sourceQuery }),
-      ...(config.targetQuery && { targetQuery: config.targetQuery }),
-      ...(config.thresholdPercentage !== undefined && { thresholdPercentage: config.thresholdPercentage }),
       activeFlag: config.activeFlag || 'Y',
     };
+
+    // Only add optional fields if they have values
+    if (config.configKey !== undefined) insertData.configKey = config.configKey;
+    if (config.sourceSchema) insertData.sourceSchema = config.sourceSchema;
+    if (config.sourceTable) insertData.sourceTable = config.sourceTable;
+    if (config.targetSchema) insertData.targetSchema = config.targetSchema;
+    if (config.targetTable) insertData.targetTable = config.targetTable;
+    if (config.attribute) insertData.attribute = config.attribute;
+    if (config.sourceQuery) insertData.sourceQuery = config.sourceQuery;
+    if (config.targetQuery) insertData.targetQuery = config.targetQuery;
+    if (config.thresholdPercentage !== undefined) insertData.thresholdPercentage = config.thresholdPercentage;
     
     console.log('Creating reconciliation config with data:', insertData);
     
-    const [created] = await db
-      .insert(reconciliationConfigTable)
-      .values(insertData)
-      .returning();
+    // Use raw SQL to avoid Drizzle including recon_key in INSERT
+    const result = await pool.query(
+      `INSERT INTO reconciliation_config (
+        ${Object.keys(insertData).map(key => {
+          // Map camelCase to snake_case for database columns
+          const columnMap: Record<string, string> = {
+            configKey: 'config_key',
+            executionLayer: 'execution_layer',
+            sourceSchema: 'source_schema',
+            sourceTable: 'source_table',
+            targetSchema: 'target_schema',
+            targetTable: 'target_table',
+            reconType: 'recon_type',
+            sourceQuery: 'source_query',
+            targetQuery: 'target_query',
+            thresholdPercentage: 'threshold_percentage',
+            activeFlag: 'active_flag'
+          };
+          return columnMap[key] || key;
+        }).join(', ')}
+      ) VALUES (
+        ${Object.keys(insertData).map((_, index) => `$${index + 1}`).join(', ')}
+      ) RETURNING *`,
+      Object.values(insertData)
+    );
       
-    console.log('Created reconciliation config with auto-generated recon_key:', created.reconKey);
-    return created;
+    const created = result.rows[0];
+    console.log('Created reconciliation config with auto-generated recon_key:', created.recon_key);
+    
+    // Convert snake_case back to camelCase for consistency
+    return {
+      reconKey: created.recon_key,
+      configKey: created.config_key,
+      executionLayer: created.execution_layer,
+      sourceSchema: created.source_schema,
+      sourceTable: created.source_table,
+      targetSchema: created.target_schema,
+      targetTable: created.target_table,
+      reconType: created.recon_type,
+      attribute: created.attribute,
+      sourceQuery: created.source_query,
+      targetQuery: created.target_query,
+      thresholdPercentage: created.threshold_percentage,
+      activeFlag: created.active_flag,
+    };
   }
 
   async updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined> {
