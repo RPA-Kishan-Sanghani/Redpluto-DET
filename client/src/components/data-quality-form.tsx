@@ -262,6 +262,8 @@ export function DataQualityForm({
       // Process the form data for submission
       const processedData = {
         ...data,
+        // Convert execution layer to lowercase for database storage
+        executionLayer: data.executionLayer?.toLowerCase(),
         // Set tableName to targetTableName if not explicitly set
         tableName: data.tableName || data.targetTableName,
         // Convert empty strings to null for optional fields
