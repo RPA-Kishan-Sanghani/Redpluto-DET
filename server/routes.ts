@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { users } from "@shared/schema";
 import { insertUserSchema, insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
 import { sql } from "drizzle-orm";
@@ -702,6 +702,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching reconciliation config:', error);
       res.status(500).json({ error: 'Failed to fetch reconciliation config' });
+    }
+  });
+
+  // Database fix endpoint - cleans up invalid recon_key = 0 records and resets sequence
+  app.post("/api/reconciliation-configs/fix-database", async (req, res) => {
+    try {
+      console.log('Starting database fix for reconciliation_config table...');
+      
+      // Step 1: Delete all records with recon_key = 0 (invalid records)
+      const deleteResult = await pool.query(
+        'DELETE FROM reconciliation_config WHERE recon_key = 0 OR recon_key IS NULL RETURNING *'
+      );
+      console.log(`Deleted ${deleteResult.rowCount} invalid records with recon_key = 0`);
+      
+      // Step 2: Get the current max recon_key
+      const maxResult = await pool.query(
+        'SELECT COALESCE(MAX(recon_key), 0) as max_key FROM reconciliation_config'
+      );
+      const maxKey = maxResult.rows[0]?.max_key || 0;
+      console.log(`Current max recon_key: ${maxKey}`);
+      
+      // Step 3: Reset the sequence to start from max + 1
+      const nextValue = maxKey + 1;
+      await pool.query(
+        `SELECT setval('reconciliation_config_recon_key_seq', $1, false)`,
+        [nextValue]
+      );
+      console.log(`Reset sequence to start from: ${nextValue}`);
+      
+      res.json({
+        success: true,
+        message: 'Database fixed successfully',
+        deletedRecords: deleteResult.rowCount,
+        currentMaxKey: maxKey,
+        nextKey: nextValue
+      });
+    } catch (error) {
+      console.error('Error fixing database:', error);
+      res.status(500).json({ error: 'Failed to fix database', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
