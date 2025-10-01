@@ -268,13 +268,6 @@ export function DataQuality() {
                                   <CardTitle className="text-lg" data-testid={`text-config-name-${config.dataQualityKey}`}>
                                     {config.tableName}.{config.attributeName}
                                   </CardTitle>
-                                  {getStatusBadge(config.activeFlag)}
-                                  {getValidationTypeBadge(config.validationType)}
-                                  {config.executionLayer && (
-                                    <Badge variant="outline" className="capitalize">
-                                      {config.executionLayer}
-                                    </Badge>
-                                  )}
                                 </div>
                                 <CardDescription className="flex items-center space-x-4 mt-1">
                                   <span className="flex items-center">
