@@ -347,29 +347,6 @@ export function ReconciliationForm({
     <TooltipProvider>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Recon Key Display */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Configuration ID
-            </CardTitle>
-            <CardDescription>Auto-generated unique identifier</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="text-lg px-4 py-2">
-                {config ? `Recon Key: ${config.reconKey}` : `Next Recon Key: ${nextReconKey || 'Loading...'}`}
-              </Badge>
-              {!config && (
-                <span className="text-sm text-muted-foreground">
-                  This will be auto-assigned when you save
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general" className="flex items-center gap-2">
