@@ -125,7 +125,8 @@ export function DataQualityForm({
     "List Value Check", 
     "Duplicate Check",
     "File Format Check",
-    "Referential Integrity Check"
+    "Referential Integrity Check",
+    "Custom Query Check"
   ];
 
   // Helper function to convert snake_case validation type back to display format
