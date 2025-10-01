@@ -133,7 +133,7 @@ export function DataQualityForm({
     resolver: zodResolver(dataQualityFormSchema),
     defaultValues: {
       configKey: config?.configKey || undefined,
-      executionLayer: config?.executionLayer || "",
+      executionLayer: config?.executionLayer ? config.executionLayer.charAt(0).toUpperCase() + config.executionLayer.slice(1).toLowerCase() : "",
       tableName: config?.tableName || "",
       attributeName: config?.attributeName || "",
       validationType: config?.validationType || "",
