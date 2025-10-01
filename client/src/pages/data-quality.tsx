@@ -278,19 +278,21 @@ export function DataQuality() {
                                 </div>
                                 <CardDescription className="flex items-center space-x-4 mt-1">
                                   <span className="flex items-center">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    {config.activeFlag === 'Y' ? 'Active' : 'Inactive'}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <Settings className="h-3 w-3 mr-1" />
+                                    {config.validationType.replace('_', ' ')}
+                                  </span>
+                                  <span className="flex items-center">
                                     <Database className="h-3 w-3 mr-1" />
-                                    Config: {config.configKey}
+                                    {config.executionLayer}
                                   </span>
                                   {config.thresholdPercentage && (
                                     <span className="flex items-center">
                                       <BarChart3 className="h-3 w-3 mr-1" />
                                       Threshold: {config.thresholdPercentage}%
-                                    </span>
-                                  )}
-                                  {config.defaultValue && (
-                                    <span className="flex items-center">
-                                      <Settings className="h-3 w-3 mr-1" />
-                                      Default: {config.defaultValue}
                                     </span>
                                   )}
                                 </CardDescription>
