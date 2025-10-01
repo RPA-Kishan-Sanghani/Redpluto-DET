@@ -771,7 +771,7 @@ export function DataQualityForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                      Status
+                      Active Flag
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -786,15 +786,12 @@ export function DataQualityForm({
                     <Select onValueChange={field.onChange} defaultValue={field.value || 'Y'}>
                       <FormControl>
                         <SelectTrigger data-testid="select-active-flag">
-                          <SelectValue placeholder="Select status" />
+                          <SelectValue placeholder="Select active flag" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {activeFlags.map((flag) => (
-                          <SelectItem key={flag} value={flag}>
-                            {flag === 'Y' ? 'Active' : 'Inactive'}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="Y">Y</SelectItem>
+                        <SelectItem value="N">N</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
