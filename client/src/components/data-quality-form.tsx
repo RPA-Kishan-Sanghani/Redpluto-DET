@@ -259,11 +259,20 @@ export function DataQualityForm({
       console.log('Form submitted with data:', data);
       setIsLoading(true);
 
+      // Helper function to convert validation type to snake_case
+      const convertValidationTypeToSnakeCase = (validationType: string) => {
+        return validationType
+          .toLowerCase()
+          .replace(/\s+/g, '_');
+      };
+
       // Process the form data for submission
       const processedData = {
         ...data,
         // Convert execution layer to lowercase for database storage
         executionLayer: data.executionLayer?.toLowerCase(),
+        // Convert validation type to snake_case for database storage
+        validationType: data.validationType ? convertValidationTypeToSnakeCase(data.validationType) : data.validationType,
         // Set tableName to targetTableName if not explicitly set
         tableName: data.tableName || data.targetTableName,
         // Convert empty strings to null for optional fields
