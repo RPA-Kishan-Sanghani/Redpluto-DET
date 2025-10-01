@@ -128,6 +128,19 @@ export function DataQualityForm({
     "Referential Integrity Check"
   ];
 
+  // Helper function to convert snake_case validation type back to display format
+  const convertValidationTypeToDisplayFormat = (validationType: string) => {
+    const typeMap: Record<string, string> = {
+      'null_check': 'Null Check',
+      'list_value_check': 'List Value Check',
+      'duplicate_check': 'Duplicate Check',
+      'file_format_check': 'File Format Check',
+      'referential_integrity_check': 'Referential Integrity Check',
+      'custom_query_check': 'Custom Query Check'
+    };
+    return typeMap[validationType.toLowerCase()] || validationType;
+  };
+
   // Initialize form with default values or existing config values
   const form = useForm<FormData>({
     resolver: zodResolver(dataQualityFormSchema),
@@ -136,7 +149,7 @@ export function DataQualityForm({
       executionLayer: config?.executionLayer ? config.executionLayer.charAt(0).toUpperCase() + config.executionLayer.slice(1).toLowerCase() : "",
       tableName: config?.tableName || "",
       attributeName: config?.attributeName || "",
-      validationType: config?.validationType || "",
+      validationType: config?.validationType ? convertValidationTypeToDisplayFormat(config.validationType) : "",
       referenceTableName: config?.referenceTableName || "",
       defaultValue: config?.defaultValue || "",
       errorTableTransferFlag: config?.errorTableTransferFlag || "N",
