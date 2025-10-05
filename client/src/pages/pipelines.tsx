@@ -191,44 +191,42 @@ export function Pipelines() {
                 <CollapsibleTrigger className="w-full">
                   <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 text-left">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <CardTitle className="text-lg" data-testid={`text-pipeline-name-${pipeline.configKey}`}>
-                              {pipeline.sourceTableName || `Pipeline ${pipeline.configKey}`}
-                            </CardTitle>
-                            {pipeline.sourceSchemaName && (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                Schema: {pipeline.sourceSchemaName}
-                              </Badge>
-                            )}
-                            {pipeline.targetTableName && (
-                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                                Target: {pipeline.targetTableName}
-                              </Badge>
-                            )}
-                            {getStatusBadge(pipeline.activeFlag)}
-                            {pipeline.executionLayer && (
-                              <Badge variant="outline" className="capitalize">
-                                {pipeline.executionLayer}
-                              </Badge>
-                            )}
-                          </div>
-                          <CardDescription className="flex items-center space-x-4 mt-1">
-                            <span className="flex items-center">
-                              <Database className="h-3 w-3 mr-1" />
-                              {pipeline.sourceSystem || 'Unknown'}
-                            </span>
-                            <span className="flex items-center">
-                              <Settings className="h-3 w-3 mr-1" />
-                              {pipeline.loadType || 'N/A'}
-                            </span>
-                            <span className="flex items-center">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {pipeline.createdAt ? new Date(pipeline.createdAt).toLocaleDateString() : 'N/A'}
-                            </span>
-                          </CardDescription>
+                      <div className="flex-1 text-left">
+                        <CardTitle className="text-lg mb-2" data-testid={`text-pipeline-name-${pipeline.configKey}`}>
+                          {pipeline.sourceTableName || `Pipeline ${pipeline.configKey}`}
+                        </CardTitle>
+                        <div className="flex items-center space-x-2 mb-1">
+                          {pipeline.sourceSchemaName && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Schema: {pipeline.sourceSchemaName}
+                            </Badge>
+                          )}
+                          {pipeline.targetTableName && (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              Target: {pipeline.targetTableName}
+                            </Badge>
+                          )}
+                          {getStatusBadge(pipeline.activeFlag)}
+                          {pipeline.executionLayer && (
+                            <Badge variant="outline" className="capitalize">
+                              {pipeline.executionLayer}
+                            </Badge>
+                          )}
                         </div>
+                        <CardDescription className="flex items-center space-x-4">
+                          <span className="flex items-center">
+                            <Database className="h-3 w-3 mr-1" />
+                            {pipeline.sourceSystem || 'Unknown'}
+                          </span>
+                          <span className="flex items-center">
+                            <Settings className="h-3 w-3 mr-1" />
+                            {pipeline.loadType || 'N/A'}
+                          </span>
+                          <span className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {pipeline.createdAt ? new Date(pipeline.createdAt).toLocaleDateString() : 'N/A'}
+                          </span>
+                        </CardDescription>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
