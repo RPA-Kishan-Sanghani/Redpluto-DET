@@ -170,8 +170,8 @@ export function Reconciliation() {
             <p className="text-gray-600">Manage your data reconciliation pipeline configurations</p>
           </div>
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/reconciliation-configs'] })}
               data-testid="button-refresh-configs"
             >
@@ -264,16 +264,14 @@ export function Reconciliation() {
                       <CollapsibleTrigger className="w-full">
                         <CardHeader className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4 text-left">
-                              <div className="flex-1">
-                                <CardTitle className="text-lg" data-testid={`text-config-name-${config.reconKey}`}>
-                                  {config.sourceTable && config.targetTable
-                                    ? `${config.sourceTable} → ${config.targetTable}`
-                                    : `Reconciliation ${config.reconKey}`
-                                  }
-                                </CardTitle>
-                              </div>
-                              <CardDescription className="flex items-center space-x-4 mt-1">
+                            <div className="flex-1 text-left">
+                              <CardTitle className="text-lg mb-2" data-testid={`text-config-name-${config.reconKey}`}>
+                                {config.sourceTable && config.targetTable
+                                  ? `${config.sourceTable} → ${config.targetTable}`
+                                  : `Reconciliation ${config.reconKey}`
+                                }
+                              </CardTitle>
+                              <CardDescription className="flex items-center space-x-4">
                                 <span className="flex items-center">
                                   <Database className="h-3 w-3 mr-1" />
                                   {config.activeFlag === 'Y' ? 'Active' : 'Inactive'}
