@@ -266,39 +266,37 @@ export function Reconciliation() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4 text-left">
                               <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <CardTitle className="text-lg" data-testid={`text-config-name-${config.reconKey}`}>
-                                    {config.sourceTable && config.targetTable
-                                      ? `${config.sourceTable} → ${config.targetTable}`
-                                      : `Reconciliation ${config.reconKey}`
-                                    }
-                                  </CardTitle>
-                                  {getStatusBadge(config.activeFlag)}
-                                  {getReconTypeBadge(config.reconType)}
-                                  {config.executionLayer && (
-                                    <Badge variant="outline" className="capitalize">
-                                      {config.executionLayer}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <CardDescription className="flex items-center space-x-4 mt-1">
+                                <CardTitle className="text-lg" data-testid={`text-config-name-${config.reconKey}`}>
+                                  {config.sourceTable && config.targetTable
+                                    ? `${config.sourceTable} → ${config.targetTable}`
+                                    : `Reconciliation ${config.reconKey}`
+                                  }
+                                </CardTitle>
+                              </div>
+                              <CardDescription className="flex items-center space-x-4 mt-1">
+                                <span className="flex items-center">
+                                  <Database className="h-3 w-3 mr-1" />
+                                  {config.activeFlag === 'Y' ? 'Active' : 'Inactive'}
+                                </span>
+                                <span className="flex items-center">
+                                  <Settings className="h-3 w-3 mr-1" />
+                                  {config.reconType.replace(/_/g, ' ')}
+                                </span>
+                                {config.executionLayer && (
                                   <span className="flex items-center">
-                                    <Database className="h-3 w-3 mr-1" />
-                                    Config: {config.configKey}
+                                    <Target className="h-3 w-3 mr-1" />
+                                    {config.executionLayer}
                                   </span>
-                                  {config.thresholdPercentage && (
-                                    <span className="flex items-center">
-                                      <BarChart3 className="h-3 w-3 mr-1" />
-                                      Threshold: {config.thresholdPercentage}%
-                                    </span>
-                                  )}
-                                  {config.attribute && (
-                                    <span className="flex items-center">
-                                      <Settings className="h-3 w-3 mr-1" />
-                                      Attribute: {config.attribute}
-                                    </span>
-                                  )}
-                                </CardDescription>
+                                )}
+                                {config.thresholdPercentage !== null && (
+                                  <span className="flex items-center">
+                                    <BarChart3 className="h-3 w-3 mr-1" />
+                                    Threshold: {config.thresholdPercentage}%
+                                  </span>
+                                )}
+                              </CardDescription>
+                            </div>
+                            <div className="flex items-center space-x-2">
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
