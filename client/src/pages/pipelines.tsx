@@ -197,9 +197,6 @@ export function Pipelines() {
                             <CardTitle className="text-lg" data-testid={`text-pipeline-name-${pipeline.configKey}`}>
                               {pipeline.sourceTableName || `Pipeline ${pipeline.configKey}`}
                             </CardTitle>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              Config Key: {pipeline.configKey}
-                            </Badge>
                             {pipeline.sourceSchemaName && (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Schema: {pipeline.sourceSchemaName}
