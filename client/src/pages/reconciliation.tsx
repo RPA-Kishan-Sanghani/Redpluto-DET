@@ -297,9 +297,6 @@ export function Reconciliation() {
                               </CardDescription>
                             </div>
                             <div className="flex items-center space-x-2">
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
