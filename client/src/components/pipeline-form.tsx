@@ -341,7 +341,9 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       const processedData = {
         ...data,
         executionLayer: data.executionLayer?.toLowerCase(),
+        sourceSystem: data.sourceSystem?.toLowerCase(),
         sourceType: data.sourceType?.toLowerCase(),
+        targetSystem: data.targetSystem?.toLowerCase(),
         targetType: data.targetType?.toLowerCase(),
         loadType: processedLoadType
       };

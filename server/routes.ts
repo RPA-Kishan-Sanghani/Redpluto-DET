@@ -477,9 +477,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pipelines", async (req, res) => {
     try {
       const validatedData = insertConfigSchema.parse(req.body);
-      // Ensure execution layer, source type, and target type are lowercase
+      // Ensure execution layer, source system, target system, source type, and target type are lowercase
       if (validatedData.executionLayer) {
         validatedData.executionLayer = validatedData.executionLayer.toLowerCase();
+      }
+      if (validatedData.sourceSystem) {
+        validatedData.sourceSystem = validatedData.sourceSystem.toLowerCase();
+      }
+      if (validatedData.targetSystem) {
+        validatedData.targetSystem = validatedData.targetSystem.toLowerCase();
       }
       if (validatedData.sourceType) {
         validatedData.sourceType = validatedData.sourceType.toLowerCase();
@@ -507,9 +513,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = updateConfigSchema.parse(req.body);
-      // Ensure execution layer, source type, and target type are lowercase
+      // Ensure execution layer, source system, target system, source type, and target type are lowercase
       if (validatedData.executionLayer) {
         validatedData.executionLayer = validatedData.executionLayer.toLowerCase();
+      }
+      if (validatedData.sourceSystem) {
+        validatedData.sourceSystem = validatedData.sourceSystem.toLowerCase();
+      }
+      if (validatedData.targetSystem) {
+        validatedData.targetSystem = validatedData.targetSystem.toLowerCase();
       }
       if (validatedData.sourceType) {
         validatedData.sourceType = validatedData.sourceType.toLowerCase();
