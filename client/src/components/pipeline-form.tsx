@@ -254,12 +254,12 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
 
-  // Fetch datetime columns only for effective date column dropdown
+  // Fetch date/datetime columns only for effective date column dropdown
   const { data: dateTimeColumns = [] } = useQuery({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'datetime-columns'],
     queryFn: async () => {
       if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns-with-types?dataTypes=datetime`);
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns-with-types?dataTypes=date,datetime,timestamp`);
       return response.json() as Array<{ columnName: string; dataType: string }>;
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
