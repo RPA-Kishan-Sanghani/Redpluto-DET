@@ -191,7 +191,7 @@ export const insertConfigSchema = z.object({
   targetTableName: z.string().max(30).optional(),
   loadType: z.string().max(20).optional(),
   primaryKey: z.string().max(40).optional(),
-  effectiveDateColumn: z.string().max(30).optional(),
+  effectiveDate: z.string().max(30).optional(),
   md5Columns: z.string().max(150).optional(),
   customCode: z.string().max(150).optional(),
   executionSequence: z.string().max(5).optional(),

@@ -65,7 +65,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
          pipeline.loadType) : 
         undefined,
       primaryKey: pipeline?.primaryKey || undefined,
-      effectiveDateColumn: pipeline?.effectiveDateColumn || undefined,
+      effectiveDate: pipeline?.effectiveDate || undefined,
       md5Columns: pipeline?.md5Columns || undefined,
       customCode: pipeline?.customCode || undefined,
       executionSequence: pipeline?.executionSequence || undefined,
@@ -1197,7 +1197,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
                   <FormField
                     control={form.control}
-                    name="effectiveDateColumn"
+                    name="effectiveDate"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
