@@ -2,6 +2,7 @@ import { users, auditTable, errorTable, sourceConnectionTable, configTable, data
 import { db, pool } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } from "drizzle-orm";
 import { Pool } from 'pg';
+import mysql from 'mysql2/promise';
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -1006,12 +1007,43 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    // For MySQL connections, connect to the actual MySQL database
+    if (connection.connectionType?.toLowerCase() === 'mysql') {
+      try {
+        const mysqlConnection = await mysql.createConnection({
+          host: connection.host || undefined,
+          port: connection.port || 3306,
+          user: connection.username || undefined,
+          password: connection.password || undefined,
+          database: connection.databaseName || undefined,
+          connectTimeout: 10000, // 10 second timeout
+        });
+
+        try {
+          const [rows] = await mysqlConnection.query(`
+            SELECT SCHEMA_NAME
+            FROM information_schema.SCHEMATA
+            WHERE SCHEMA_NAME NOT IN ('information_schema', 'performance_schema', 'mysql', 'sys')
+            ORDER BY SCHEMA_NAME
+          `);
+
+          await mysqlConnection.end();
+          
+          return (rows as any[]).map((row: any) => row.SCHEMA_NAME);
+        } catch (queryError) {
+          await mysqlConnection.end();
+          throw queryError;
+        }
+      } catch (error) {
+        console.error('Error fetching schemas from MySQL database:', error);
+        throw new Error(`Failed to connect to MySQL database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
     // Simulate fetching schemas for other connection types
     await this.simulateConnectionDelay();
 
     switch (connection.connectionType?.toLowerCase()) {
-      case 'mysql':
-        return ['information_schema', 'performance_schema', 'sys', 'mysql', 'sales_db', 'inventory_db'];
       case 'sql server':
         return ['dbo', 'sys', 'INFORMATION_SCHEMA', 'tempdb', 'model', 'msdb'];
       case 'oracle':
@@ -1084,11 +1116,45 @@ export class DatabaseStorage implements IStorage {
         console.error('Error fetching columns from external database:', error);
         throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    } else {
-      // Return mock columns for other connection types
-      await this.simulateConnectionDelay();
-      return ['id', 'name', 'email', 'phone', 'address', 'city', 'state', 'country', 'postal_code', 'created_at', 'updated_at'];
     }
+
+    // For MySQL connections, connect to the actual MySQL database
+    if (connection.connectionType?.toLowerCase() === 'mysql') {
+      try {
+        const mysqlConnection = await mysql.createConnection({
+          host: connection.host || undefined,
+          port: connection.port || 3306,
+          user: connection.username || undefined,
+          password: connection.password || undefined,
+          database: connection.databaseName || undefined,
+          connectTimeout: 10000, // 10 second timeout
+        });
+
+        try {
+          const [rows] = await mysqlConnection.query(`
+            SELECT COLUMN_NAME
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = ?
+            AND TABLE_NAME = ?
+            ORDER BY ORDINAL_POSITION
+          `, [schemaName, tableName]);
+
+          await mysqlConnection.end();
+          
+          return (rows as any[]).map((row: any) => row.COLUMN_NAME);
+        } catch (queryError) {
+          await mysqlConnection.end();
+          throw queryError;
+        }
+      } catch (error) {
+        console.error('Error fetching columns from MySQL database:', error);
+        throw new Error(`Failed to connect to MySQL database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // Return mock columns for other connection types
+    await this.simulateConnectionDelay();
+    return ['id', 'name', 'email', 'phone', 'address', 'city', 'state', 'country', 'postal_code', 'created_at', 'updated_at'];
   }
 
   // Get enhanced database column metadata with data types and constraints
@@ -1201,16 +1267,80 @@ export class DatabaseStorage implements IStorage {
         console.error('Error fetching column metadata from external database:', error);
         throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    } else {
-      // Return mock metadata for other connection types
-      await this.simulateConnectionDelay();
-      return [
-        { attributeName: 'id', dataType: 'integer', isPrimaryKey: true, isForeignKey: false, columnDescription: '' },
-        { attributeName: 'name', dataType: 'varchar', length: 255, isPrimaryKey: false, isForeignKey: false, columnDescription: '' },
-        { attributeName: 'email', dataType: 'varchar', length: 255, isPrimaryKey: false, isForeignKey: false, columnDescription: '' },
-        { attributeName: 'created_at', dataType: 'timestamp', isPrimaryKey: false, isForeignKey: false, columnDescription: '' }
-      ];
     }
+
+    // For MySQL connections, connect to the actual MySQL database
+    if (connection.connectionType?.toLowerCase() === 'mysql') {
+      try {
+        const mysqlConnection = await mysql.createConnection({
+          host: connection.host || undefined,
+          port: connection.port || 3306,
+          user: connection.username || undefined,
+          password: connection.password || undefined,
+          database: connection.databaseName || undefined,
+          connectTimeout: 10000, // 10 second timeout
+        });
+
+        try {
+          const [rows] = await mysqlConnection.query(`
+            SELECT
+              c.COLUMN_NAME as column_name,
+              c.DATA_TYPE as data_type,
+              c.CHARACTER_MAXIMUM_LENGTH as character_maximum_length,
+              c.NUMERIC_PRECISION as numeric_precision,
+              c.NUMERIC_SCALE as numeric_scale,
+              c.IS_NULLABLE as is_nullable,
+              CASE WHEN k.COLUMN_NAME IS NOT NULL AND k.CONSTRAINT_NAME = 'PRIMARY' THEN true ELSE false END as is_primary_key,
+              CASE WHEN fk.COLUMN_NAME IS NOT NULL THEN true ELSE false END as is_foreign_key,
+              fk.REFERENCED_TABLE_NAME as foreign_table_name
+            FROM information_schema.COLUMNS c
+            LEFT JOIN information_schema.KEY_COLUMN_USAGE k
+              ON c.TABLE_SCHEMA = k.TABLE_SCHEMA
+              AND c.TABLE_NAME = k.TABLE_NAME
+              AND c.COLUMN_NAME = k.COLUMN_NAME
+              AND k.CONSTRAINT_NAME = 'PRIMARY'
+            LEFT JOIN information_schema.KEY_COLUMN_USAGE fk
+              ON c.TABLE_SCHEMA = fk.TABLE_SCHEMA
+              AND c.TABLE_NAME = fk.TABLE_NAME
+              AND c.COLUMN_NAME = fk.COLUMN_NAME
+              AND fk.REFERENCED_TABLE_NAME IS NOT NULL
+            WHERE c.TABLE_SCHEMA = ?
+            AND c.TABLE_NAME = ?
+            ORDER BY c.ORDINAL_POSITION
+          `, [schemaName, tableName]);
+
+          await mysqlConnection.end();
+          
+          return (rows as any[]).map((row: any) => ({
+            attributeName: row.column_name,
+            dataType: row.data_type,
+            length: row.character_maximum_length,
+            precision: row.numeric_precision,
+            scale: row.numeric_scale,
+            isPrimaryKey: row.is_primary_key,
+            isForeignKey: row.is_foreign_key,
+            foreignKeyTable: row.foreign_table_name,
+            columnDescription: '',
+            isNotNull: row.is_nullable === 'NO'
+          }));
+        } catch (queryError) {
+          await mysqlConnection.end();
+          throw queryError;
+        }
+      } catch (error) {
+        console.error('Error fetching column metadata from MySQL database:', error);
+        throw new Error(`Failed to connect to MySQL database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // Return mock metadata for other connection types
+    await this.simulateConnectionDelay();
+    return [
+      { attributeName: 'id', dataType: 'integer', isPrimaryKey: true, isForeignKey: false, columnDescription: '' },
+      { attributeName: 'name', dataType: 'varchar', length: 255, isPrimaryKey: false, isForeignKey: false, columnDescription: '' },
+      { attributeName: 'email', dataType: 'varchar', length: 255, isPrimaryKey: false, isForeignKey: false, columnDescription: '' },
+      { attributeName: 'created_at', dataType: 'timestamp', isPrimaryKey: false, isForeignKey: false, columnDescription: '' }
+    ];
   }
 
   // Get database tables from a connection and schema
@@ -1275,6 +1405,40 @@ export class DatabaseStorage implements IStorage {
       } catch (error) {
         console.error('Error fetching tables from external database:', error);
         throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // For MySQL connections, connect to the actual MySQL database
+    if (connection.connectionType?.toLowerCase() === 'mysql') {
+      try {
+        const mysqlConnection = await mysql.createConnection({
+          host: connection.host || undefined,
+          port: connection.port || 3306,
+          user: connection.username || undefined,
+          password: connection.password || undefined,
+          database: connection.databaseName || undefined,
+          connectTimeout: 10000, // 10 second timeout
+        });
+
+        try {
+          const [rows] = await mysqlConnection.query(`
+            SELECT TABLE_NAME
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = ?
+            AND TABLE_TYPE = 'BASE TABLE'
+            ORDER BY TABLE_NAME
+          `, [schemaName]);
+
+          await mysqlConnection.end();
+          
+          return (rows as any[]).map((row: any) => row.TABLE_NAME);
+        } catch (queryError) {
+          await mysqlConnection.end();
+          throw queryError;
+        }
+      } catch (error) {
+        console.error('Error fetching tables from MySQL database:', error);
+        throw new Error(`Failed to connect to MySQL database: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
