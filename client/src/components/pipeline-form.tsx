@@ -1241,10 +1241,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                           <SelectContent>
                             {dateTimeColumns.map((column) => (
                               <SelectItem key={column.columnName} value={column.columnName}>
-                                <div className="flex flex-col">
-                                  <span>{column.columnName}</span>
-                                  <span className="text-xs text-muted-foreground">{column.dataType}</span>
-                                </div>
+                                {column.columnName}
                               </SelectItem>
                             ))}
                           </SelectContent>
