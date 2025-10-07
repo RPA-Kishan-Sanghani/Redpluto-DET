@@ -433,8 +433,12 @@ export function ReconciliationForm({
                           </Tooltip>
                         </FormLabel>
                         <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value || ""}
+                          onValueChange={(value) => {
+                            // Convert display value to database format (lowercase with space)
+                            const dbValue = value.toLowerCase();
+                            field.onChange(dbValue);
+                          }}
+                          value={field.value || ""}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-recon-type">
@@ -442,8 +446,8 @@ export function ReconciliationForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="count_check">Count Check</SelectItem>
-                            <SelectItem value="amount_check">Amount Check</SelectItem>
+                            <SelectItem value="count check">Count Check</SelectItem>
+                            <SelectItem value="amount check">Amount Check</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
