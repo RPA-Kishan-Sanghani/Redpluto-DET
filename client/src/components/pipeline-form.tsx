@@ -336,7 +336,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
         sourceType: data.sourceType?.toLowerCase(),
         targetSystem: data.targetSystem?.toLowerCase(),
         targetType: data.targetType?.toLowerCase(),
-        loadType: processedLoadType
+        loadType: processedLoadType,
+        executionSequence: data.executionSequence?.toLowerCase()
       };
       await savePipelineMutation.mutateAsync(processedData);
     } finally {
