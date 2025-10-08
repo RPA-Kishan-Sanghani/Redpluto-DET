@@ -429,7 +429,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-source-system-form">
                               <SelectValue placeholder="Select source system" />
@@ -510,7 +510,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-source-type-form">
                               <SelectValue placeholder="Select source type" />
@@ -687,7 +687,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                 </Tooltip>
                               </TooltipProvider>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-source-delimiter">
                                   <SelectValue placeholder="Select delimiter" />
