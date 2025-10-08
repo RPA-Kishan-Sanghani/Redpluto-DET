@@ -429,7 +429,16 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset connection when source system changes
+                            form.setValue('connectionId', undefined);
+                            form.setValue('sourceSchemaName', undefined);
+                            form.setValue('sourceTableName', undefined);
+                          }} 
+                          value={field.value || ''}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-source-system-form">
                               <SelectValue placeholder="Select source system" />
@@ -738,7 +747,16 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset target connection when target system changes
+                            form.setValue('targetConnectionId', undefined);
+                            form.setValue('targetSchemaName', undefined);
+                            form.setValue('targetTableName', undefined);
+                          }} 
+                          value={field.value || ''}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-target-system">
                               <SelectValue placeholder="Select target system" />
