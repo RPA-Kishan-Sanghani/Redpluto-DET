@@ -331,13 +331,31 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
       const processedData = {
         ...data,
-        executionLayer: data.executionLayer?.toLowerCase(),
-        sourceSystem: data.sourceSystem?.toLowerCase(),
-        sourceType: data.sourceType?.toLowerCase(),
-        targetSystem: data.targetSystem?.toLowerCase(),
-        targetType: data.targetType?.toLowerCase(),
-        loadType: processedLoadType,
-        executionSequence: data.executionSequence?.toLowerCase()
+        executionLayer: data.executionLayer?.toLowerCase() || 'NA',
+        sourceSystem: data.sourceSystem?.toLowerCase() || 'NA',
+        sourceType: data.sourceType?.toLowerCase() || 'NA',
+        targetSystem: data.targetSystem?.toLowerCase() || 'NA',
+        targetType: data.targetType?.toLowerCase() || 'NA',
+        loadType: processedLoadType || 'NA',
+        executionSequence: data.executionSequence?.toLowerCase() || 'NA',
+        sourceFilePath: data.sourceFilePath || 'NA',
+        sourceFileName: data.sourceFileName || 'NA',
+        sourceFileDelimiter: data.sourceFileDelimiter || 'NA',
+        sourceSchemaName: data.sourceSchemaName || 'NA',
+        sourceTableName: data.sourceTableName || 'NA',
+        targetLayer: data.targetLayer || 'NA',
+        targetFilePath: data.targetFilePath || 'NA',
+        targetFileDelimiter: data.targetFileDelimiter || 'NA',
+        targetSchemaName: data.targetSchemaName || 'NA',
+        targetTableName: data.targetTableName || 'NA',
+        temporaryTargetTable: data.temporaryTargetTable || 'NA',
+        primaryKey: data.primaryKey || 'NA',
+        effectiveDate: data.effectiveDate || 'NA',
+        md5Columns: data.md5Columns || 'NA',
+        customCode: data.customCode || 'NA',
+        activeFlag: data.activeFlag || 'Y',
+        enableDynamicSchema: data.enableDynamicSchema || 'N',
+        fullDataRefreshFlag: data.fullDataRefreshFlag || 'Y'
       };
       await savePipelineMutation.mutateAsync(processedData);
     } finally {
