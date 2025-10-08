@@ -412,7 +412,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-execution-layer-form">
                               <SelectValue placeholder="Select execution layer" />
@@ -811,7 +811,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         </FormLabel>
                         <Select 
                           onValueChange={(value) => field.onChange(Number(value))} 
-                          defaultValue={field.value?.toString() || ''}
+                          value={field.value?.toString() || ''}
                           disabled={!selectedTargetSystem}
                         >
                           <FormControl>
@@ -850,7 +850,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-target-type">
                               <SelectValue placeholder="Select target type" />
@@ -890,7 +890,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </FormLabel>
                             <Select 
                               onValueChange={field.onChange} 
-                              defaultValue={field.value || ''}
+                              value={field.value || ''}
                               disabled={!selectedTargetConnectionId}
                             >
                               <FormControl>
@@ -979,7 +979,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                       // Clear primary key when target table changes
                                       form.setValue('primaryKey', '');
                                     }} 
-                                    defaultValue={field.value || ''}
+                                    value={field.value || ''}
                                     disabled={!selectedTargetConnectionId || !selectedTargetSchema}
                                   >
                                     <FormControl>
@@ -1155,7 +1155,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                 </Tooltip>
                               </TooltipProvider>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-target-delimiter">
                                   <SelectValue placeholder="Select delimiter" />
@@ -1214,7 +1214,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                               field.onChange('');
                             }
                           }} 
-                          defaultValue={field.value || ''}
+                          value={field.value || ''}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-load-type">
@@ -1491,7 +1491,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                               </Tooltip>
                             </TooltipProvider>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
                               <SelectTrigger data-testid="select-execution-sequence">
                                 <SelectValue placeholder="Select execution sequence" />
@@ -1675,7 +1675,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-active-status">
                               <SelectValue placeholder="Select status" />
@@ -1709,7 +1709,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-dynamic-schema">
                               <SelectValue placeholder="Select option" />
@@ -1743,7 +1743,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger data-testid="select-full-refresh">
                               <SelectValue placeholder="Select option" />
