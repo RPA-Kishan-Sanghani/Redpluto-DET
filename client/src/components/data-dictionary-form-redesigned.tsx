@@ -232,17 +232,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     }
   }, [entry, allConnections, watchedValues.sourceConnectionId, form]);
 
-  // Auto-fetch metadata when source object is selected
+  // Auto-fetch metadata when target object is selected
   useEffect(() => {
     const fetchColumnMetadata = async () => {
-      if (!watchedValues.sourceConnectionId || !watchedValues.sourceSchemaName || !watchedValues.sourceTableName) {
+      if (!watchedValues.targetConnectionId || !watchedValues.targetSchemaName || !watchedValues.targetTableName) {
         setColumns([]);
         return;
       }
 
       setIsLoadingMetadata(true);
       try {
-        const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables/${watchedValues.sourceTableName}/metadata`);
+        const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables/${watchedValues.targetTableName}/metadata`);
         if (!response.ok) throw new Error('Network response was not ok');
         const metadata = await response.json() as ColumnMetadata[];
 
@@ -261,7 +261,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     };
 
     fetchColumnMetadata();
-  }, [watchedValues.sourceConnectionId, watchedValues.sourceSchemaName, watchedValues.sourceTableName, toast]);
+  }, [watchedValues.targetConnectionId, watchedValues.targetSchemaName, watchedValues.targetTableName, toast]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -721,11 +721,11 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!watchedValues.sourceTableName ? (
+            {!watchedValues.targetTableName ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4">📊</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No source object selected</h3>
-                <p className="text-gray-500">Select a source object above to view and manage column metadata</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No target object selected</h3>
+                <p className="text-gray-500">Select a target object above to view and manage column metadata</p>
               </div>
             ) : columns.length === 0 && !isLoadingMetadata ? (
               <div className="text-center py-12">
