@@ -1286,7 +1286,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                       render={({ field }) => {
                         const currentValue = field.value || '';
                         const selectedColumns = currentValue ? currentValue.split(',').filter(Boolean) : [];
-                        const enableDynamicSchema = form.watch('enableDynamicSchema');
 
                         // Auto-select all columns when target table is selected and no previous selection exists
                         React.useEffect(() => {
@@ -1294,32 +1293,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                             field.onChange(targetColumns.join(','));
                           }
                         }, [targetColumns, currentValue, field]);
-
-                        // Dynamic schema adjustment: sync MD5 columns with target table columns
-                        React.useEffect(() => {
-                          if (enableDynamicSchema === 'Y' && targetColumns.length > 0 && selectedColumns.length > 0) {
-                            // Get columns that exist in both selected and target columns
-                            const validColumns = selectedColumns.filter(col => targetColumns.includes(col));
-
-                            // Get new columns that are in target but not in selected
-                            const newColumns = targetColumns.filter(col => !selectedColumns.includes(col));
-
-                            // If there are changes (removed or added columns), update the field
-                            if (validColumns.length !== selectedColumns.length || newColumns.length > 0) {
-                              const updatedColumns = [...validColumns, ...newColumns];
-                              field.onChange(updatedColumns.join(','));
-
-                              // Show toast notification about the automatic adjustment
-                              if (validColumns.length !== selectedColumns.length || newColumns.length > 0) {
-                                toast({
-                                  title: 'MD5 Columns Auto-Adjusted',
-                                  description: `Columns automatically synced with target table. ${newColumns.length > 0 ? `Added: ${newColumns.join(', ')}` : ''} ${validColumns.length !== selectedColumns.length ? `Removed invalid columns.` : ''}`,
-                                  duration: 5000,
-                                });
-                              }
-                            }
-                          }
-                        }, [targetColumns, selectedColumns, enableDynamicSchema, field, toast]);
 
                         const handleSelectAll = () => {
                           field.onChange(targetColumns.join(','));
@@ -1456,11 +1429,6 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                       ? "Loading columns..." 
                                       : `${selectedColumns.length} of ${targetColumns.length} columns selected for change detection`
                                   }
-                                  {enableDynamicSchema === 'Y' && selectedTargetTable && (
-                                    <div className="mt-1 text-blue-600 text-xs font-medium">
-                                      🔄 Dynamic Schema Enabled - MD5 columns will auto-adjust when target table structure changes
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             </FormControl>
