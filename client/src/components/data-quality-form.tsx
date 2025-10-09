@@ -214,9 +214,10 @@ export function DataQualityForm({
 
   // Watch the validation type to conditionally show fields
   const selectedValidationType = form.watch('validationType');
-  
+
   const showReferenceTable = selectedValidationType === 'Referential Integrity Check';
-  const showThresholdPercentage = ['List Value Check', 'File Format Check'].includes(selectedValidationType || '');
+  // Threshold percentage is now always visible
+  const showThresholdPercentage = true;
 
   // Create mutation
   const createMutation = useMutation({
@@ -659,7 +660,7 @@ export function DataQualityForm({
                               <p>Reference table for lookups</p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
+                        </Tooltip>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Enter reference table name" data-testid="input-reference-table" />
@@ -713,7 +714,7 @@ export function DataQualityForm({
                               <p>Maximum allowed error percentage</p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
+                        </Tooltip>
                       </FormLabel>
                       <FormControl>
                         <Input 
