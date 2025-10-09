@@ -1489,7 +1489,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                   <p>When to run custom code (before or after SCD logic)</p>
                                 </TooltipContent>
                               </Tooltip>
-                            </TooltipProvider>
+                            </Tooltip>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
@@ -1498,7 +1498,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {executionSequences.map((sequence) => (
+                              {executionSequences.filter(seq => seq !== 'NA').map((sequence) => (
                                 <SelectItem key={sequence} value={sequence}>{sequence}</SelectItem>
                               ))}
                             </SelectContent>
