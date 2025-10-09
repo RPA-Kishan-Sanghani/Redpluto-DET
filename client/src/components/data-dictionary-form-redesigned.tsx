@@ -82,8 +82,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       // Find the connection that matches the schema name from available connections
       // This is a temporary solution until we can get the actual connectionId from the entry
       form.reset({
-        executionLayer: entry.executionLayer ? 
-          entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
+        executionLayer: entry.executionLayer ?
+          entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() :
           "",
         sourceSystem: "", // Will be determined by connection
         sourceConnectionId: 0, // Will be set when we find the matching connection
@@ -135,8 +135,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   });
 
   // Filter connections based on selected source system
-  const sourceConnections = allConnections.filter(conn => 
-    !watchedValues.sourceSystem || 
+  const sourceConnections = allConnections.filter(conn =>
+    !watchedValues.sourceSystem ||
     conn.connectionType?.toLowerCase() === watchedValues.sourceSystem.toLowerCase() ||
     (watchedValues.sourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
     (watchedValues.sourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
@@ -149,8 +149,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   );
 
   // Filter target connections based on selected target system
-  const targetConnections = allConnections.filter(conn => 
-    !watchedValues.targetSystem || 
+  const targetConnections = allConnections.filter(conn =>
+    !watchedValues.targetSystem ||
     conn.connectionType?.toLowerCase() === watchedValues.targetSystem.toLowerCase() ||
     (watchedValues.targetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
     (watchedValues.targetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
@@ -305,8 +305,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           const entryData = {
             configKey: 1,
             executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
-            schemaName: (data.sourceSchemaName || '').substring(0, 100),
-            tableName: (data.sourceTableName || '').substring(0, 100),
+            schemaName: (data.targetSchemaName || '').substring(0, 100),
+            tableName: (data.targetTableName || '').substring(0, 100),
             attributeName: (column.attributeName || '').substring(0, 100),
             dataType: (column.dataType || '').substring(0, 50),
             length: column.length || null,
@@ -357,7 +357,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   });
 
   const updateColumn = (index: number, field: keyof ColumnMetadata, value: any) => {
-    setColumns(prev => prev.map((col, i) => 
+    setColumns(prev => prev.map((col, i) =>
       i === index ? { ...col, [field]: value } : col
     ));
   };
@@ -974,7 +974,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                                   newColumn,
                                   ...prev.slice(index + 1)
                                 ]);
-                                
+
                                 // Focus on the new column's attribute name field after a short delay
                                 setTimeout(() => {
                                   const newColumnIndex = index + 1;
@@ -988,7 +988,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Column After
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => {
                                   if (confirm('Are you sure you want to delete this column?')) {
                                     setColumns(prev => prev.filter((_, i) => i !== index));
