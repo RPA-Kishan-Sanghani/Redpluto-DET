@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight, Loader2, Check, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter, ChevronDown, ChevronRight, Loader2, Check, X, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import type { DataDictionaryRecord } from '@shared/schema';
 
@@ -356,6 +362,7 @@ export function DataDictionary() {
                   <TableHead>Table Name</TableHead>
                   <TableHead>Execution Layer</TableHead>
                   <TableHead>Columns</TableHead>
+                  <TableHead className="w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -367,11 +374,10 @@ export function DataDictionary() {
                     <React.Fragment key={tableKey}>
                       {/* Main Table Row */}
                       <TableRow 
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => toggleRowExpansion(tableKey)}
+                        className="hover:bg-gray-50"
                         data-testid={`row-table-${tableKey}`}
                       >
-                        <TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
                           <div className="p-1">
                             {isExpanded ? (
                               <ChevronDown className="h-4 w-4" />
@@ -380,9 +386,9 @@ export function DataDictionary() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">{table.schemaName}</TableCell>
-                        <TableCell className="font-medium">{table.tableName}</TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">{table.schemaName}</TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">{table.tableName}</TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
                           <Badge variant={
                             table.executionLayer.toLowerCase() === 'gold' ? 'default' :
                             table.executionLayer.toLowerCase() === 'silver' ? 'secondary' : 'outline'
@@ -390,14 +396,53 @@ export function DataDictionary() {
                             {table.executionLayer}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
                           <span className="text-sm text-gray-500">
                             {table.entryCount} column{table.entryCount !== 1 ? 's' : ''}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                data-testid={`button-menu-${tableKey}`}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  // Edit the first entry of the table
+                                  if (table.entries.length > 0) {
+                                    handleEdit(table.entries[0]);
+                                  }
+                                }}
+                                data-testid={`menu-edit-${tableKey}`}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to delete all ${table.entryCount} column(s) from ${table.tableName}?`)) {
+                                    // Delete all entries for this table
+                                    for (const entry of table.entries) {
+                                      await deleteEntryMutation.mutateAsync(entry.dataDictionaryKey);
+                                    }
+                                  }
+                                }}
+                                className="text-red-600"
+                                data-testid={`menu-delete-${tableKey}`}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
 
