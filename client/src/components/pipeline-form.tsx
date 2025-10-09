@@ -32,13 +32,31 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Helper function to format system names from database (lowercase) to display format
+  const formatSystemName = (systemName: string | null | undefined): string | undefined => {
+    if (!systemName) return undefined;
+    const lowerName = systemName.toLowerCase();
+    const systemMap: Record<string, string> = {
+      'mysql': 'MySQL',
+      'postgresql': 'PostgreSQL',
+      'sql server': 'SQL Server',
+      'oracle': 'Oracle',
+      'csv': 'CSV',
+      'json': 'JSON',
+      'parquet': 'Parquet',
+      'excel': 'Excel',
+      'api': 'API'
+    };
+    return systemMap[lowerName] || systemName.charAt(0).toUpperCase() + systemName.slice(1);
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(insertConfigSchema),
     defaultValues: {
       executionLayer: pipeline?.executionLayer ? 
         pipeline.executionLayer.charAt(0).toUpperCase() + pipeline.executionLayer.slice(1).toLowerCase() : 
         undefined,
-      sourceSystem: pipeline?.sourceSystem || undefined,
+      sourceSystem: formatSystemName(pipeline?.sourceSystem),
       connectionId: pipeline?.connectionId || undefined,
       sourceType: pipeline?.sourceType ? 
         pipeline.sourceType.charAt(0).toUpperCase() + pipeline.sourceType.slice(1).toLowerCase() : 
@@ -49,7 +67,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       sourceSchemaName: pipeline?.sourceSchemaName || undefined,
       sourceTableName: pipeline?.sourceTableName || undefined,
       targetLayer: pipeline?.targetLayer || undefined,
-      targetSystem: pipeline?.targetSystem || undefined,
+      targetSystem: formatSystemName(pipeline?.targetSystem),
       targetConnectionId: pipeline?.targetConnectionId || undefined,
       targetType: pipeline?.targetType ? 
         pipeline.targetType.charAt(0).toUpperCase() + pipeline.targetType.slice(1).toLowerCase() : 
