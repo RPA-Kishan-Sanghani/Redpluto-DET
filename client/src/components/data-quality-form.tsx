@@ -660,7 +660,7 @@ export function DataQualityForm({
                               <p>Reference table for lookups</p>
                             </TooltipContent>
                           </Tooltip>
-                        </Tooltip>
+                        </TooltipProvider>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Enter reference table name" data-testid="input-reference-table" />
@@ -714,7 +714,7 @@ export function DataQualityForm({
                               <p>Maximum allowed error percentage</p>
                             </TooltipContent>
                           </Tooltip>
-                        </Tooltip>
+                        </TooltipProvider>
                       </FormLabel>
                       <FormControl>
                         <Input 
