@@ -1489,7 +1489,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                   <p>When to run custom code (before or after SCD logic)</p>
                                 </TooltipContent>
                               </Tooltip>
-                            </Tooltip>
+                            </TooltipProvider>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
