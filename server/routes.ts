@@ -691,15 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reconciliation-configs/next-key", async (req, res) => {
-    try {
-      const nextKey = await storage.getNextReconciliationConfigKey();
-      res.json({ nextKey });
-    } catch (error) {
-      console.error('Error fetching next reconciliation config key:', error);
-      res.status(500).json({ error: 'Failed to fetch next reconciliation config key' });
-    }
-  });
+  
 
   app.get("/api/reconciliation-configs/:id", async (req, res) => {
     try {

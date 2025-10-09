@@ -118,17 +118,7 @@ export function ReconciliationForm({
       fetch("/api/metadata/source_type").then((res) => res.json()) as Promise<string[]>,
   });
 
-  // Fetch next auto-increment value for recon_key (for new records)
-  const { data: nextReconKey } = useQuery({
-    queryKey: ["/api/reconciliation-configs/next-key"],
-    queryFn: async () => {
-      const response = await fetch("/api/reconciliation-configs/next-key");
-      if (!response.ok) throw new Error('Failed to fetch next recon key');
-      const data = await response.json();
-      return data.nextKey as number;
-    },
-    enabled: !config, // Only fetch for new records
-  });
+  
 
   // Initialize form with default values or existing config values
   const form = useForm<FormData>({

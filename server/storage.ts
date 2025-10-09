@@ -147,7 +147,6 @@ export interface IStorage {
   // Reconciliation config methods
   getReconciliationConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]>;
   getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined>;
-  getNextReconciliationConfigKey(): Promise<number>;
   createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
   updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
   deleteReconciliationConfig(id: number): Promise<boolean>;
@@ -1918,51 +1917,28 @@ export class DatabaseStorage implements IStorage {
     
     console.log('Creating reconciliation config with data:', insertData);
     
-    // Use raw SQL to avoid Drizzle including recon_key in INSERT
-    const result = await pool.query(
-      `INSERT INTO reconciliation_config (
-        ${Object.keys(insertData).map(key => {
-          // Map camelCase to snake_case for database columns
-          const columnMap: Record<string, string> = {
-            configKey: 'config_key',
-            executionLayer: 'execution_layer',
-            sourceSchema: 'source_schema',
-            sourceTable: 'source_table',
-            targetSchema: 'target_schema',
-            targetTable: 'target_table',
-            reconType: 'recon_type',
-            sourceQuery: 'source_query',
-            targetQuery: 'target_query',
-            thresholdPercentage: 'threshold_percentage',
-            activeFlag: 'active_flag'
-          };
-          return columnMap[key] || key;
-        }).join(', ')}
-      ) VALUES (
-        ${Object.keys(insertData).map((_, index) => `$${index + 1}`).join(', ')}
-      ) RETURNING *`,
-      Object.values(insertData)
-    );
+    // Use Drizzle ORM insert - it will automatically handle the serial primary key
+    const [created] = await db
+      .insert(reconciliationConfigTable)
+      .values({
+        configKey: config.configKey,
+        executionLayer: config.executionLayer,
+        sourceSchema: config.sourceSchema,
+        sourceTable: config.sourceTable,
+        targetSchema: config.targetSchema,
+        targetTable: config.targetTable,
+        reconType: config.reconType,
+        attribute: config.attribute,
+        sourceQuery: config.sourceQuery,
+        targetQuery: config.targetQuery,
+        thresholdPercentage: config.thresholdPercentage,
+        activeFlag: config.activeFlag || 'Y',
+      })
+      .returning();
       
-    const created = result.rows[0];
-    console.log('Created reconciliation config with auto-generated recon_key:', created.recon_key);
+    console.log('Created reconciliation config with auto-generated recon_key:', created.reconKey);
     
-    // Convert snake_case back to camelCase for consistency
-    return {
-      reconKey: created.recon_key,
-      configKey: created.config_key,
-      executionLayer: created.execution_layer,
-      sourceSchema: created.source_schema,
-      sourceTable: created.source_table,
-      targetSchema: created.target_schema,
-      targetTable: created.target_table,
-      reconType: created.recon_type,
-      attribute: created.attribute,
-      sourceQuery: created.source_query,
-      targetQuery: created.target_query,
-      thresholdPercentage: created.threshold_percentage,
-      activeFlag: created.active_flag,
-    };
+    return created;
   }
 
   async updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined> {
@@ -1974,19 +1950,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async getNextReconciliationConfigKey(): Promise<number> {
-    try {
-      const result = await db
-        .select({ maxKey: sql<number>`COALESCE(MAX(${reconciliationConfigTable.reconKey}), 0)` })
-        .from(reconciliationConfigTable);
-      
-      const maxKey = result[0]?.maxKey ?? 0;
-      return maxKey + 1;
-    } catch (error) {
-      console.error('Error getting next reconciliation config key:', error);
-      return 1; // Default to 1 if there's an error or no records
-    }
-  }
+  
 
   async deleteReconciliationConfig(id: number): Promise<boolean> {
     const result = await db
