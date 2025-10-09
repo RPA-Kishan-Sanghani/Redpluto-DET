@@ -57,7 +57,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
         pipeline.executionLayer.charAt(0).toUpperCase() + pipeline.executionLayer.slice(1).toLowerCase() : 
         undefined,
       sourceSystem: formatSystemName(pipeline?.sourceSystem),
-      connectionId: pipeline?.connectionId || undefined,
+      connectionId: pipeline?.connectionId ?? undefined,
       sourceType: pipeline?.sourceType ? 
         pipeline.sourceType.charAt(0).toUpperCase() + pipeline.sourceType.slice(1).toLowerCase() : 
         undefined,
@@ -497,7 +497,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          Database Connection
+                          Source Database Connection
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
