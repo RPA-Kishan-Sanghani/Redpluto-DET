@@ -1009,10 +1009,36 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                   <span>Fetching metadata...</span>
                 </div>
               )}
+              {/* Add Column button for Manual types */}
+              {(watchedValues.targetType === 'Manual' || watchedValues.targetType === 'File' || watchedValues.targetType === 'External') && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newColumn: ColumnMetadata = {
+                      attributeName: `column_${columns.length + 1}`,
+                      dataType: "varchar",
+                      precision: undefined,
+                      length: 255,
+                      scale: undefined,
+                      isPrimaryKey: false,
+                      isForeignKey: false,
+                      foreignKeyTable: undefined,
+                      columnDescription: "",
+                      isNotNull: false,
+                    };
+                    setColumns(prev => [...prev, newColumn]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Column
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!watchedValues.targetTableName ? (
+            {!watchedValues.targetTableName && watchedValues.targetType === 'Table' ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4">📊</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No target object selected</h3>
@@ -1021,8 +1047,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             ) : columns.length === 0 && !isLoadingMetadata ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4">📋</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No columns found</h3>
-                <p className="text-gray-500">The selected object doesn't have any columns or metadata couldn't be fetched</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No columns added</h3>
+                <p className="text-gray-500">
+                  {(watchedValues.targetType === 'Manual' || watchedValues.targetType === 'File' || watchedValues.targetType === 'External') 
+                    ? 'Click "Add Column" button above to manually add column metadata'
+                    : 'The selected object doesn\'t have any columns or metadata couldn\'t be fetched'}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
