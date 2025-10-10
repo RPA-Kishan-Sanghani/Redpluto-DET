@@ -120,6 +120,18 @@ export function ReconciliationForm({
 
   
 
+  // Fetch the pipeline config to get source/target system info when editing
+  const { data: pipelineConfig } = useQuery({
+    queryKey: ['/api/pipelines', config?.configKey],
+    queryFn: async () => {
+      if (!config?.configKey) return null;
+      const response = await fetch(`/api/pipelines/${config.configKey}`);
+      if (!response.ok) return null;
+      return await response.json();
+    },
+    enabled: !!config?.configKey
+  });
+
   // Initialize form with default values or existing config values
   const form = useForm<FormData>({
     resolver: zodResolver(reconciliationFormSchema),
@@ -128,14 +140,22 @@ export function ReconciliationForm({
       executionLayer: config?.executionLayer ? 
         config.executionLayer.charAt(0).toUpperCase() + config.executionLayer.slice(1).toLowerCase() : 
         "",
-      sourceSystem: config?.sourceSystem || "",
-      sourceConnectionId: config?.sourceConnectionId || undefined,
-      sourceType: config?.sourceType || "",
+      sourceSystem: pipelineConfig?.sourceSystem ? 
+        pipelineConfig.sourceSystem.charAt(0).toUpperCase() + pipelineConfig.sourceSystem.slice(1).toLowerCase() : 
+        "",
+      sourceConnectionId: pipelineConfig?.connectionId || undefined,
+      sourceType: pipelineConfig?.sourceType ? 
+        pipelineConfig.sourceType.charAt(0).toUpperCase() + pipelineConfig.sourceType.slice(1).toLowerCase() : 
+        "",
       sourceSchema: config?.sourceSchema || "",
       sourceTable: config?.sourceTable || "",
-      targetSystem: config?.targetSystem || "",
-      targetConnectionId: config?.targetConnectionId || undefined,
-      targetType: config?.targetType || "",
+      targetSystem: pipelineConfig?.targetSystem ? 
+        pipelineConfig.targetSystem.charAt(0).toUpperCase() + pipelineConfig.targetSystem.slice(1).toLowerCase() : 
+        "",
+      targetConnectionId: pipelineConfig?.targetConnectionId || undefined,
+      targetType: pipelineConfig?.targetType ? 
+        pipelineConfig.targetType.charAt(0).toUpperCase() + pipelineConfig.targetType.slice(1).toLowerCase() : 
+        "",
       targetSchema: config?.targetSchema || "",
       targetTable: config?.targetTable || "",
       reconType: config?.reconType || "",
@@ -146,6 +166,30 @@ export function ReconciliationForm({
       activeFlag: config?.activeFlag || "Y",
     },
   });
+
+  // Update form values when pipeline config is loaded
+  useEffect(() => {
+    if (pipelineConfig && config) {
+      if (pipelineConfig.sourceSystem) {
+        form.setValue('sourceSystem', pipelineConfig.sourceSystem.charAt(0).toUpperCase() + pipelineConfig.sourceSystem.slice(1).toLowerCase());
+      }
+      if (pipelineConfig.connectionId) {
+        form.setValue('sourceConnectionId', pipelineConfig.connectionId);
+      }
+      if (pipelineConfig.sourceType) {
+        form.setValue('sourceType', pipelineConfig.sourceType.charAt(0).toUpperCase() + pipelineConfig.sourceType.slice(1).toLowerCase());
+      }
+      if (pipelineConfig.targetSystem) {
+        form.setValue('targetSystem', pipelineConfig.targetSystem.charAt(0).toUpperCase() + pipelineConfig.targetSystem.slice(1).toLowerCase());
+      }
+      if (pipelineConfig.targetConnectionId) {
+        form.setValue('targetConnectionId', pipelineConfig.targetConnectionId);
+      }
+      if (pipelineConfig.targetType) {
+        form.setValue('targetType', pipelineConfig.targetType.charAt(0).toUpperCase() + pipelineConfig.targetType.slice(1).toLowerCase());
+      }
+    }
+  }, [pipelineConfig, config, form]);
 
   // Fetch pipeline configs for the dropdown
   const { data: configs = [] } = useQuery({
