@@ -1466,6 +1466,7 @@ export class DatabaseStorage implements IStorage {
         configKey: configTable.configKey,
         executionLayer: configTable.executionLayer,
         sourceSystem: configTable.sourceSystem,
+        connectionId: configTable.connectionId,
         sourceSchemaName: configTable.sourceSchemaName,
         sourceTableName: configTable.sourceTableName,
         sourceType: configTable.sourceType,
