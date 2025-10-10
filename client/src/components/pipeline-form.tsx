@@ -599,7 +599,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                                 // Reset table when schema changes
                                 form.setValue('sourceTableName', undefined);
                               }} 
-                              value={field.value || ''}
+                              value={field.value ?? ''}
                               disabled={!selectedConnectionId}
                             >
                               <FormControl>
