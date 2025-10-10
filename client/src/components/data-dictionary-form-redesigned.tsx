@@ -21,14 +21,18 @@ import { useToast } from "@/hooks/use-toast";
 const dataDictionarySchema = z.object({
   executionLayer: z.string().min(1, "Layer is required"),
   sourceSystem: z.string().min(1, "Source system is required"),
-  sourceConnectionId: z.number().min(1, "Source connection is required"),
-  sourceSchemaName: z.string().min(1, "Source schema is required"),
-  sourceTableName: z.string().min(1, "Source object is required"),
+  sourceConnectionId: z.number().optional(),
+  sourceType: z.string().min(1, "Source type is required"),
+  sourceSchemaName: z.string().optional(),
+  sourceTableName: z.string().optional(),
+  sourceFileName: z.string().optional(),
   targetSystem: z.string().min(1, "Target system is required"),
-  targetConnectionId: z.number().min(1, "Target connection is required"),
+  targetConnectionId: z.number().optional(),
   targetLayer: z.string().min(1, "Target layer is required"),
-  targetSchemaName: z.string().min(1, "Target schema is required"),
-  targetTableName: z.string().min(1, "Target object is required"),
+  targetType: z.string().min(1, "Target type is required"),
+  targetSchemaName: z.string().optional(),
+  targetTableName: z.string().optional(),
+  targetFileName: z.string().optional(),
 });
 
 interface ColumnMetadata {
@@ -66,13 +70,17 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       executionLayer: entry?.executionLayer || "",
       sourceSystem: "",
       sourceConnectionId: 0,
+      sourceType: "",
       sourceSchemaName: entry?.schemaName || "",
       sourceTableName: entry?.tableName || "",
+      sourceFileName: "",
       targetSystem: "",
       targetConnectionId: 0,
       targetLayer: "",
+      targetType: "",
       targetSchemaName: "",
       targetTableName: "",
+      targetFileName: "",
     },
   });
 
@@ -103,6 +111,16 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
+
+  // Fetch source and target types
+  const { data: sourceTypes = [] } = useQuery({
+    queryKey: ['/api/metadata/source_type'],
+    queryFn: async () => {
+      const response = await fetch('/api/metadata/source_type');
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json() as string[];
+    }
+  });
 
   // Fetch execution layers
   const { data: executionLayers = [] } = useQuery({
@@ -232,9 +250,20 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     }
   }, [entry, allConnections, watchedValues.sourceConnectionId, form]);
 
-  // Auto-fetch metadata when target object is selected
+  // Auto-fetch metadata when target object is selected (only for Table type)
   useEffect(() => {
     const fetchColumnMetadata = async () => {
+      // Only auto-fetch for Table type
+      if (watchedValues.targetType !== 'Table') {
+        // For File and External types, allow manual column entry
+        if (watchedValues.targetType === 'File' || watchedValues.targetType === 'External') {
+          // Don't clear columns - allow user to add manually
+          return;
+        }
+        setColumns([]);
+        return;
+      }
+
       if (!watchedValues.targetConnectionId || !watchedValues.targetSchemaName || !watchedValues.targetTableName) {
         setColumns([]);
         return;
@@ -261,7 +290,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     };
 
     fetchColumnMetadata();
-  }, [watchedValues.targetConnectionId, watchedValues.targetSchemaName, watchedValues.targetTableName, toast]);
+  }, [watchedValues.targetType, watchedValues.targetConnectionId, watchedValues.targetSchemaName, watchedValues.targetTableName, toast]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -465,7 +494,549 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 </Select>
               </div>
 
-              {/* Source Schema */}
+              {/* Source Type */}
+              <div className="space-y-2">
+                <Label htmlFor="source-type" className="flex items-center gap-2">
+                  Source Type
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Type of source: Table, File, or External</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Select
+                  value={watchedValues.sourceType}
+                  onValueChange={(value) => {
+                    form.setValue('sourceType', value);
+                    // Reset dependent fields when type changes
+                    form.setValue('sourceSchemaName', '');
+                    form.setValue('sourceTableName', '');
+                    form.setValue('sourceFileName', '');
+                  }}
+                >
+                  <SelectTrigger data-testid="select-source-type">
+                    <SelectValue placeholder="Select source type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sourceTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Source Schema - Only for Table type */}
+              {watchedValues.sourceType === 'Table' && (
+                <div className="space-y-2">
+                  <Label htmlFor="source-schema" className="flex items-center gap-2">
+                    Source Schema
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the database schema.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Select
+                    value={watchedValues.sourceSchemaName}
+                    onValueChange={(value) => form.setValue('sourceSchemaName', value)}
+                  >
+                    <SelectTrigger data-testid="select-source-schema">
+                      <SelectValue placeholder="Select source schema" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sourceSchemas.map((schema) => (
+                        <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Source Object - For Table type */}
+              {watchedValues.sourceType === 'Table' && (
+                <div className="space-y-2">
+                  <Label htmlFor="source-object" className="flex items-center gap-2">
+                    Source Object
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the database table.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Select
+                    value={watchedValues.sourceTableName}
+                    onValueChange={(value) => form.setValue('sourceTableName', value)}
+                  >
+                    <SelectTrigger data-testid="select-source-object">
+                      <SelectValue placeholder="Select source object" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sourceObjects.map((object) => (
+                        <SelectItem key={object} value={object}>{object}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Source File Name - For File type */}
+              {watchedValues.sourceType === 'File' && (
+                <div className="space-y-2">
+                  <Label htmlFor="source-file-name" className="flex items-center gap-2">
+                    Source File Name
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the source file.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Input
+                    value={watchedValues.sourceFileName || ''}
+                    onChange={(e) => form.setValue('sourceFileName', e.target.value)}
+                    placeholder="Enter source file name"
+                    data-testid="input-source-file-name"
+                  />
+                </div>
+              )}
+
+              {/* Source Object - For File type */}
+              {watchedValues.sourceType === 'File' && (
+                <div className="space-y-2">
+                  <Label htmlFor="source-object-file" className="flex items-center gap-2">
+                    Source Object
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Object name for the file.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Input
+                    value={watchedValues.sourceTableName || ''}
+                    onChange={(e) => form.setValue('sourceTableName', e.target.value)}
+                    placeholder="Enter source object name"
+                    data-testid="input-source-object-file"
+                  />
+                </div>
+              )}
+
+              {/* Source Object - For External type */}
+              {watchedValues.sourceType === 'External' && (
+                <div className="space-y-2">
+                  <Label htmlFor="source-object-external" className="flex items-center gap-2">
+                    Source Object
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the external source object.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Input
+                    value={watchedValues.sourceTableName || ''}
+                    onChange={(e) => form.setValue('sourceTableName', e.target.value)}
+                    placeholder="Enter source object name"
+                    data-testid="input-source-object-external"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+
+
+          {/* Right Column - Target */}
+          <Card className="shadow-lg w-full max-w-none">
+            <CardHeader className="bg-green-50 dark:bg-green-950 py-3">
+              <CardTitle className="text-green-700 dark:text-green-300 text-sm">🔹 Target Configuration</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 space-y-3">
+              {/* Target System */}
+              <div className="space-y-2">
+                <Label htmlFor="target-system">Target System</Label>
+                <Select
+                  value={watchedValues.targetSystem}
+                  onValueChange={(value) => {
+                    form.setValue('targetSystem', value);
+                    form.setValue('targetConnectionId', 0); // Reset connection when system changes
+                    // Reset dependent fields
+                    form.setValue('targetSchemaName', '');
+                    form.setValue('targetTableName', '');
+                  }}
+                >
+                  <SelectTrigger data-testid="select-target-system">
+                    <SelectValue placeholder="Select target system" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sourceSystems.map((system) => (
+                      <SelectItem key={system} value={system}>{system}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Connection */}
+              <div className="space-y-2">
+                <Label htmlFor="target-connection">Target Connection</Label>
+                <Select
+                  value={watchedValues.targetConnectionId?.toString() || ""}
+                  onValueChange={(value) => {
+                    form.setValue('targetConnectionId', parseInt(value));
+                    // Reset dependent fields when connection changes
+                    form.setValue('targetSchemaName', '');
+                    form.setValue('targetTableName', '');
+                  }}
+                  disabled={!watchedValues.targetSystem}
+                >
+                  <SelectTrigger data-testid="select-target-connection">
+                    <SelectValue placeholder={watchedValues.targetSystem ? "Select target connection" : "Select target system first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {targetConnections.map((conn) => (
+                      <SelectItem key={conn.connectionId} value={conn.connectionId.toString()}>
+                        {conn.connectionName} ({conn.connectionType})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Layer */}
+              <div className="space-y-2">
+                <Label htmlFor="target-layer">Target Layer</Label>
+                <Select
+                  value={watchedValues.targetLayer || ""}
+                  onValueChange={(value) => form.setValue('targetLayer', value)}
+                >
+                  <SelectTrigger data-testid="select-target-layer">
+                    <SelectValue placeholder="Select target layer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {executionLayers.map((layer) => (
+                      <SelectItem key={layer} value={layer}>{layer}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Type */}
+              <div className="space-y-2">
+                <Label htmlFor="target-type" className="flex items-center gap-2">
+                  Target Type
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Type of target: Table, File, or External</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Select
+                  value={watchedValues.targetType}
+                  onValueChange={(value) => {
+                    form.setValue('targetType', value);
+                    // Reset dependent fields when type changes
+                    form.setValue('targetSchemaName', '');
+                    form.setValue('targetTableName', '');
+                    form.setValue('targetFileName', '');
+                  }}
+                >
+                  <SelectTrigger data-testid="select-target-type">
+                    <SelectValue placeholder="Select target type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sourceTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Schema - Only for Table type */}
+              {watchedValues.targetType === 'Table' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target-schema" className="flex items-center gap-2">
+                    Target Schema
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the database schema.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Select
+                    value={watchedValues.targetSchemaName}
+                    onValueChange={(value) => form.setValue('targetSchemaName', value)}
+                  >
+                    <SelectTrigger data-testid="select-target-schema">
+                      <SelectValue placeholder="Select target schema" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {targetSchemas.map((schema) => (
+                        <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Target Object - For Table type */}
+              {watchedValues.targetType === 'Table' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target-object" className="flex items-center gap-2">
+                    Target Object
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the database table.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  {showAddTargetObject ? (
+                    <div className="flex space-x-2">
+                      <Input
+                        value={newTargetObject}
+                        onChange={(e) => setNewTargetObject(e.target.value)}
+                        placeholder="Enter new target object name"
+                        data-testid="input-new-target-object"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (newTargetObject.trim()) {
+                            form.setValue('targetTableName', newTargetObject.trim());
+                            setShowAddTargetObject(false);
+                            setNewTargetObject("");
+                          }
+                        }}
+                        data-testid="button-save-target-object"
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowAddTargetObject(false);
+                          setNewTargetObject("");
+                        }}
+                        data-testid="button-cancel-target-object"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Select
+                        value={watchedValues.targetTableName}
+                        onValueChange={(value) => form.setValue('targetTableName', value)}
+                      >
+                        <SelectTrigger data-testid="select-target-object">
+                          <SelectValue placeholder="Select target object" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {targetObjects.map((object) => (
+                            <SelectItem key={object} value={object}>{object}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddTargetObject(true)}
+                        data-testid="button-add-target-object"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Target File Name - For File type */}
+              {watchedValues.targetType === 'File' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target-file-name" className="flex items-center gap-2">
+                    Target File Name
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the target file.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Input
+                    value={watchedValues.targetFileName || ''}
+                    onChange={(e) => form.setValue('targetFileName', e.target.value)}
+                    placeholder="Enter target file name"
+                    data-testid="input-target-file-name"
+                  />
+                </div>
+              )}
+
+              {/* Target Object - For File type */}
+              {watchedValues.targetType === 'File' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target-object-file" className="flex items-center gap-2">
+                    Target Object
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Object name for the file.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Input
+                    value={watchedValues.targetTableName || ''}
+                    onChange={(e) => form.setValue('targetTableName', e.target.value)}
+                    placeholder="Enter target object name"
+                    data-testid="input-target-object-file"
+                  />
+                </div>
+              )}
+
+              {/* Target Object - For External type */}
+              {watchedValues.targetType === 'External' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target-object-external" className="flex items-center gap-2">
+                    Target Object
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Name of the external target object.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Input
+                    value={watchedValues.targetTableName || ''}
+                    onChange={(e) => form.setValue('targetTableName', e.target.value)}
+                    placeholder="Enter target object name"
+                    data-testid="input-target-object-external"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bottom Section - Metadata Table */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Column Metadata
+              {isLoadingMetadata && (
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Fetching metadata...</span>
+                </div>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!watchedValues.targetType ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">📊</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No target type selected</h3>
+                <p className="text-gray-500">Select a target type above to view and manage column metadata</p>
+              </div>
+            ) : watchedValues.targetType === 'External' ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">✏️</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Manual Column Entry</h3>
+                <p className="text-gray-500 mb-4">Add columns manually for external sources</p>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const newColumn: ColumnMetadata = {
+                      attributeName: `column_${columns.length + 1}`,
+                      dataType: "varchar",
+                      precision: undefined,
+                      length: 255,
+                      scale: undefined,
+                      isPrimaryKey: false,
+                      isForeignKey: false,
+                      foreignKeyTable: undefined,
+                      columnDescription: "",
+                      isNotNull: false,
+                    };
+                    setColumns(prev => [...prev, newColumn]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Column
+                </Button>
+              </div>
+            ) : !watchedValues.targetTableName && watchedValues.targetType === 'Table' ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">📊</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No target object selected</h3>
+                <p className="text-gray-500">Select a target object above to view and manage column metadata</p>
+              </div>
+            ) : (!watchedValues.targetTableName && (watchedValues.targetType === 'File' || watchedValues.targetType === 'External')) ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">✏️</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Manual Column Entry</h3>
+                <p className="text-gray-500 mb-4">Add columns manually for {watchedValues.targetType.toLowerCase()} sources</p>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const newColumn: ColumnMetadata = {
+                      attributeName: `column_${columns.length + 1}`,
+                      dataType: "varchar",
+                      precision: undefined,
+                      length: 255,
+                      scale: undefined,
+                      isPrimaryKey: false,
+                      isForeignKey: false,
+                      foreignKeyTable: undefined,
+                      columnDescription: "",
+                      isNotNull: false,
+                    };
+                    setColumns(prev => [...prev, newColumn]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Column
+                </Button>
+              </div>
+            ) : columns.length === 0 && !isLoadingMetadata ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">📋</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No columns found</h3>
+                <p className="text-gray-500">The selected object doesn't have any columns or metadata couldn't be fetched</p>
+              </div>
+            ) : (
               <div className="space-y-2">
                 <Label htmlFor="source-schema" className="flex items-center gap-2">
                   Source Schema
