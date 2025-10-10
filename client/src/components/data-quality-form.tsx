@@ -215,7 +215,9 @@ export function DataQualityForm({
   // Watch the validation type to conditionally show fields
   const selectedValidationType = form.watch('validationType');
 
-  const showReferenceTable = selectedValidationType === 'Referential Integrity Check';
+  const showReferenceTable = selectedValidationType === 'Referential Integrity Check' || 
+                             selectedValidationType === 'List Value Check' ||
+                             selectedValidationType === 'File Format Check';
   // Threshold percentage is now always visible
   const showThresholdPercentage = true;
 
