@@ -165,6 +165,18 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedTargetConnectionId = form.watch('targetConnectionId');
   const selectedTargetSchema = form.watch('targetSchemaName');
 
+  // Fetch the specific source connection when editing (to ensure it's available in dropdown)
+  const { data: editingSourceConnection } = useQuery({
+    queryKey: ['/api/connections', pipeline?.connectionId],
+    queryFn: async () => {
+      if (!pipeline?.connectionId) return null;
+      const response = await fetch(`/api/connections/${pipeline.connectionId}`);
+      if (!response.ok) return null;
+      return await response.json();
+    },
+    enabled: !!pipeline?.connectionId
+  });
+
   // Fetch connections filtered by source system
   const { data: connections = [] } = useQuery({
     queryKey: ['/api/connections', { sourceSystem: selectedSourceSystem }],
@@ -174,7 +186,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
 
       // Filter connections by matching connection type with selected source system
-      return allConnections.filter(conn => 
+      const filtered = allConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
         (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
         (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
@@ -185,6 +197,13 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
         (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
         (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
       );
+
+      // If editing and the connection isn't in the filtered list, add it
+      if (editingSourceConnection && !filtered.find(c => c.connectionId === editingSourceConnection.connectionId)) {
+        filtered.unshift(editingSourceConnection);
+      }
+
+      return filtered;
     },
     enabled: !!selectedSourceSystem
   });
@@ -212,6 +231,18 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   });
 
   // Target configuration queries
+  // Fetch the specific target connection when editing (to ensure it's available in dropdown)
+  const { data: editingTargetConnection } = useQuery({
+    queryKey: ['/api/connections', pipeline?.targetConnectionId],
+    queryFn: async () => {
+      if (!pipeline?.targetConnectionId) return null;
+      const response = await fetch(`/api/connections/${pipeline.targetConnectionId}`);
+      if (!response.ok) return null;
+      return await response.json();
+    },
+    enabled: !!pipeline?.targetConnectionId
+  });
+
   // Fetch target connections filtered by target system
   const { data: targetConnections = [] } = useQuery({
     queryKey: ['/api/connections', { targetSystem: selectedTargetSystem }],
@@ -221,7 +252,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
 
       // Filter connections by matching connection type with selected target system
-      return allConnections.filter(conn => 
+      const filtered = allConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
         (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
         (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
@@ -232,6 +263,13 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
         (selectedTargetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
         (selectedTargetSystem === 'Salesforce' && conn.connectionType === 'API')
       );
+
+      // If editing and the connection isn't in the filtered list, add it
+      if (editingTargetConnection && !filtered.find(c => c.connectionId === editingTargetConnection.connectionId)) {
+        filtered.unshift(editingTargetConnection);
+      }
+
+      return filtered;
     },
     enabled: !!selectedTargetSystem
   });
