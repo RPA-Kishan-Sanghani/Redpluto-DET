@@ -1898,30 +1898,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
-    // Build insert data explicitly, only including non-undefined/non-null values  
-    const insertData: Record<string, any> = {
-      executionLayer: config.executionLayer,
-      reconType: config.reconType,
-      activeFlag: config.activeFlag || 'Y',
-    };
+    // Get the maximum existing recon_key
+    const maxKeyResult = await db
+      .select({ maxKey: sql`COALESCE(MAX(${reconciliationConfigTable.reconKey}), 0)` })
+      .from(reconciliationConfigTable);
 
-    // Only add optional fields if they have values
-    if (config.configKey !== undefined) insertData.configKey = config.configKey;
-    if (config.sourceSchema) insertData.sourceSchema = config.sourceSchema;
-    if (config.sourceTable) insertData.sourceTable = config.sourceTable;
-    if (config.targetSchema) insertData.targetSchema = config.targetSchema;
-    if (config.targetTable) insertData.targetTable = config.targetTable;
-    if (config.attribute) insertData.attribute = config.attribute;
-    if (config.sourceQuery) insertData.sourceQuery = config.sourceQuery;
-    if (config.targetQuery) insertData.targetQuery = config.targetQuery;
-    if (config.thresholdPercentage !== undefined) insertData.thresholdPercentage = config.thresholdPercentage;
+    const nextKey = (maxKeyResult[0]?.maxKey || 0) + 1;
+
+    console.log('Creating reconciliation config with next recon_key:', nextKey);
     
-    console.log('Creating reconciliation config with data:', insertData);
-    
-    // Use Drizzle ORM insert - it will automatically handle the serial primary key
+    // Use Drizzle ORM insert with explicit recon_key
     const [created] = await db
       .insert(reconciliationConfigTable)
       .values({
+        reconKey: nextKey,
         configKey: config.configKey,
         executionLayer: config.executionLayer,
         sourceSchema: config.sourceSchema,
@@ -1937,7 +1927,7 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
       
-    console.log('Created reconciliation config with auto-generated recon_key:', created.reconKey);
+    console.log('Created reconciliation config with recon_key:', created.reconKey);
     
     return created;
   }
