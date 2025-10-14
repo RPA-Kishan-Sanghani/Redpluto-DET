@@ -36,6 +36,8 @@ interface TableGroup {
   executionLayer: string;
   entryCount: number;
   entries: DataDictionaryRecord[];
+  sourceType: string; // Added sourceType
+  sourceFileName?: string; // Added sourceFileName
 }
 
 interface ExpandedRowState {
@@ -91,7 +93,7 @@ export function DataDictionary() {
     const existingGroup = acc.find(group => 
       group.tableName === entry.tableName && group.schemaName === (entry.schemaName || 'Unknown')
     );
-    
+
     if (existingGroup) {
       existingGroup.entries.push(entry);
       existingGroup.entryCount++;
@@ -101,7 +103,9 @@ export function DataDictionary() {
         schemaName: entry.schemaName || 'Unknown',
         executionLayer: entry.executionLayer || 'Unknown',
         entryCount: 1,
-        entries: [entry]
+        entries: [entry],
+        sourceType: entry.sourceType || 'table', // Default to 'table' if not specified
+        sourceFileName: entry.sourceFileName // Directly use sourceFileName from entry
       });
     }
     return acc;
@@ -123,7 +127,7 @@ export function DataDictionary() {
     const matchesTable = tableFilter === 'all' || table.tableName.toLowerCase() === tableFilter.toLowerCase();
     const matchesTargetSystem = targetSystemFilter === 'all' || 
       table.entries.some(entry => entry.createdBy?.toLowerCase() === targetSystemFilter.toLowerCase());
-    
+
     return matchesSearch && matchesLayer && matchesSchema && matchesTable && matchesTargetSystem;
   });
 
@@ -295,7 +299,7 @@ export function DataDictionary() {
               data-testid="input-search-tables"
             />
           </div>
-          
+
           <Select value={layerFilter} onValueChange={setLayerFilter}>
             <SelectTrigger className="w-48" data-testid="select-layer-filter">
               <SelectValue placeholder="Filter by layer" />
@@ -369,7 +373,7 @@ export function DataDictionary() {
                 {filteredTables.map((table) => {
                   const tableKey = getTableKey(table);
                   const isExpanded = expandedRows[tableKey];
-                  
+
                   return (
                     <React.Fragment key={tableKey}>
                       {/* Main Table Row */}
@@ -386,7 +390,13 @@ export function DataDictionary() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">{table.schemaName}</TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">
+                          {table.sourceType === 'table' 
+                            ? table.schemaName 
+                            : table.sourceType === 'file' 
+                            ? (table.sourceFileName || 'N/A')
+                            : table.schemaName}
+                        </TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">{table.tableName}</TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
                           <Badge variant={
@@ -481,7 +491,7 @@ export function DataDictionary() {
                                     }).map((entry) => {
                                       const isEditing = editingStates[entry.dataDictionaryKey];
                                       const editValues = editingValues[entry.dataDictionaryKey] || entry;
-                                      
+
                                       return (
                                         <TableRow key={entry.dataDictionaryKey} className="hover:bg-gray-50">
                                           <TableCell className="font-medium">
