@@ -255,8 +255,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     const fetchColumnMetadata = async () => {
       // Only auto-fetch for Table type
       if (watchedValues.targetType !== 'Table') {
-        // For File, External, and Manual types, allow manual column entry
-        if (watchedValues.targetType === 'File' || watchedValues.targetType === 'External' || watchedValues.targetType === 'Manual') {
+        // For File type, allow manual column entry
+        if (watchedValues.targetType === 'File') {
           // Don't clear columns - allow user to add manually
           return;
         }
@@ -503,7 +503,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                       <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Type of source: Table, File, or Manual</p>
+                      <p>Type of source: Table or File</p>
                     </TooltipContent>
                   </Tooltip>
                 </Label>
@@ -521,10 +521,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                     <SelectValue placeholder="Select source type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {sourceTypes.filter(type => type !== 'API').map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                    <SelectItem value="Manual">Manual</SelectItem>
+                    <SelectItem value="Table">Table</SelectItem>
+                    <SelectItem value="File">File</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -635,51 +633,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 </div>
               )}
 
-              {/* Source Object - For External type */}
-              {watchedValues.sourceType === 'External' && (
-                <div className="space-y-2">
-                  <Label htmlFor="source-object-external" className="flex items-center gap-2">
-                    Source Object
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Name of the external source object.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <Input
-                    value={watchedValues.sourceTableName || ''}
-                    onChange={(e) => form.setValue('sourceTableName', e.target.value)}
-                    placeholder="Enter source object name"
-                    data-testid="input-source-object-external"
-                  />
-                </div>
-              )}
-
-              {/* Source Object - For Manual type */}
-              {watchedValues.sourceType === 'Manual' && (
-                <div className="space-y-2">
-                  <Label htmlFor="source-object-manual" className="flex items-center gap-2">
-                    Source Object
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Name of the manual source object.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <Input
-                    value={watchedValues.sourceTableName || ''}
-                    onChange={(e) => form.setValue('sourceTableName', e.target.value)}
-                    placeholder="Enter source object name"
-                    data-testid="input-source-object-manual"
-                  />
-                </div>
-              )}
+              
             </CardContent>
           </Card>
 
@@ -768,7 +722,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                       <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Type of target: Table, File, or Manual</p>
+                      <p>Type of target: Table or File</p>
                     </TooltipContent>
                   </Tooltip>
                 </Label>
@@ -786,10 +740,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                     <SelectValue placeholder="Select target type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {sourceTypes.filter(type => type !== 'API').map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                    <SelectItem value="Manual">Manual</SelectItem>
+                    <SelectItem value="Table">Table</SelectItem>
+                    <SelectItem value="File">File</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -949,51 +901,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 </div>
               )}
 
-              {/* Target Object - For External type */}
-              {watchedValues.targetType === 'External' && (
-                <div className="space-y-2">
-                  <Label htmlFor="target-object-external" className="flex items-center gap-2">
-                    Target Object
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Name of the external target object.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <Input
-                    value={watchedValues.targetTableName || ''}
-                    onChange={(e) => form.setValue('targetTableName', e.target.value)}
-                    placeholder="Enter target object name"
-                    data-testid="input-target-object-external"
-                  />
-                </div>
-              )}
-
-              {/* Target Object - For Manual type */}
-              {watchedValues.targetType === 'Manual' && (
-                <div className="space-y-2">
-                  <Label htmlFor="target-object-manual" className="flex items-center gap-2">
-                    Target Object
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Name of the manual target object.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <Input
-                    value={watchedValues.targetTableName || ''}
-                    onChange={(e) => form.setValue('targetTableName', e.target.value)}
-                    placeholder="Enter target object name"
-                    data-testid="input-target-object-manual"
-                  />
-                </div>
-              )}
+              
             </CardContent>
           </Card>
         </div>
@@ -1009,8 +917,8 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                   <span>Fetching metadata...</span>
                 </div>
               )}
-              {/* Add Column button for Manual types */}
-              {(watchedValues.targetType === 'Manual' || watchedValues.targetType === 'File' || watchedValues.targetType === 'External') && (
+              {/* Add Column button for File type */}
+              {watchedValues.targetType === 'File' && (
                 <Button
                   type="button"
                   variant="outline"
@@ -1049,7 +957,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
                 <div className="text-gray-400 mb-4">📋</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No columns added</h3>
                 <p className="text-gray-500">
-                  {(watchedValues.targetType === 'Manual' || watchedValues.targetType === 'File' || watchedValues.targetType === 'External') 
+                  {watchedValues.targetType === 'File' 
                     ? 'Click "Add Column" button above to manually add column metadata'
                     : 'The selected object doesn\'t have any columns or metadata couldn\'t be fetched'}
                 </p>
