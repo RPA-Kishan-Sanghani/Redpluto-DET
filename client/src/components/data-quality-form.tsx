@@ -15,6 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -214,6 +215,7 @@ export function DataQualityForm({
 
   // Watch the validation type to conditionally show fields
   const selectedValidationType = form.watch('validationType');
+  const [showDefaultValue, setShowDefaultValue] = useState(false);
 
   const showReferenceTable = selectedValidationType === 'Referential Integrity Check' || 
                              selectedValidationType === 'List Value Check' ||
@@ -673,31 +675,55 @@ export function DataQualityForm({
                 />
               )}
 
-              <FormField
-                control={form.control}
-                name="defaultValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Default Value
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Default value for replacement</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter default value" data-testid="input-default-value" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-default-value"
+                    checked={showDefaultValue}
+                    onCheckedChange={(checked) => {
+                      setShowDefaultValue(checked as boolean);
+                      if (!checked) {
+                        form.setValue('defaultValue', '');
+                      }
+                    }}
+                    data-testid="checkbox-show-default-value"
+                  />
+                  <label
+                    htmlFor="show-default-value"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Do you want to replace null value to default value?
+                  </label>
+                </div>
+
+                {showDefaultValue && (
+                  <FormField
+                    control={form.control}
+                    name="defaultValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Default Value
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Default value for replacement</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter default value" data-testid="input-default-value" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
+              </div>
 
               {showThresholdPercentage && (
                 <FormField
