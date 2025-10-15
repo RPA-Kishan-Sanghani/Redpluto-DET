@@ -234,11 +234,6 @@ export const dataDictionaryTable = pgTable("data_dictionary_table", {
   isPrimaryKey: char("is_primary_key", { length: 1 }),
   isForeignKey: char("is_foreign_key", { length: 1 }),
   activeFlag: char("active_flag", { length: 1 }),
-  sourceType: varchar("source_type", { length: 50 }),
-  sourceFileName: varchar("source_file_name", { length: 255 }),
-  targetType: varchar("target_type", { length: 50 }),
-  targetSchemaName: varchar("target_schema_name", { length: 100 }),
-  targetFileName: varchar("target_file_name", { length: 255 }),
 });
 
 export const insertDataDictionarySchema = createInsertSchema(dataDictionaryTable).omit({
