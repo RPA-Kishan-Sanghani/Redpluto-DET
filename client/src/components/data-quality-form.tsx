@@ -298,7 +298,8 @@ export function DataQualityForm({
         // Convert empty strings to null for optional fields
         configKey: data.configKey || undefined,
         referenceTableName: data.referenceTableName || null,
-        defaultValue: data.defaultValue || null,
+        // Set default value to 'NA' if empty or null
+        defaultValue: data.defaultValue?.trim() || 'NA',
         thresholdPercentage: data.thresholdPercentage || null,
         customQuery: data.customQuery || null,
       };
