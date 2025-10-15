@@ -809,6 +809,28 @@ export function DataQualityForm({
                 />
               )}
 
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-default-value"
+                    checked={showDefaultValue}
+                    onCheckedChange={(checked) => {
+                      setShowDefaultValue(checked as boolean);
+                      if (!checked) {
+                        form.setValue('defaultValue', '');
+                      }
+                    }}
+                    data-testid="checkbox-show-default-value"
+                  />
+                  <label
+                    htmlFor="show-default-value"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Do you want to replace null value to default value?
+                  </label>
+                </div>
+              </div>
+
               {showThresholdPercentage && (
                 <FormField
                   control={form.control}
@@ -845,55 +867,33 @@ export function DataQualityForm({
                 />
               )}
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-default-value"
-                    checked={showDefaultValue}
-                    onCheckedChange={(checked) => {
-                      setShowDefaultValue(checked as boolean);
-                      if (!checked) {
-                        form.setValue('defaultValue', '');
-                      }
-                    }}
-                    data-testid="checkbox-show-default-value"
-                  />
-                  <label
-                    htmlFor="show-default-value"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    Do you want to replace null value to default value?
-                  </label>
-                </div>
-
-                {showDefaultValue && (
-                  <FormField
-                    control={form.control}
-                    name="defaultValue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          Default Value
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Default value for replacement</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter default value" data-testid="input-default-value" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
+              {showDefaultValue && (
+                <FormField
+                  control={form.control}
+                  name="defaultValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Default Value
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Default value for replacement</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter default value" data-testid="input-default-value" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
