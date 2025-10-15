@@ -809,7 +809,43 @@ export function DataQualityForm({
                 />
               )}
 
-              <div className="space-y-4">
+              {showThresholdPercentage && (
+                <FormField
+                  control={form.control}
+                  name="thresholdPercentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Threshold Percentage
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Maximum allowed error percentage</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="Enter threshold percentage"
+                          data-testid="input-threshold-percentage"
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="show-default-value"
@@ -858,42 +894,6 @@ export function DataQualityForm({
                   />
                 )}
               </div>
-
-              {showThresholdPercentage && (
-                <FormField
-                  control={form.control}
-                  name="thresholdPercentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Threshold Percentage
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Maximum allowed error percentage</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number"
-                          min="0"
-                          max="100"
-                          placeholder="Enter threshold percentage"
-                          data-testid="input-threshold-percentage"
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <FormField
                 control={form.control}
