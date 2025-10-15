@@ -178,6 +178,7 @@ export function DataQualityForm({
   // Basic Configuration - Target System, Connection, Schema, Table, Type
   const selectedTargetSystem = form.watch('targetSystem');
   const selectedTargetConnectionId = form.watch('targetConnectionId');
+  const selectedTargetType = form.watch('targetType');
   const selectedTargetSchema = form.watch('targetSchema');
   const selectedTargetTableName = form.watch('targetTableName');
 
@@ -504,29 +505,30 @@ export function DataQualityForm({
                 )}
               />
 
-              {/* Target Schema Field */}
+              {/* Target Type Field */}
               <FormField
                 control={form.control}
-                name="targetSchema"
+                name="targetType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                      Target Schema
+                      Target Type
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Database schema containing the target table</p>
+                            <p>Defines whether the target is a database table or a file</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </FormLabel>
                     <Select 
                       onValueChange={(value) => {
-                        field.onChange(value || '');
-                        // Reset dependent fields when schema changes
+                        field.onChange(value);
+                        // Reset dependent fields when type changes
+                        form.setValue('targetSchema', '');
                         form.setValue('targetTableName', '');
                         form.setValue('attributeName', '');
                       }} 
@@ -534,14 +536,13 @@ export function DataQualityForm({
                       disabled={!selectedTargetConnectionId}
                     >
                       <FormControl>
-                        <SelectTrigger data-testid="select-target-schema-basic">
-                          <SelectValue placeholder={selectedTargetConnectionId ? "Select schema" : "Select connection first"} />
+                        <SelectTrigger data-testid="select-target-type-basic">
+                          <SelectValue placeholder={selectedTargetConnectionId ? "Select target type" : "Select connection first"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {targetSchemas.map((schema) => (
-                          <SelectItem key={schema} value={schema}>{schema}</SelectItem>
-                        ))}
+                        <SelectItem value="Table">Table</SelectItem>
+                        <SelectItem value="File">File</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -549,51 +550,173 @@ export function DataQualityForm({
                 )}
               />
 
-              {/* Target Table Field */}
-              <FormField
-                control={form.control}
-                name="targetTableName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Target Table Name
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Table to validate</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value || '');
-                        // Reset attribute name when table changes
-                        form.setValue('attributeName', '');
-                      }} 
-                      value={field.value || ''}
-                      disabled={!selectedTargetConnectionId || !selectedTargetSchema}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-target-table-basic">
-                          <SelectValue placeholder={selectedTargetConnectionId && selectedTargetSchema ? "Select table" : "Select schema first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {targetTables.map((table) => (
-                          <SelectItem key={table} value={table}>{table}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Show schema and table fields only when target type is Table */}
+              {selectedTargetType === 'Table' && (
+                <>
+                  {/* Target Schema Field */}
+                  <FormField
+                    control={form.control}
+                    name="targetSchema"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Schema
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Database schema containing the target table</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value || '');
+                            // Reset dependent fields when schema changes
+                            form.setValue('targetTableName', '');
+                            form.setValue('attributeName', '');
+                          }} 
+                          value={field.value || ''}
+                          disabled={!selectedTargetConnectionId}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-schema-basic">
+                              <SelectValue placeholder={selectedTargetConnectionId ? "Select schema" : "Select connection first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {targetSchemas.map((schema) => (
+                              <SelectItem key={schema} value={schema}>{schema}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Attribute Name Field - Populated from target table columns */}
+                  {/* Target Table Field */}
+                  <FormField
+                    control={form.control}
+                    name="targetTableName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Table Name
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Table to validate</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value || '');
+                            // Reset attribute name when table changes
+                            form.setValue('attributeName', '');
+                          }} 
+                          value={field.value || ''}
+                          disabled={!selectedTargetConnectionId || !selectedTargetSchema}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-target-table-basic">
+                              <SelectValue placeholder={selectedTargetConnectionId && selectedTargetSchema ? "Select table" : "Select schema first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {targetTables.map((table) => (
+                              <SelectItem key={table} value={table}>{table}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* Show file fields only when target type is File */}
+              {selectedTargetType === 'File' && (
+                <>
+                  {/* Target File Name Field */}
+                  <FormField
+                    control={form.control}
+                    name="targetTableName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Target File Name
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Name of the target file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="Enter target file name" 
+                            data-testid="input-target-file-name"
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              // Reset attribute name when file name changes
+                              form.setValue('attributeName', '');
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Target Object Field */}
+                  <FormField
+                    control={form.control}
+                    name="targetSchema"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Target Object
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Target object identifier or path</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="Enter target object" 
+                            data-testid="input-target-object"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* Attribute Name Field - Dropdown for Table type, Input for File type */}
               <FormField
                 control={form.control}
                 name="attributeName"
@@ -607,27 +730,38 @@ export function DataQualityForm({
                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Column(s) to validate</p>
+                            <p>Column(s) or field(s) to validate</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
-                      disabled={!selectedTargetTableName}
-                    >
+                    {selectedTargetType === 'Table' ? (
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || ''}
+                        disabled={!selectedTargetTableName}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-attribute-name-basic">
+                            <SelectValue placeholder={selectedTargetTableName ? "Select column" : "Select table first"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {targetColumns.map((column) => (
+                            <SelectItem key={column} value={column}>{column}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
                       <FormControl>
-                        <SelectTrigger data-testid="select-attribute-name-basic">
-                          <SelectValue placeholder={selectedTargetTableName ? "Select column" : "Select table first"} />
-                        </SelectTrigger>
+                        <Input 
+                          {...field} 
+                          placeholder="Enter attribute name" 
+                          data-testid="input-attribute-name-basic"
+                          disabled={!selectedTargetTableName}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {targetColumns.map((column) => (
-                          <SelectItem key={column} value={column}>{column}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
