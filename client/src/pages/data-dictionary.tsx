@@ -38,6 +38,9 @@ interface TableGroup {
   entries: DataDictionaryRecord[];
   sourceType: string; // Added sourceType
   sourceFileName?: string; // Added sourceFileName
+  targetType?: string; // Added targetType
+  targetSchemaName?: string; // Added targetSchemaName
+  targetFileName?: string; // Added targetFileName
 }
 
 interface ExpandedRowState {
@@ -105,7 +108,10 @@ export function DataDictionary() {
         entryCount: 1,
         entries: [entry],
         sourceType: entry.sourceType || 'table', // Default to 'table' if not specified
-        sourceFileName: entry.sourceFileName // Directly use sourceFileName from entry
+        sourceFileName: entry.sourceFileName, // Directly use sourceFileName from entry
+        targetType: entry.targetType, // Added targetType
+        targetSchemaName: entry.targetSchemaName, // Added targetSchemaName
+        targetFileName: entry.targetFileName // Added targetFileName
       });
     }
     return acc;
@@ -362,8 +368,9 @@ export function DataDictionary() {
               <TableHeader className="sticky top-0 bg-gray-50 z-10">
                 <TableRow>
                   <TableHead className="w-8"></TableHead>
-                  <TableHead>Schema</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead>Table Name</TableHead>
+                  <TableHead>Target</TableHead> {/* Added Target Header */}
                   <TableHead>Execution Layer</TableHead>
                   <TableHead>Columns</TableHead>
                   <TableHead className="w-20">Actions</TableHead>
@@ -395,9 +402,16 @@ export function DataDictionary() {
                             ? table.schemaName 
                             : table.sourceType === 'file' 
                             ? (table.sourceFileName || 'N/A')
-                            : table.schemaName}
+                            : 'Unknown'}
                         </TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">{table.tableName}</TableCell>
+                        <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
+                          {table.targetType === 'table' 
+                            ? (table.targetSchemaName || 'N/A')
+                            : table.targetType === 'file' 
+                            ? (table.targetFileName || 'N/A')
+                            : 'N/A'}
+                        </TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
                           <Badge variant={
                             table.executionLayer.toLowerCase() === 'gold' ? 'default' :
@@ -459,7 +473,7 @@ export function DataDictionary() {
                       {/* Expanded Row with Column Metadata */}
                       {isExpanded && (
                         <TableRow>
-                          <TableCell colSpan={6} className="p-0 bg-gray-50">
+                          <TableCell colSpan={7} className="p-0 bg-gray-50"> {/* Increased colSpan to 7 */}
                             <div className="p-4">
                               <h4 className="font-medium text-gray-900 mb-3">Column Metadata</h4>
                               <div className="bg-white rounded border overflow-hidden">
