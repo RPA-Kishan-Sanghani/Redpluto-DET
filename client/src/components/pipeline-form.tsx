@@ -176,11 +176,16 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
 
   // Filter connections based on selected source system
   const connections = (() => {
-    if (!selectedSourceSystem) {
-      // When editing and no source system selected yet, show the current connection
-      if (pipeline?.connectionId) {
-        return allSourceConnections.filter(conn => conn.connectionId === pipeline.connectionId);
+    // When editing, always show the current connection first
+    if (pipeline?.connectionId && !selectedSourceSystem) {
+      const currentConnection = allSourceConnections.find(c => c.connectionId === pipeline.connectionId);
+      if (currentConnection) {
+        return [currentConnection];
       }
+      return [];
+    }
+
+    if (!selectedSourceSystem) {
       return [];
     }
 
@@ -197,7 +202,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
       (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
     );
 
-    // If editing and the current connection isn't in the filtered list, add it
+    // If editing and the current connection isn't in the filtered list, add it at the beginning
     if (pipeline?.connectionId) {
       const currentConnection = allSourceConnections.find(c => c.connectionId === pipeline.connectionId);
       if (currentConnection && !filtered.find(c => c.connectionId === currentConnection.connectionId)) {
