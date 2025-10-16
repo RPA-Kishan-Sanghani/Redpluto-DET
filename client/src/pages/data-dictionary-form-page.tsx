@@ -4,6 +4,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DataDictionaryFormRedesigned } from "../components/data-dictionary-form-redesigned";
 import type { DataDictionaryRecord } from '@shared/schema';
 
@@ -11,6 +12,7 @@ export function DataDictionaryFormPage() {
   const [location, setLocation] = useLocation();
   const [match, params] = useRoute("/data-dictionary/form/:id");
   const entryId = params?.id;
+  const [showExitDialog, setShowExitDialog] = useState(false);
   
   // Fetch the entry data if we have an ID (editing mode)
   const { data: editingEntry, isLoading } = useQuery({
@@ -28,10 +30,13 @@ export function DataDictionaryFormPage() {
     setLocation('/data-dictionary');
   };
 
-  const handleCancel = () => {
-    if (confirm('Do you really want to cancel?')) {
-      setLocation('/data-dictionary');
-    }
+  const handleCancelClick = () => {
+    setShowExitDialog(true);
+  };
+
+  const handleConfirmExit = () => {
+    setShowExitDialog(false);
+    setLocation('/data-dictionary');
   };
 
   // Show loading state while fetching entry data
@@ -53,7 +58,7 @@ export function DataDictionaryFormPage() {
         <div className="mb-8 flex items-center space-x-4">
           <Button
             variant="outline"
-            onClick={() => setLocation('/data-dictionary')}
+            onClick={handleCancelClick}
             className="flex items-center space-x-2"
             data-testid="button-back-to-dictionary"
           >
@@ -76,11 +81,27 @@ export function DataDictionaryFormPage() {
             <DataDictionaryFormRedesigned
               entry={editingEntry || null}
               onSuccess={handleSuccess}
-              onCancel={handleCancel}
+              onCancel={handleCancelClick}
             />
           </div>
         </div>
       </main>
+
+      {/* Exit Confirmation Dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Do you really want to close the screen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Any unsaved changes will be lost if you close this screen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="dialog-cancel-exit">No</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmExit} data-testid="dialog-confirm-exit">Yes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

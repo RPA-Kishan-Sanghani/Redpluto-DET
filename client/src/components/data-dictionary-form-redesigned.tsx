@@ -15,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const dataDictionarySchema = z.object({
@@ -59,7 +58,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [newTargetObject, setNewTargetObject] = useState("");
   const [showAddTargetObject, setShowAddTargetObject] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -536,14 +534,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     ));
   };
 
-  const handleCancelClick = () => {
-    setShowCancelDialog(true);
-  };
-
-  const handleConfirmCancel = () => {
-    setShowCancelDialog(false);
-    onCancel();
-  };
 
   const onSubmit = (data: z.infer<typeof dataDictionarySchema>) => {
     saveMutation.mutate(data);
@@ -1413,7 +1403,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           <Button
             type="button"
             variant="outline"
-            onClick={handleCancelClick}
+            onClick={onCancel}
             data-testid="button-cancel-form"
           >
             <X className="h-4 w-4 mr-2" />
@@ -1439,22 +1429,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           </Button>
         </div>
         </form>
-
-        {/* Cancel Confirmation Dialog */}
-        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Exit Page</AlertDialogTitle>
-              <AlertDialogDescription>
-                Do you want to exit this page? Any unsaved changes will be lost.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>No</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmCancel}>Yes</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </TooltipProvider>
   );
