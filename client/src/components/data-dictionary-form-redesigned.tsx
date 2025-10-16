@@ -296,21 +296,24 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof dataDictionarySchema>) => {
       if (entry) {
-        // EDITING MODE: Update the existing entry
+        // EDITING MODE: Update the existing entry with current column data
+        // Find the column that matches the entry's attribute name
+        const currentColumn = columns.find(col => col.attributeName === entry.attributeName) || columns[0];
+        
         const entryData = {
           configKey: entry.configKey || 1,
           executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
-          schemaName: (data.sourceSchemaName || '').substring(0, 100),
-          tableName: (data.sourceTableName || '').substring(0, 100),
-          attributeName: (columns[0]?.attributeName || entry.attributeName || '').substring(0, 100),
-          dataType: (columns[0]?.dataType || entry.dataType || '').substring(0, 50),
-          length: columns[0]?.length || entry.length || null,
-          precisionValue: columns[0]?.precision || entry.precisionValue || null,
-          scale: columns[0]?.scale || entry.scale || null,
-          isNotNull: columns[0]?.isNotNull ? 'Y' : 'N',
-          isPrimaryKey: columns[0]?.isPrimaryKey ? 'Y' : 'N',
-          isForeignKey: columns[0]?.isForeignKey ? 'Y' : 'N',
-          columnDescription: (columns[0]?.columnDescription || entry.columnDescription || '').substring(0, 150),
+          schemaName: (data.targetSchemaName || data.sourceSchemaName || '').substring(0, 100),
+          tableName: (data.targetTableName || data.sourceTableName || '').substring(0, 100),
+          attributeName: (currentColumn?.attributeName || entry.attributeName || '').substring(0, 100),
+          dataType: (currentColumn?.dataType || entry.dataType || '').substring(0, 50),
+          length: currentColumn?.length || null,
+          precisionValue: currentColumn?.precision || null,
+          scale: currentColumn?.scale || null,
+          isNotNull: currentColumn?.isNotNull ? 'Y' : 'N',
+          isPrimaryKey: currentColumn?.isPrimaryKey ? 'Y' : 'N',
+          isForeignKey: currentColumn?.isForeignKey ? 'Y' : 'N',
+          columnDescription: (currentColumn?.columnDescription || '').substring(0, 150),
           activeFlag: entry.activeFlag || 'Y',
           createdBy: entry.createdBy || 'User',
           updatedBy: 'User',
