@@ -84,31 +84,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     },
   });
 
-  // Populate form with existing entry data when editing
-  useEffect(() => {
-    if (entry) {
-      // Find the connection that matches the schema name from available connections
-      // This is a temporary solution until we can get the actual connectionId from the entry
-      form.reset({
-        executionLayer: entry.executionLayer ?
-          entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() :
-          "",
-        sourceSystem: "", // Will be determined by connection
-        sourceConnectionId: 0, // Will be set when we find the matching connection
-        sourceSchemaName: entry.schemaName || "",
-        sourceTableName: entry.tableName || "",
-        targetSystem: "",
-        targetConnectionId: 0,
-        targetLayer: "",
-        targetSchemaName: "",
-        targetTableName: "",
-      });
-
-      // Don't manually set columns here - let the auto-fetch handle it
-      // This will be triggered by the useEffect that watches form values
-    }
-  }, [entry, form]);
-
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
 
@@ -151,6 +126,99 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       return await response.json() as any[];
     }
   });
+
+  // Populate form with existing entry data when editing
+  useEffect(() => {
+    if (entry && allConnections.length > 0) {
+      // Infer connection and system from the entry's schema name
+      // Try to find a connection that has this schema
+      const findConnectionWithSchema = async () => {
+        let matchedConnection = null;
+        
+        for (const conn of allConnections) {
+          try {
+            const response = await fetch(`/api/connections/${conn.connectionId}/schemas`);
+            if (response.ok) {
+              const schemas = await response.json() as string[];
+              if (schemas.includes(entry.schemaName)) {
+                matchedConnection = conn;
+                break;
+              }
+            }
+          } catch (error) {
+            console.error(`Error checking schemas for connection ${conn.connectionId}:`, error);
+          }
+        }
+        
+        if (matchedConnection) {
+          // Determine the source system from connection type
+          const sourceSystem = matchedConnection.connectionType || "";
+          
+          // Populate the form with inferred values
+          form.setValue('executionLayer', entry.executionLayer ? 
+            entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
+            "");
+          form.setValue('sourceSystem', sourceSystem);
+          form.setValue('sourceConnectionId', matchedConnection.connectionId);
+          form.setValue('sourceType', 'Table'); // Assume Table for existing entries
+          form.setValue('sourceSchemaName', entry.schemaName || "");
+          form.setValue('sourceTableName', entry.tableName || "");
+          
+          // Set target to be the same as source for existing entries
+          form.setValue('targetSystem', sourceSystem);
+          form.setValue('targetConnectionId', matchedConnection.connectionId);
+          form.setValue('targetLayer', entry.executionLayer ? 
+            entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
+            "");
+          form.setValue('targetType', 'Table');
+          form.setValue('targetSchemaName', entry.schemaName || "");
+          form.setValue('targetTableName', entry.tableName || "");
+          
+          // Fetch and populate column metadata from existing data dictionary entries
+          const response = await fetch('/api/data-dictionary');
+          if (response.ok) {
+            const allEntries = await response.json();
+            const tableColumns = allEntries
+              .filter((e: any) => 
+                e.schemaName === entry.schemaName && 
+                e.tableName === entry.tableName
+              )
+              .map((e: any) => ({
+                attributeName: e.attributeName || '',
+                dataType: e.dataType || '',
+                precision: e.precisionValue || undefined,
+                length: e.length || undefined,
+                scale: e.scale || undefined,
+                isPrimaryKey: e.isPrimaryKey === 'Y',
+                isForeignKey: e.isForeignKey === 'Y',
+                foreignKeyTable: undefined,
+                columnDescription: e.columnDescription || '',
+                isNotNull: e.isNotNull === 'Y'
+              }));
+            
+            if (tableColumns.length > 0) {
+              setColumns(tableColumns);
+            }
+          }
+        } else {
+          // If no matching connection found, still populate basic info
+          form.setValue('executionLayer', entry.executionLayer ? 
+            entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
+            "");
+          form.setValue('sourceSchemaName', entry.schemaName || "");
+          form.setValue('sourceTableName', entry.tableName || "");
+          
+          toast({
+            title: "Warning",
+            description: "Could not find matching connection for this entry's schema. Please select connection manually.",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      findConnectionWithSchema();
+    }
+  }, [entry, allConnections, form, toast]);
 
   // Filter connections based on selected source system
   const sourceConnections = allConnections.filter(conn =>
