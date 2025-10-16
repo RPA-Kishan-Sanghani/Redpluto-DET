@@ -127,55 +127,41 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
   // Populate form with existing entry data when editing
   useEffect(() => {
-    if (entry && allConnections.length > 0) {
-      // Infer connection and system from the entry's schema name
-      // Try to find a connection that has this schema
-      const findConnectionWithSchema = async () => {
-        let matchedConnection = null;
-        
-        for (const conn of allConnections) {
-          try {
-            const response = await fetch(`/api/connections/${conn.connectionId}/schemas`);
-            if (response.ok) {
-              const schemas = await response.json() as string[];
-              if (schemas.includes(entry.schemaName)) {
-                matchedConnection = conn;
-                break;
-              }
-            }
-          } catch (error) {
-            console.error(`Error checking schemas for connection ${conn.connectionId}:`, error);
+    if (entry && entry.configKey) {
+      // Fetch the pipeline config using the configKey to get connection info
+      const fetchConfigAndPopulate = async () => {
+        try {
+          const configResponse = await fetch(`/api/pipelines/${entry.configKey}`);
+          if (!configResponse.ok) {
+            throw new Error('Failed to fetch pipeline config');
           }
-        }
-        
-        if (matchedConnection) {
-          // Determine the source system from connection type
-          const sourceSystem = matchedConnection.connectionType || "";
+          const config = await configResponse.json();
           
-          // Populate the form with inferred values
-          form.setValue('executionLayer', entry.executionLayer ? 
-            entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
-            "");
-          form.setValue('sourceSystem', sourceSystem);
-          form.setValue('sourceConnectionId', matchedConnection.connectionId);
-          form.setValue('sourceType', 'Table'); // Assume Table for existing entries
-          form.setValue('sourceSchemaName', entry.schemaName || "");
-          form.setValue('sourceTableName', entry.tableName || "");
+          // Capitalize execution layer for display
+          const capitalizeLayer = (layer: string) => 
+            layer ? layer.charAt(0).toUpperCase() + layer.slice(1).toLowerCase() : "";
           
-          // Set target to be the same as source for existing entries
-          form.setValue('targetSystem', sourceSystem);
-          form.setValue('targetConnectionId', matchedConnection.connectionId);
-          form.setValue('targetLayer', entry.executionLayer ? 
-            entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
-            "");
-          form.setValue('targetType', 'Table');
-          form.setValue('targetSchemaName', entry.schemaName || "");
-          form.setValue('targetTableName', entry.tableName || "");
+          // Populate form with data from config
+          form.setValue('executionLayer', capitalizeLayer(config.executionLayer || entry.executionLayer));
+          form.setValue('sourceSystem', config.sourceSystem || "");
+          form.setValue('sourceConnectionId', config.sourceConnectionId || 0);
+          form.setValue('sourceType', config.sourceType || "Table");
+          form.setValue('sourceSchemaName', config.sourceSchemaName || entry.schemaName || "");
+          form.setValue('sourceTableName', config.sourceTableName || entry.tableName || "");
+          form.setValue('sourceFileName', config.sourceFileName || "");
+          
+          form.setValue('targetSystem', config.targetSystem || config.sourceSystem || "");
+          form.setValue('targetConnectionId', config.targetConnectionId || config.sourceConnectionId || 0);
+          form.setValue('targetLayer', capitalizeLayer(config.targetLayer || config.executionLayer || entry.executionLayer));
+          form.setValue('targetType', config.targetType || "Table");
+          form.setValue('targetSchemaName', config.targetSchemaName || config.sourceSchemaName || entry.schemaName || "");
+          form.setValue('targetTableName', config.targetTableName || entry.tableName || "");
+          form.setValue('targetFileName', config.targetFilePath || "");
           
           // Fetch and populate column metadata from existing data dictionary entries
-          const response = await fetch('/api/data-dictionary');
-          if (response.ok) {
-            const allEntries = await response.json();
+          const dictResponse = await fetch('/api/data-dictionary');
+          if (dictResponse.ok) {
+            const allEntries = await dictResponse.json();
             const tableColumns = allEntries
               .filter((e: any) => 
                 e.schemaName === entry.schemaName && 
@@ -198,25 +184,19 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
               setColumns(tableColumns);
             }
           }
-        } else {
-          // If no matching connection found, still populate basic info
-          form.setValue('executionLayer', entry.executionLayer ? 
-            entry.executionLayer.charAt(0).toUpperCase() + entry.executionLayer.slice(1).toLowerCase() : 
-            "");
-          form.setValue('sourceSchemaName', entry.schemaName || "");
-          form.setValue('sourceTableName', entry.tableName || "");
-          
+        } catch (error) {
+          console.error('Error fetching config:', error);
           toast({
-            title: "Warning",
-            description: "Could not find matching connection for this entry's schema. Please select connection manually.",
+            title: "Error",
+            description: "Could not load pipeline configuration. Please try again.",
             variant: "destructive",
           });
         }
       };
       
-      findConnectionWithSchema();
+      fetchConfigAndPopulate();
     }
-  }, [entry, allConnections, form, toast]);
+  }, [entry, form, toast]);
 
   // Filter connections based on selected source system
   const sourceConnections = allConnections.filter(conn =>
@@ -294,27 +274,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     enabled: !!watchedValues.targetConnectionId && !!watchedValues.targetSchemaName
   });
 
-  // Auto-select connection when editing based on schema name
-  useEffect(() => {
-    if (entry && allConnections.length > 0 && !watchedValues.sourceConnectionId) {
-      // Find the connection that matches the schema name from available connections
-      // This is a temporary solution until we can get the actual connectionId from the entry
-      const matchingConnection = allConnections.find(conn =>
-        // Assuming entry.schemaName matches the schema used by a connection
-        // This logic might need adjustment based on how connections are structured
-        // and how schema names are stored or related.
-        // For now, we'll use the first connection as a fallback if no specific match is found.
-        true // Placeholder for actual matching logic
-      );
-
-      const defaultConnection = matchingConnection || allConnections[0];
-      if (defaultConnection) {
-        form.setValue('sourceConnectionId', defaultConnection.connectionId);
-        // The source system will be set based on the connection
-        form.setValue('sourceSystem', defaultConnection.source_system);
-      }
-    }
-  }, [entry, allConnections, watchedValues.sourceConnectionId, form]);
 
   // Auto-fetch metadata when target object is selected (only for Table type)
   useEffect(() => {
