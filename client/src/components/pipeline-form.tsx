@@ -165,48 +165,48 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const selectedTargetConnectionId = form.watch('targetConnectionId');
   const selectedTargetSchema = form.watch('targetSchemaName');
 
-  // Fetch the specific source connection when editing (to ensure it's available in dropdown)
-  const { data: editingSourceConnection } = useQuery({
-    queryKey: ['/api/connections', pipeline?.connectionId],
+  // Fetch all connections first
+  const { data: allSourceConnections = [] } = useQuery({
+    queryKey: ['/api/connections'],
     queryFn: async () => {
-      if (!pipeline?.connectionId) return null;
-      const response = await fetch(`/api/connections/${pipeline.connectionId}`);
-      if (!response.ok) return null;
-      return await response.json();
-    },
-    enabled: !!pipeline?.connectionId
-  });
-
-  // Fetch connections filtered by source system
-  const { data: connections = [] } = useQuery({
-    queryKey: ['/api/connections', { sourceSystem: selectedSourceSystem }],
-    queryFn: async () => {
-      if (!selectedSourceSystem) return [];
       const response = await fetch(`/api/connections`);
-      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-
-      // Filter connections by matching connection type with selected source system
-      const filtered = allConnections.filter(conn => 
-        conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
-        (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
-        (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
-        (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
-        (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
-        (selectedSourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
-        (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
-        (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
-        (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
-      );
-
-      // If editing and the connection isn't in the filtered list, add it
-      if (editingSourceConnection && !filtered.find(c => c.connectionId === editingSourceConnection.connectionId)) {
-        filtered.unshift(editingSourceConnection);
-      }
-
-      return filtered;
-    },
-    enabled: !!selectedSourceSystem
+      return await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+    }
   });
+
+  // Filter connections based on selected source system
+  const connections = (() => {
+    if (!selectedSourceSystem) {
+      // When editing and no source system selected yet, show the current connection
+      if (pipeline?.connectionId) {
+        return allSourceConnections.filter(conn => conn.connectionId === pipeline.connectionId);
+      }
+      return [];
+    }
+
+    // Filter by source system
+    const filtered = allSourceConnections.filter(conn => 
+      conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
+      (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+      (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+      (selectedSourceSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+      (selectedSourceSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+      (selectedSourceSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+      (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+      (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+      (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
+    );
+
+    // If editing and the current connection isn't in the filtered list, add it
+    if (pipeline?.connectionId) {
+      const currentConnection = allSourceConnections.find(c => c.connectionId === pipeline.connectionId);
+      if (currentConnection && !filtered.find(c => c.connectionId === currentConnection.connectionId)) {
+        filtered.unshift(currentConnection);
+      }
+    }
+
+    return filtered;
+  })();
 
   // Fetch schemas for selected connection
   const { data: schemas = [] } = useQuery({
@@ -230,49 +230,39 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     enabled: !!selectedConnectionId && !!selectedSchema
   });
 
-  // Target configuration queries
-  // Fetch the specific target connection when editing (to ensure it's available in dropdown)
-  const { data: editingTargetConnection } = useQuery({
-    queryKey: ['/api/connections', pipeline?.targetConnectionId],
-    queryFn: async () => {
-      if (!pipeline?.targetConnectionId) return null;
-      const response = await fetch(`/api/connections/${pipeline.targetConnectionId}`);
-      if (!response.ok) return null;
-      return await response.json();
-    },
-    enabled: !!pipeline?.targetConnectionId
-  });
-
-  // Fetch target connections filtered by target system
-  const { data: targetConnections = [] } = useQuery({
-    queryKey: ['/api/connections', { targetSystem: selectedTargetSystem }],
-    queryFn: async () => {
-      if (!selectedTargetSystem) return [];
-      const response = await fetch(`/api/connections`);
-      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
-
-      // Filter connections by matching connection type with selected target system
-      const filtered = allConnections.filter(conn => 
-        conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
-        (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
-        (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
-        (selectedTargetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
-        (selectedTargetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
-        (selectedTargetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
-        (selectedTargetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
-        (selectedTargetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
-        (selectedTargetSystem === 'Salesforce' && conn.connectionType === 'API')
-      );
-
-      // If editing and the connection isn't in the filtered list, add it
-      if (editingTargetConnection && !filtered.find(c => c.connectionId === editingTargetConnection.connectionId)) {
-        filtered.unshift(editingTargetConnection);
+  // Filter target connections based on selected target system
+  const targetConnections = (() => {
+    if (!selectedTargetSystem) {
+      // When editing and no target system selected yet, show the current connection
+      if (pipeline?.targetConnectionId) {
+        return allSourceConnections.filter(conn => conn.connectionId === pipeline.targetConnectionId);
       }
+      return [];
+    }
 
-      return filtered;
-    },
-    enabled: !!selectedTargetSystem
-  });
+    // Filter by target system
+    const filtered = allSourceConnections.filter(conn => 
+      conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
+      (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
+      (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
+      (selectedTargetSystem === 'PostgreSQL' && conn.connectionType === 'PostgreSQL') ||
+      (selectedTargetSystem === 'Oracle' && conn.connectionType === 'Oracle') ||
+      (selectedTargetSystem === 'Snowflake' && conn.connectionType === 'Snowflake') ||
+      (selectedTargetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
+      (selectedTargetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
+      (selectedTargetSystem === 'Salesforce' && conn.connectionType === 'API')
+    );
+
+    // If editing and the current connection isn't in the filtered list, add it
+    if (pipeline?.targetConnectionId) {
+      const currentConnection = allSourceConnections.find(c => c.connectionId === pipeline.targetConnectionId);
+      if (currentConnection && !filtered.find(c => c.connectionId === currentConnection.connectionId)) {
+        filtered.unshift(currentConnection);
+      }
+    }
+
+    return filtered;
+  })();
 
   // Fetch target schemas for selected target connection
   const { data: targetSchemas = [] } = useQuery({
