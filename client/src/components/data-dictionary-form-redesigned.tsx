@@ -296,41 +296,115 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof dataDictionarySchema>) => {
       if (entry) {
-        // EDITING MODE: Update the existing entry with current column data
-        // Find the column that matches the entry's attribute name
-        const currentColumn = columns.find(col => col.attributeName === entry.attributeName) || columns[0];
+        // EDITING MODE: Update/create entries for ALL columns shown in the table
+        const schemaName = (data.targetSchemaName || data.sourceSchemaName || '').substring(0, 100);
+        const tableName = (data.targetTableName || data.sourceTableName || '').substring(0, 100);
         
-        const entryData = {
-          configKey: entry.configKey || 1,
-          executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
-          schemaName: (data.targetSchemaName || data.sourceSchemaName || '').substring(0, 100),
-          tableName: (data.targetTableName || data.sourceTableName || '').substring(0, 100),
-          attributeName: (currentColumn?.attributeName || entry.attributeName || '').substring(0, 100),
-          dataType: (currentColumn?.dataType || entry.dataType || '').substring(0, 50),
-          length: currentColumn?.length || null,
-          precisionValue: currentColumn?.precision || null,
-          scale: currentColumn?.scale || null,
-          isNotNull: currentColumn?.isNotNull ? 'Y' : 'N',
-          isPrimaryKey: currentColumn?.isPrimaryKey ? 'Y' : 'N',
-          isForeignKey: currentColumn?.isForeignKey ? 'Y' : 'N',
-          columnDescription: (currentColumn?.columnDescription || '').substring(0, 150),
-          activeFlag: entry.activeFlag || 'Y',
-          createdBy: entry.createdBy || 'User',
-          updatedBy: 'User',
-        };
+        // If no columns are loaded, fall back to updating just the original entry
+        if (columns.length === 0) {
+          const entryData = {
+            configKey: entry.configKey || 1,
+            executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
+            schemaName,
+            tableName,
+            attributeName: (entry.attributeName || '').substring(0, 100),
+            dataType: (entry.dataType || '').substring(0, 50),
+            length: entry.length || null,
+            precisionValue: entry.precisionValue || null,
+            scale: entry.scale || null,
+            isNotNull: entry.isNotNull || 'N',
+            isPrimaryKey: entry.isPrimaryKey || 'N',
+            isForeignKey: entry.isForeignKey || 'N',
+            columnDescription: (entry.columnDescription || '').substring(0, 150),
+            activeFlag: entry.activeFlag || 'Y',
+            createdBy: entry.createdBy || 'User',
+            updatedBy: 'User',
+          };
 
-        const response = await fetch(`/api/data-dictionary/${entry.dataDictionaryKey}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entryData),
+          const response = await fetch(`/api/data-dictionary/${entry.dataDictionaryKey}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entryData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update entry');
+          }
+
+          return response.json();
+        }
+        
+        // Fetch all existing data dictionary entries for this table
+        const existingEntriesResponse = await fetch('/api/data-dictionary');
+        if (!existingEntriesResponse.ok) {
+          throw new Error('Failed to fetch existing entries');
+        }
+        const allEntries = await existingEntriesResponse.json();
+        
+        // Filter entries for the same table
+        const tableEntries = allEntries.filter((e: any) => 
+          e.schemaName === schemaName && e.tableName === tableName
+        );
+        
+        // Update or create entries for each column
+        const promises = columns.map(async (column) => {
+          // Find existing entry for this column
+          const existingEntry = tableEntries.find((e: any) => 
+            e.attributeName === column.attributeName
+          );
+          
+          const entryData = {
+            configKey: existingEntry?.configKey || entry.configKey || 1,
+            executionLayer: (data.executionLayer || '').toLowerCase().substring(0, 50),
+            schemaName,
+            tableName,
+            attributeName: (column.attributeName || '').substring(0, 100),
+            dataType: (column.dataType || '').substring(0, 50),
+            length: column.length || null,
+            precisionValue: column.precision || null,
+            scale: column.scale || null,
+            isNotNull: column.isNotNull ? 'Y' : 'N',
+            isPrimaryKey: column.isPrimaryKey ? 'Y' : 'N',
+            isForeignKey: column.isForeignKey ? 'Y' : 'N',
+            columnDescription: (column.columnDescription || '').substring(0, 150),
+            activeFlag: existingEntry?.activeFlag || 'Y',
+            createdBy: existingEntry?.createdBy || 'User',
+            updatedBy: 'User',
+          };
+          
+          if (existingEntry) {
+            // Update existing entry
+            const response = await fetch(`/api/data-dictionary/${existingEntry.dataDictionaryKey}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(entryData),
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to update entry');
+            }
+            
+            return response.json();
+          } else {
+            // Create new entry
+            const response = await fetch('/api/data-dictionary', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(entryData),
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to create entry');
+            }
+            
+            return response.json();
+          }
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update entry');
-        }
-
-        return response.json();
+        return Promise.all(promises);
       } else {
         // CREATION MODE: Create new entries for each column
         const promises = columns.map(column => {
