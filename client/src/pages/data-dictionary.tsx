@@ -90,7 +90,7 @@ export function DataDictionary() {
   // Group entries by table name for expandable rows
   const groupedTables: TableGroup[] = allEntries.reduce((acc: TableGroup[], entry: DataDictionaryRecord) => {
     const key = `${entry.schemaName || 'Unknown'}.${entry.tableName || 'Unknown'}`;
-    const existingGroup = acc.find(group => 
+    const existingGroup = acc.find(group =>
       group.tableName === entry.tableName && group.schemaName === (entry.schemaName || 'Unknown')
     );
 
@@ -114,10 +114,10 @@ export function DataDictionary() {
   // Filter tables based on search and all filters (case-insensitive)
   const filteredTables = groupedTables.filter(table => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       table.tableName.toLowerCase().includes(searchLower) ||
       table.schemaName.toLowerCase().includes(searchLower) ||
-      table.entries.some(entry => 
+      table.entries.some(entry =>
         entry.attributeName?.toLowerCase().includes(searchLower) ||
         entry.columnDescription?.toLowerCase().includes(searchLower) ||
         entry.dataType?.toLowerCase().includes(searchLower)
@@ -125,7 +125,7 @@ export function DataDictionary() {
     const matchesLayer = layerFilter === 'all' || table.executionLayer.toLowerCase() === layerFilter.toLowerCase();
     const matchesSchema = schemaFilter === 'all' || table.schemaName.toLowerCase() === schemaFilter.toLowerCase();
     const matchesTable = tableFilter === 'all' || table.tableName.toLowerCase() === tableFilter.toLowerCase();
-    const matchesTargetSystem = targetSystemFilter === 'all' || 
+    const matchesTargetSystem = targetSystemFilter === 'all' ||
       table.entries.some(entry => entry.createdBy?.toLowerCase() === targetSystemFilter.toLowerCase());
 
     return matchesSearch && matchesLayer && matchesSchema && matchesTable && matchesTargetSystem;
@@ -377,7 +377,7 @@ export function DataDictionary() {
                   return (
                     <React.Fragment key={tableKey}>
                       {/* Main Table Row */}
-                      <TableRow 
+                      <TableRow
                         className="hover:bg-gray-50"
                         data-testid={`row-table-${tableKey}`}
                       >
@@ -391,11 +391,7 @@ export function DataDictionary() {
                           </div>
                         </TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">
-                          {table.sourceType === 'table' 
-                            ? table.schemaName 
-                            : table.sourceType === 'file' 
-                            ? (table.sourceFileName || 'N/A')
-                            : table.schemaName}
+                          {table.schemaName || table.sourceFileName || 'N/A'}
                         </TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="font-medium cursor-pointer">{table.tableName}</TableCell>
                         <TableCell onClick={() => toggleRowExpansion(tableKey)} className="cursor-pointer">
@@ -414,8 +410,8 @@ export function DataDictionary() {
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
                                 data-testid={`button-menu-${tableKey}`}
