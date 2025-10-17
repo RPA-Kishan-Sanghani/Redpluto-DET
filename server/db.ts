@@ -3,8 +3,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Use external PostgreSQL database
-const DATABASE_CONFIG = {
+// Admin Database (external PostgreSQL) - stores users, user_config_db_settings, user_activity
+const ADMIN_DATABASE_CONFIG = {
   host: '4.240.90.166',
   port: 5432,
   database: 'config_db',
@@ -14,20 +14,20 @@ const DATABASE_CONFIG = {
   connectionTimeoutMillis: 10000,
 };
 
-console.log('Connecting to external PostgreSQL database at', DATABASE_CONFIG.host);
+console.log('Connecting to Admin Database at', ADMIN_DATABASE_CONFIG.host);
 
-export const pool = new Pool(DATABASE_CONFIG);
+export const pool = new Pool(ADMIN_DATABASE_CONFIG);
 
 export const db = drizzle({ client: pool, schema, logger: true });
 
 // Test the connection
 pool.connect()
   .then(client => {
-    console.log('Successfully connected to external PostgreSQL database');
+    console.log('Successfully connected to Admin Database');
     client.release();
   })
   .catch(err => {
-    console.error('Failed to connect to external PostgreSQL database:', err.message);
+    console.error('Failed to connect to Admin Database:', err.message);
   });
 
 // User-specific database pool cache
