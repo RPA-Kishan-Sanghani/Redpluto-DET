@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Bell, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuthState } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 
 export default function Header() {
-  const { user, logout } = useAuthState();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [errorCount] = useState(3);
   const [location, setLocation] = useLocation();
