@@ -88,8 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard metrics endpoint
-  app.get("/api/dashboard/metrics", async (req, res) => {
+  app.get("/api/dashboard/metrics", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { startDate, endDate, search, system, layer, status, category, targetTable } = req.query;
 
       let dateRange;
@@ -109,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetTable: targetTable as string,
       };
 
-      const metrics = await storage.getDashboardMetrics(dateRange, filters);
+      const metrics = await storage.getDashboardMetrics(userId, dateRange, filters);
       res.json(metrics);
     } catch (error) {
       console.error('Error fetching dashboard metrics:', error);
@@ -118,8 +119,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pipeline summary endpoint
-  app.get("/api/dashboard/pipeline-summary", async (req, res) => {
+  app.get("/api/dashboard/pipeline-summary", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { startDate, endDate, search, system, layer, status, category, targetTable } = req.query;
 
       let dateRange;
@@ -139,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetTable: targetTable as string,
       };
 
-      const summary = await storage.getPipelineSummary(dateRange, filters);
+      const summary = await storage.getPipelineSummary(userId, dateRange, filters);
       res.json(summary);
     } catch (error) {
       console.error('Error fetching pipeline summary:', error);
@@ -148,8 +150,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pipeline runs endpoint with filtering and pagination
-  app.get("/api/dashboard/pipelines", async (req, res) => {
+  app.get("/api/dashboard/pipelines", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const {
         page = "1",
         limit = "5",
@@ -181,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortOrder: sortOrder as 'asc' | 'desc',
       };
 
-      const result = await storage.getPipelineRuns(options);
+      const result = await storage.getPipelineRuns(userId, options);
       res.json(result);
     } catch (error) {
       console.error('Error fetching pipeline runs:', error);
@@ -190,8 +193,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // All pipelines endpoint with filtering and pagination
-  app.get("/api/dashboard/all-pipelines", async (req, res) => {
+  app.get("/api/dashboard/all-pipelines", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const {
         page = "1",
         limit = "20",
@@ -223,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortOrder: sortOrder as 'asc' | 'desc',
       };
 
-      const result = await storage.getAllPipelines(options);
+      const result = await storage.getAllPipelines(userId, options);
       res.json(result);
     } catch (error) {
       console.error('Error fetching all pipelines:', error);
@@ -232,8 +236,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Errors endpoint
-  app.get("/api/dashboard/errors", async (req, res) => {
+  app.get("/api/dashboard/errors", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { startDate, endDate } = req.query;
 
       let dateRange;
@@ -244,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      const errors = await storage.getErrors(dateRange);
+      const errors = await storage.getErrors(userId, dateRange);
       res.json(errors);
     } catch (error) {
       console.error('Error fetching errors:', error);
@@ -254,8 +259,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Source connections endpoints
   // Get all connections with optional filtering
-  app.get("/api/connections", async (req, res) => {
+  app.get("/api/connections", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { category, search, status } = req.query;
 
       const filters = {
@@ -264,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: status as string,
       };
 
-      const connections = await storage.getConnections(filters);
+      const connections = await storage.getConnections(userId, filters);
       res.json(connections);
     } catch (error) {
       console.error('Error fetching connections:', error);
@@ -476,8 +482,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Pipeline configuration endpoints
   // Get all pipelines with optional filtering
-  app.get("/api/pipelines", async (req, res) => {
+  app.get("/api/pipelines", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { search, executionLayer, sourceSystem, status } = req.query;
 
       const filters = {
@@ -487,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: status as string,
       };
 
-      const pipelines = await storage.getPipelines(filters);
+      const pipelines = await storage.getPipelines(userId, filters);
       res.json(pipelines);
     } catch (error) {
       console.error('Error fetching pipelines:', error);
@@ -606,11 +613,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data Dictionary routes
-  app.get("/api/data-dictionary", async (req, res) => {
+  app.get("/api/data-dictionary", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { search, executionLayer, schemaName, tableName, sourceSystem } = req.query;
 
-      const entries = await storage.getDataDictionaryEntries({
+      const entries = await storage.getDataDictionaryEntries(userId, {
         search: search as string,
         executionLayer: executionLayer as string,
         schemaName: schemaName as string,
@@ -710,8 +718,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reconciliation config routes
-  app.get("/api/reconciliation-configs", async (req, res) => {
+  app.get("/api/reconciliation-configs", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { search, executionLayer, configKey, reconType, status } = req.query;
 
       const filters = {
@@ -722,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: status as string,
       };
 
-      const configs = await storage.getReconciliationConfigs(filters);
+      const configs = await storage.getReconciliationConfigs(userId, filters);
       res.json(configs);
     } catch (error) {
       console.error('Error fetching reconciliation configs:', error);
@@ -838,8 +847,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data Quality Config routes
-  app.get("/api/data-quality-configs", async (req, res) => {
+  app.get("/api/data-quality-configs", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { search, executionLayer, configKey, validationType, status } = req.query;
 
       const filters = {
@@ -850,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: status as string,
       };
 
-      const configs = await storage.getDataQualityConfigs(filters);
+      const configs = await storage.getDataQualityConfigs(userId, filters);
       res.json(configs);
     } catch (error) {
       console.error('Error fetching data quality configs:', error);

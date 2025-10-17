@@ -16,9 +16,9 @@ const externalPool = new Pool({
 });
 
 // Helper function to get user-specific database pool
-async function getUserSpecificPool(userId?: string): Promise<Pool> {
+async function getUserSpecificPool(userId?: string): Promise<Pool | null> {
   if (!userId) {
-    return externalPool; // Return default pool if no userId
+    return null; // Return null if no userId
   }
 
   try {
@@ -32,8 +32,8 @@ async function getUserSpecificPool(userId?: string): Promise<Pool> {
       .limit(1);
 
     if (!settings) {
-      console.log('No user-specific config found, using default pool');
-      return externalPool; // Return default pool if no settings
+      console.log('No user-specific config found, returning null');
+      return null; // Return null if no settings
     }
 
     // Create and return user-specific pool
@@ -47,8 +47,8 @@ async function getUserSpecificPool(userId?: string): Promise<Pool> {
       connectionTimeoutMillis: settings.connectionTimeout || 10000,
     });
   } catch (error) {
-    console.error('Error fetching user config, using default pool:', error);
-    return externalPool; // Return default pool on error
+    console.error('Error fetching user config, returning null:', error);
+    return null; // Return null on error
   }
 }
 
@@ -59,7 +59,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 
   // Dashboard metrics
-  getDashboardMetrics(dateRange?: { start: Date; end: Date }, filters?: {
+  getDashboardMetrics(userId: string, dateRange?: { start: Date; end: Date }, filters?: {
     search?: string;
     system?: string;
     layer?: string;
@@ -75,7 +75,7 @@ export interface IStorage {
   }>;
 
   // Pipeline summary by category
-  getPipelineSummary(dateRange?: { start: Date; end: Date }, filters?: {
+  getPipelineSummary(userId: string, dateRange?: { start: Date; end: Date }, filters?: {
     search?: string;
     system?: string;
     layer?: string;
@@ -91,7 +91,7 @@ export interface IStorage {
   }>;
 
   // Pipeline runs with filtering and pagination
-  getPipelineRuns(options: {
+  getPipelineRuns(userId: string, options: {
     page?: number;
     limit?: number;
     search?: string;
@@ -125,7 +125,7 @@ export interface IStorage {
   }>;
 
   // All pipelines with filtering and pagination
-  getAllPipelines(options: {
+  getAllPipelines(userId: string, options: {
     page?: number;
     limit?: number;
     search?: string;
@@ -157,11 +157,11 @@ export interface IStorage {
   }>;
 
   // Error logs
-  getErrors(dateRange?: { start: Date; end: Date }): Promise<ErrorRecord[]>;
+  getErrors(userId: string, dateRange?: { start: Date; end: Date }): Promise<ErrorRecord[]>;
 
   // Source connections
   createConnection(connection: InsertSourceConnection): Promise<SourceConnection>;
-  getConnections(filters?: {
+  getConnections(userId: string, filters?: {
     category?: string;
     search?: string;
     status?: string;
@@ -176,7 +176,7 @@ export interface IStorage {
   }>;
 
   // Pipeline configuration methods
-  getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]>;
+  getPipelines(userId: string, filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]>;
   getPipeline(id: number): Promise<ConfigRecord | undefined>;
   createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord>;
   updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined>;
@@ -186,21 +186,21 @@ export interface IStorage {
   getMetadata(type: string): Promise<string[]>;
 
   // Data dictionary methods
-  getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
+  getDataDictionaryEntries(userId: string, filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
   getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined>;
   createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
   updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
   deleteDataDictionaryEntry(id: number): Promise<boolean>;
 
   // Reconciliation config methods
-  getReconciliationConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]>;
+  getReconciliationConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]>;
   getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined>;
   createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
   updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
   deleteReconciliationConfig(id: number): Promise<boolean>;
 
   // Data Quality Config methods
-  getDataQualityConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]>;
+  getDataQualityConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]>;
   getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined>;
   createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig>;
   updateDataQualityConfig(id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined>;
@@ -299,7 +299,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getDashboardMetrics(dateRange?: { start: Date; end: Date }, filters?: {
+  async getDashboardMetrics(userId: string, dateRange?: { start: Date; end: Date }, filters?: {
     search?: string;
     system?: string;
     layer?: string;
@@ -307,84 +307,110 @@ export class DatabaseStorage implements IStorage {
     category?: string;
     targetTable?: string;
   }) {
-    const conditions = [];
-
-    if (dateRange) {
-      conditions.push(and(
-        gte(auditTable.startTime, dateRange.start),
-        lte(auditTable.startTime, dateRange.end)
-      ));
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty metrics if no user config
+    if (!userPool) {
+      return {
+        totalPipelines: 0,
+        successfulRuns: 0,
+        failedRuns: 0,
+        scheduledRuns: 0,
+        runningRuns: 0,
+      };
     }
 
-    // Apply filters
-    if (filters?.search) {
-      conditions.push(
-        like(auditTable.codeName, `%${filters.search}%`)
-      );
-    }
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
-    if (filters?.system) {
-      conditions.push(eq(auditTable.sourceSystem, filters.system));
-    }
-
-    if (filters?.layer) {
-      conditions.push(like(auditTable.schemaName, `%${filters.layer.toLowerCase()}%`));
-    }
-
-    if (filters?.status) {
-      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' :
-                         filters.status.toLowerCase() === 'success' ? 'Success' :
-                         filters.status;
-      conditions.push(eq(auditTable.status, statusValue));
-    }
-
-    if (filters?.targetTable) {
-      conditions.push(like(auditTable.targetTableName, `%${filters.targetTable}%`));
-    }
-
-    // Get all records first to debug
-    const allRecords = await db.select().from(auditTable).limit(5);
-    console.log('Sample audit records:', allRecords);
-
-    const results = await db.select({
-      status: auditTable.status,
-      count: sql`count(distinct ${auditTable.codeName})`
-    }).from(auditTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .groupBy(auditTable.status);
-
-    console.log('Dashboard metrics query results:', results);
-
-    const metrics = {
-      totalPipelines: 0,
-      successfulRuns: 0,
-      failedRuns: 0,
-      scheduledRuns: 0,
-      runningRuns: 0,
-    };
-
-    results.forEach(result => {
-      const status = result.status?.toLowerCase();
-      const count = Number(result.count);
-
-      metrics.totalPipelines += count;
-
-      if (status === 'success') {
-        metrics.successfulRuns += count;
-      } else if (status === 'failed' || status === 'fail') {
-        metrics.failedRuns += count;
-      } else if (status === 'scheduled') {
-        metrics.scheduledRuns += count;
-      } else if (status === 'running') {
-        metrics.runningRuns += count;
+      if (dateRange) {
+        whereClauses.push(`start_time >= $${paramIndex} AND start_time <= $${paramIndex + 1}`);
+        params.push(dateRange.start, dateRange.end);
+        paramIndex += 2;
       }
-    });
 
-    console.log('Final metrics:', metrics);
-    return metrics;
+      if (filters?.search) {
+        whereClauses.push(`code_name LIKE $${paramIndex}`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
+      }
+
+      if (filters?.system) {
+        whereClauses.push(`source_system = $${paramIndex}`);
+        params.push(filters.system);
+        paramIndex++;
+      }
+
+      if (filters?.layer) {
+        whereClauses.push(`schema_name ILIKE $${paramIndex}`);
+        params.push(`%${filters.layer.toLowerCase()}%`);
+        paramIndex++;
+      }
+
+      if (filters?.status) {
+        const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' :
+                           filters.status.toLowerCase() === 'success' ? 'Success' :
+                           filters.status;
+        whereClauses.push(`status = $${paramIndex}`);
+        params.push(statusValue);
+        paramIndex++;
+      }
+
+      if (filters?.targetTable) {
+        whereClauses.push(`target_table_name LIKE $${paramIndex}`);
+        params.push(`%${filters.targetTable}%`);
+        paramIndex++;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT status, COUNT(DISTINCT code_name) as count
+        FROM audit_table
+        ${whereClause}
+        GROUP BY status
+      `;
+
+      const result = await client.query(query, params);
+      
+      const metrics = {
+        totalPipelines: 0,
+        successfulRuns: 0,
+        failedRuns: 0,
+        scheduledRuns: 0,
+        runningRuns: 0,
+      };
+
+      result.rows.forEach(row => {
+        const status = row.status?.toLowerCase();
+        const count = Number(row.count);
+
+        metrics.totalPipelines += count;
+
+        if (status === 'success') {
+          metrics.successfulRuns += count;
+        } else if (status === 'failed' || status === 'fail') {
+          metrics.failedRuns += count;
+        } else if (status === 'scheduled') {
+          metrics.scheduledRuns += count;
+        } else if (status === 'running') {
+          metrics.runningRuns += count;
+        }
+      });
+
+      return metrics;
+    } finally {
+      client.release();
+      await userPool.end();
+    }
   }
 
-  async getPipelineSummary(dateRange?: { start: Date; end: Date }, filters?: {
+  async getPipelineSummary(userId: string, dateRange?: { start: Date; end: Date }, filters?: {
     search?: string;
     system?: string;
     layer?: string;
@@ -392,98 +418,125 @@ export class DatabaseStorage implements IStorage {
     category?: string;
     targetTable?: string;
   }) {
-    const conditions = [];
-
-    if (dateRange) {
-      conditions.push(and(
-        gte(auditTable.startTime, dateRange.start),
-        lte(auditTable.startTime, dateRange.end)
-      ));
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty summary if no user config
+    if (!userPool) {
+      return {
+        dataQuality: { total: 0, success: 0, failed: 0 },
+        reconciliation: { total: 0, success: 0, failed: 0 },
+        bronze: { total: 0, success: 0, failed: 0 },
+        silver: { total: 0, success: 0, failed: 0 },
+        gold: { total: 0, success: 0, failed: 0 },
+      };
     }
 
-    // Apply filters
-    if (filters?.search) {
-      conditions.push(
-        like(auditTable.codeName, `%${filters.search}%`)
-      );
-    }
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
-    if (filters?.system) {
-      conditions.push(eq(auditTable.sourceSystem, filters.system));
-    }
-
-    if (filters?.layer) {
-      conditions.push(like(auditTable.schemaName, `%${filters.layer.toLowerCase()}%`));
-    }
-
-    if (filters?.status) {
-      const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' :
-                         filters.status.toLowerCase() === 'success' ? 'Success' :
-                         filters.status;
-      conditions.push(eq(auditTable.status, statusValue));
-    }
-
-    if (filters?.targetTable) {
-      conditions.push(like(auditTable.targetTableName, `%${filters.targetTable}%`));
-    }
-
-    // For pipeline summary, we want to count distinct pipelines by their schema layer
-    // Group by schema and status to get counts per layer
-    const results = await db.select({
-      schemaName: auditTable.schemaName,
-      status: auditTable.status,
-      count: sql`count(distinct ${auditTable.codeName})`
-    }).from(auditTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .groupBy(auditTable.schemaName, auditTable.status);
-
-    console.log('Pipeline summary query results:', results);
-
-    const summary = {
-      dataQuality: { total: 0, success: 0, failed: 0 },
-      reconciliation: { total: 0, success: 0, failed: 0 },
-      bronze: { total: 0, success: 0, failed: 0 },
-      silver: { total: 0, success: 0, failed: 0 },
-      gold: { total: 0, success: 0, failed: 0 },
-    };
-
-    results.forEach(result => {
-      const schemaName = result.schemaName?.toLowerCase() || '';
-      const status = result.status?.toLowerCase();
-      const count = Number(result.count);
-
-      let category: keyof typeof summary;
-
-      // Categorize based on schema name patterns
-      if (schemaName.includes('quality')) {
-        category = 'dataQuality';
-      } else if (schemaName.includes('reconciliation')) {
-        category = 'reconciliation';
-      } else if (schemaName.includes('bronze')) {
-        category = 'bronze';
-      } else if (schemaName.includes('silver')) {
-        category = 'silver';
-      } else if (schemaName.includes('gold')) {
-        category = 'gold';
-      } else {
-        // Default to bronze for schemas that don't match specific patterns
-        category = 'bronze';
+      if (dateRange) {
+        whereClauses.push(`start_time >= $${paramIndex} AND start_time <= $${paramIndex + 1}`);
+        params.push(dateRange.start, dateRange.end);
+        paramIndex += 2;
       }
 
-      summary[category].total += count;
-
-      if (status === 'success') {
-        summary[category].success += count;
-      } else if (status === 'failed' || status === 'fail') {
-        summary[category].failed += count;
+      if (filters?.search) {
+        whereClauses.push(`code_name LIKE $${paramIndex}`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
       }
-    });
 
-    console.log('Final pipeline summary:', summary);
-    return summary;
+      if (filters?.system) {
+        whereClauses.push(`source_system = $${paramIndex}`);
+        params.push(filters.system);
+        paramIndex++;
+      }
+
+      if (filters?.layer) {
+        whereClauses.push(`schema_name ILIKE $${paramIndex}`);
+        params.push(`%${filters.layer.toLowerCase()}%`);
+        paramIndex++;
+      }
+
+      if (filters?.status) {
+        const statusValue = filters.status.toLowerCase() === 'failed' ? 'Fail' :
+                           filters.status.toLowerCase() === 'success' ? 'Success' :
+                           filters.status;
+        whereClauses.push(`status = $${paramIndex}`);
+        params.push(statusValue);
+        paramIndex++;
+      }
+
+      if (filters?.targetTable) {
+        whereClauses.push(`target_table_name LIKE $${paramIndex}`);
+        params.push(`%${filters.targetTable}%`);
+        paramIndex++;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT schema_name, status, COUNT(DISTINCT code_name) as count
+        FROM audit_table
+        ${whereClause}
+        GROUP BY schema_name, status
+      `;
+
+      const result = await client.query(query, params);
+
+      const summary = {
+        dataQuality: { total: 0, success: 0, failed: 0 },
+        reconciliation: { total: 0, success: 0, failed: 0 },
+        bronze: { total: 0, success: 0, failed: 0 },
+        silver: { total: 0, success: 0, failed: 0 },
+        gold: { total: 0, success: 0, failed: 0 },
+      };
+
+      result.rows.forEach(row => {
+        const schemaName = row.schema_name?.toLowerCase() || '';
+        const status = row.status?.toLowerCase();
+        const count = Number(row.count);
+
+        let category: keyof typeof summary;
+
+        // Categorize based on schema name patterns
+        if (schemaName.includes('quality')) {
+          category = 'dataQuality';
+        } else if (schemaName.includes('reconciliation')) {
+          category = 'reconciliation';
+        } else if (schemaName.includes('bronze')) {
+          category = 'bronze';
+        } else if (schemaName.includes('silver')) {
+          category = 'silver';
+        } else if (schemaName.includes('gold')) {
+          category = 'gold';
+        } else {
+          // Default to bronze for schemas that don't match specific patterns
+          category = 'bronze';
+        }
+
+        summary[category].total += count;
+
+        if (status === 'success') {
+          summary[category].success += count;
+        } else if (status === 'failed' || status === 'fail') {
+          summary[category].failed += count;
+        }
+      });
+
+      return summary;
+    } finally {
+      client.release();
+      await userPool.end();
+    }
   }
 
-  async getPipelineRuns(options: {
+  async getPipelineRuns(userId: string, options: {
     page?: number;
     limit?: number;
     search?: string;
@@ -493,6 +546,18 @@ export class DatabaseStorage implements IStorage {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   } = {}) {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty result if no user config
+    if (!userPool) {
+      return {
+        data: [],
+        total: 0,
+        page: options.page || 1,
+        limit: options.limit || 5,
+      };
+    }
+
     const {
       page = 1,
       limit = 5,
@@ -504,113 +569,128 @@ export class DatabaseStorage implements IStorage {
       sortOrder = 'desc'
     } = options;
 
-    let queryBuilder = db.select({
-      auditKey: auditTable.auditKey,
-      codeName: auditTable.codeName,
-      runId: auditTable.runId,
-      sourceSystem: auditTable.sourceSystem,
-      schemaName: auditTable.schemaName,
-      targetTableName: auditTable.targetTableName,
-      sourceFileName: auditTable.sourceFileName,
-      startTime: auditTable.startTime,
-      endTime: auditTable.endTime,
-      insertedRowCount: auditTable.insertedRowCount,
-      updatedRowCount: auditTable.updatedRowCount,
-      deletedRowCount: auditTable.deletedRowCount,
-      noChangeRowCount: auditTable.noChangeRowCount,
-      status: auditTable.status,
-    }).from(auditTable);
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
-    const conditions = [];
+      if (search) {
+        whereClauses.push(`code_name LIKE $${paramIndex}`);
+        params.push(`%${search}%`);
+        paramIndex++;
+      }
 
-    if (search) {
-      conditions.push(like(auditTable.codeName, `%${search}%`));
+      if (sourceSystem && sourceSystem !== 'all') {
+        whereClauses.push(`source_system = $${paramIndex}`);
+        params.push(sourceSystem);
+        paramIndex++;
+      }
+
+      if (status && status !== 'all') {
+        whereClauses.push(`status = $${paramIndex}`);
+        params.push(status);
+        paramIndex++;
+      }
+
+      if (dateRange) {
+        whereClauses.push(`start_time >= $${paramIndex} AND start_time <= $${paramIndex + 1}`);
+        params.push(dateRange.start, dateRange.end);
+        paramIndex += 2;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(*) as count
+        FROM audit_table
+        ${whereClause}
+      `;
+      const countResult = await client.query(countQuery, params);
+      const total = parseInt(countResult.rows[0]?.count || '0');
+
+      // Build sort column
+      const sortColumnMap: Record<string, string> = {
+        'codeName': 'code_name',
+        'status': 'status',
+        'sourceSystem': 'source_system',
+        'startTime': 'start_time'
+      };
+      const sortColumn = sortColumnMap[sortBy] || 'start_time';
+      const sortOrderClause = sortOrder.toUpperCase();
+
+      // Apply pagination
+      const offset = (page - 1) * limit;
+      
+      const dataQuery = `
+        SELECT 
+          audit_key, code_name, run_id, source_system, schema_name,
+          target_table_name, source_file_name, start_time, end_time,
+          inserted_row_count, updated_row_count, deleted_row_count,
+          no_change_row_count, status
+        FROM audit_table
+        ${whereClause}
+        ORDER BY ${sortColumn} ${sortOrderClause}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+      
+      const dataResult = await client.query(dataQuery, [...params, limit, offset]);
+
+      // Get error details for each audit record
+      const auditKeys = dataResult.rows.map(r => r.audit_key);
+      let errorDetails: Record<number, string> = {};
+
+      if (auditKeys.length > 0) {
+        const errorQuery = `
+          SELECT audit_key, error_details
+          FROM error_table
+          WHERE audit_key = ANY($1)
+        `;
+        const errorResult = await client.query(errorQuery, [auditKeys]);
+        
+        errorResult.rows.forEach(error => {
+          if (error.audit_key && !errorDetails[error.audit_key]) {
+            errorDetails[error.audit_key] = error.error_details || '';
+          }
+        });
+      }
+
+      const data = dataResult.rows.map(row => ({
+        auditKey: row.audit_key,
+        codeName: row.code_name || 'Unknown Process',
+        runId: row.run_id || '',
+        sourceSystem: row.source_system || 'Unknown',
+        schemaName: row.schema_name || '',
+        targetTableName: row.target_table_name || '',
+        sourceFileName: row.source_file_name || '',
+        startTime: row.start_time || new Date(),
+        endTime: row.end_time || undefined,
+        insertedRowCount: row.inserted_row_count || 0,
+        updatedRowCount: row.updated_row_count || 0,
+        deletedRowCount: row.deleted_row_count || 0,
+        noChangeRowCount: row.no_change_row_count || 0,
+        status: row.status || 'Unknown',
+        errorDetails: errorDetails[row.audit_key] || undefined,
+        duration: row.end_time && row.start_time ?
+          Math.round((new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / 1000) : undefined,
+      }));
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+      };
+    } finally {
+      client.release();
+      await userPool.end();
     }
-
-    if (sourceSystem && sourceSystem !== 'all') {
-      conditions.push(eq(auditTable.sourceSystem, sourceSystem));
-    }
-
-    if (status && status !== 'all') {
-      conditions.push(eq(auditTable.status, status));
-    }
-
-    if (dateRange) {
-      conditions.push(and(
-        gte(auditTable.startTime, dateRange.start),
-        lte(auditTable.startTime, dateRange.end)
-      ));
-    }
-
-    // Build the sorting column
-    const sortColumn = sortBy === 'codeName' ? auditTable.codeName :
-                      sortBy === 'status' ? auditTable.status :
-                      sortBy === 'sourceSystem' ? auditTable.sourceSystem :
-                      sortBy === 'startTime' ? auditTable.startTime :
-                      auditTable.startTime;
-
-    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
-
-    // Get total count for pagination
-    const countResults = await db.select({ count: count() }).from(auditTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-    const total = countResults[0]?.count || 0;
-
-    // Apply pagination
-    const offset = (page - 1) * limit;
-    const results = await queryBuilder
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset);
-
-    // Get error details for each audit record
-    const auditKeys = results.map(r => r.auditKey);
-    let errorDetails: Record<number, string> = {};
-
-    if (auditKeys.length > 0) {
-      const errors = await db.select({
-        auditKey: errorTable.auditKey,
-        errorMessage: errorTable.errorDetails
-      }).from(errorTable)
-        .where(inArray(errorTable.auditKey, auditKeys));
-
-      errors.forEach(error => {
-        if (error.auditKey && !errorDetails[error.auditKey]) {
-          errorDetails[error.auditKey] = error.errorMessage || '';
-        }
-      });
-    }
-
-    const data = results.map(row => ({
-      auditKey: row.auditKey,
-      codeName: row.codeName || 'Unknown Process',
-      runId: row.runId || '',
-      sourceSystem: row.sourceSystem || 'Unknown',
-      schemaName: row.schemaName || '',
-      targetTableName: row.targetTableName || '',
-      sourceFileName: row.sourceFileName || '',
-      startTime: row.startTime || new Date(),
-      endTime: row.endTime || undefined,
-      insertedRowCount: row.insertedRowCount || 0,
-      updatedRowCount: row.updatedRowCount || 0,
-      deletedRowCount: row.deletedRowCount || 0,
-      noChangeRowCount: row.noChangeRowCount || 0,
-      status: row.status || 'Unknown',
-      errorDetails: errorDetails[row.auditKey] || undefined,
-      duration: row.endTime && row.startTime ?
-        Math.round((row.endTime.getTime() - row.startTime.getTime()) / 1000) : undefined,
-    }));
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
   }
 
-  async getAllPipelines(options: {
+  async getAllPipelines(userId: string, options: {
     page?: number;
     limit?: number;
     search?: string;
@@ -620,9 +700,21 @@ export class DatabaseStorage implements IStorage {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   } = {}) {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty result if no user config
+    if (!userPool) {
+      return {
+        data: [],
+        total: 0,
+        page: options.page || 1,
+        limit: options.limit || 10,
+      };
+    }
+
     const {
       page = 1,
-      limit = 10, // Default limit for all pipelines
+      limit = 10,
       search,
       sourceSystem,
       status,
@@ -631,127 +723,149 @@ export class DatabaseStorage implements IStorage {
       sortOrder = 'desc'
     } = options;
 
-    let query = db.select({
-      auditKey: auditTable.auditKey,
-      codeName: auditTable.codeName,
-      runId: auditTable.runId,
-      sourceSystem: auditTable.sourceSystem,
-      schemaName: auditTable.schemaName,
-      targetTableName: auditTable.targetTableName,
-      sourceFileName: auditTable.sourceFileName,
-      startTime: auditTable.startTime,
-      endTime: auditTable.endTime,
-      insertedRowCount: auditTable.insertedRowCount,
-      updatedRowCount: auditTable.updatedRowCount,
-      deletedRowCount: auditTable.deletedRowCount,
-      noChangeRowCount: auditTable.noChangeRowCount,
-      status: auditTable.status,
-    }).from(auditTable);
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
-    const conditions = [];
+      if (search) {
+        whereClauses.push(`(
+          code_name ILIKE $${paramIndex} OR
+          run_id ILIKE $${paramIndex} OR
+          source_system ILIKE $${paramIndex} OR
+          target_table_name ILIKE $${paramIndex} OR
+          source_file_name ILIKE $${paramIndex}
+        )`);
+        params.push(`%${search}%`);
+        paramIndex++;
+      }
 
-    if (search) {
-      // Search across multiple fields for flexibility
-      conditions.push(
-        sql`(
-          ${auditTable.codeName} ILIKE ${`%${search}%`} OR
-          ${auditTable.runId} ILIKE ${`%${search}%`} OR
-          ${auditTable.sourceSystem} ILIKE ${`%${search}%`} OR
-          ${auditTable.targetTableName} ILIKE ${`%${search}%`} OR
-          ${auditTable.sourceFileName} ILIKE ${`%${search}%`}
-        )`
-      );
+      if (sourceSystem && sourceSystem !== 'all') {
+        whereClauses.push(`source_system = $${paramIndex}`);
+        params.push(sourceSystem);
+        paramIndex++;
+      }
+
+      if (status && status !== 'all') {
+        whereClauses.push(`status = $${paramIndex}`);
+        params.push(status);
+        paramIndex++;
+      }
+
+      if (dateRange) {
+        whereClauses.push(`start_time >= $${paramIndex} AND start_time <= $${paramIndex + 1}`);
+        params.push(dateRange.start, dateRange.end);
+        paramIndex += 2;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(*) as count
+        FROM audit_table
+        ${whereClause}
+      `;
+      const countResult = await client.query(countQuery, params);
+      const total = parseInt(countResult.rows[0]?.count || '0');
+
+      // Build sort column
+      const sortColumnMap: Record<string, string> = {
+        'codeName': 'code_name',
+        'runId': 'run_id',
+        'sourceSystem': 'source_system',
+        'status': 'status',
+        'startTime': 'start_time'
+      };
+      const sortColumn = sortColumnMap[sortBy] || 'start_time';
+      const sortOrderClause = sortOrder.toUpperCase();
+
+      // Apply pagination
+      const offset = (page - 1) * limit;
+      
+      const dataQuery = `
+        SELECT 
+          audit_key, code_name, run_id, source_system, schema_name,
+          target_table_name, source_file_name, start_time, end_time,
+          inserted_row_count, updated_row_count, deleted_row_count,
+          no_change_row_count, status
+        FROM audit_table
+        ${whereClause}
+        ORDER BY ${sortColumn} ${sortOrderClause}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+      
+      const dataResult = await client.query(dataQuery, [...params, limit, offset]);
+
+      const data = dataResult.rows.map(row => ({
+        auditKey: row.audit_key,
+        codeName: row.code_name || 'Unknown Process',
+        runId: row.run_id || '',
+        sourceSystem: row.source_system || 'Unknown',
+        schemaName: row.schema_name || '',
+        targetTableName: row.target_table_name || '',
+        sourceFileName: row.source_file_name || '',
+        startTime: row.start_time || new Date(),
+        endTime: row.end_time || undefined,
+        insertedRowCount: row.inserted_row_count || 0,
+        updatedRowCount: row.updated_row_count || 0,
+        deletedRowCount: row.deleted_row_count || 0,
+        noChangeRowCount: row.no_change_row_count || 0,
+        status: row.status || 'Unknown',
+      }));
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+      };
+    } finally {
+      client.release();
+      await userPool.end();
     }
-
-    if (sourceSystem && sourceSystem !== 'all') {
-      conditions.push(eq(auditTable.sourceSystem, sourceSystem));
-    }
-
-    if (status && status !== 'all') {
-      conditions.push(eq(auditTable.status, status));
-    }
-
-    if (dateRange) {
-      conditions.push(and(
-        gte(auditTable.startTime, dateRange.start),
-        lte(auditTable.startTime, dateRange.end)
-      ));
-    }
-
-    // Add sorting
-    let sortColumn;
-    switch (sortBy) {
-      case 'codeName':
-        sortColumn = auditTable.codeName;
-        break;
-      case 'runId':
-        sortColumn = auditTable.runId;
-        break;
-      case 'sourceSystem':
-        sortColumn = auditTable.sourceSystem;
-        break;
-      case 'status':
-        sortColumn = auditTable.status;
-        break;
-      case 'startTime':
-      default:
-        sortColumn = auditTable.startTime;
-        break;
-    }
-
-    const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
-
-    // Get total count for pagination
-    const countResults = await db.select({ count: count() }).from(auditTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-    const total = countResults[0]?.count || 0;
-
-    // Apply pagination
-    const offset = (page - 1) * limit;
-    const results = await query
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset);
-
-    const data = results.map(row => ({
-      auditKey: row.auditKey,
-      codeName: row.codeName || 'Unknown Process',
-      runId: row.runId || '',
-      sourceSystem: row.sourceSystem || 'Unknown',
-      schemaName: row.schemaName || '',
-      targetTableName: row.targetTableName || '',
-      sourceFileName: row.sourceFileName || '',
-      startTime: row.startTime || new Date(),
-      endTime: row.endTime || undefined,
-      insertedRowCount: row.insertedRowCount || 0,
-      updatedRowCount: row.updatedRowCount || 0,
-      deletedRowCount: row.deletedRowCount || 0,
-      noChangeRowCount: row.noChangeRowCount || 0,
-      status: row.status || 'Unknown',
-    }));
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
   }
 
-  async getErrors(dateRange?: { start: Date; end: Date }) {
-    const conditions = [];
-
-    if (dateRange) {
-      conditions.push(and(
-        gte(errorTable.executionTime, dateRange.start),
-        lte(errorTable.executionTime, dateRange.end)
-      ));
+  async getErrors(userId: string, dateRange?: { start: Date; end: Date }) {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty array if no user config
+    if (!userPool) {
+      return [];
     }
 
-    return await db.select().from(errorTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(errorTable.executionTime));
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
+
+      if (dateRange) {
+        whereClauses.push(`execution_time >= $${paramIndex} AND execution_time <= $${paramIndex + 1}`);
+        params.push(dateRange.start, dateRange.end);
+        paramIndex += 2;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT *
+        FROM error_table
+        ${whereClause}
+        ORDER BY execution_time DESC
+      `;
+
+      const result = await client.query(query, params);
+      return result.rows;
+    } finally {
+      client.release();
+      await userPool.end();
+    }
   }
 
   private getLayerFromCodeName(codeName: string): string {
@@ -803,31 +917,25 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getConnections(filters?: {
+  async getConnections(userId: string, filters?: {
     category?: string;
     search?: string;
     status?: string;
   }): Promise<SourceConnection[]> {
-    try {
-      let query = db.select({
-        connectionId: sourceConnectionTable.connectionId,
-        connectionName: sourceConnectionTable.connectionName,
-        connectionType: sourceConnectionTable.connectionType,
-        host: sourceConnectionTable.host,
-        port: sourceConnectionTable.port,
-        username: sourceConnectionTable.username,
-        password: sourceConnectionTable.password,
-        databaseName: sourceConnectionTable.databaseName,
-        filePath: sourceConnectionTable.filePath,
-        apiKey: sourceConnectionTable.apiKey,
-        cloudProvider: sourceConnectionTable.cloudProvider,
-        status: sourceConnectionTable.status,
-        lastSync: sourceConnectionTable.lastSync,
-        createdAt: sourceConnectionTable.createdAt,
-        updatedAt: sourceConnectionTable.updatedAt,
-      }).from(sourceConnectionTable);
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty array if no user config
+    if (!userPool) {
+      return [];
+    }
 
-      const conditions = [];
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
       if (filters?.category && filters.category !== 'all') {
         const categoryMap: { [key: string]: string[] } = {
@@ -839,30 +947,41 @@ export class DatabaseStorage implements IStorage {
         };
 
         if (categoryMap[filters.category]) {
-          conditions.push(
-            inArray(sourceConnectionTable.connectionType, categoryMap[filters.category])
-          );
+          whereClauses.push(`connection_type = ANY($${paramIndex})`);
+          params.push(categoryMap[filters.category]);
+          paramIndex++;
         }
       }
 
       if (filters?.search) {
-        conditions.push(
-          like(sourceConnectionTable.connectionName, `%${filters.search}%`)
-        );
+        whereClauses.push(`connection_name LIKE $${paramIndex}`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
       }
 
       if (filters?.status && filters.status !== 'all') {
-        conditions.push(
-          eq(sourceConnectionTable.status, filters.status)
-        );
+        whereClauses.push(`status = $${paramIndex}`);
+        params.push(filters.status);
+        paramIndex++;
       }
 
-      return await query
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(sourceConnectionTable.createdAt));
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT *
+        FROM source_connection_table
+        ${whereClause}
+        ORDER BY created_at DESC
+      `;
+
+      const result = await client.query(query, params);
+      return result.rows;
     } catch (error) {
       console.error('Error fetching connections:', error);
       throw new Error(`Failed to fetch connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      client.release();
+      await userPool.end();
     }
   }
 
@@ -1522,69 +1641,63 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Pipeline configuration methods
-  async getPipelines(filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
-    try {
-      let query = db.select({
-        configKey: configTable.configKey,
-        executionLayer: configTable.executionLayer,
-        sourceSystem: configTable.sourceSystem,
-        connectionId: configTable.connectionId,
-        sourceSchemaName: configTable.sourceSchemaName,
-        sourceTableName: configTable.sourceTableName,
-        sourceType: configTable.sourceType,
-        sourceFilePath: configTable.sourceFilePath,
-        sourceFileName: configTable.sourceFileName,
-        sourceFileDelimiter: configTable.sourceFileDelimiter,
-        targetLayer: configTable.targetLayer,
-        targetSchemaName: configTable.targetSchemaName,
-        targetTableName: configTable.targetTableName,
-        targetType: configTable.targetType,
-        targetConnectionId: configTable.targetConnectionId,
-        targetFilePath: configTable.targetFilePath,
-        targetFileDelimiter: configTable.targetFileDelimiter,
-        targetSystem: configTable.targetSystem,
-        temporaryTargetTable: configTable.temporaryTargetTable,
-        loadType: configTable.loadType,
-        primaryKey: configTable.primaryKey,
-        activeFlag: configTable.activeFlag,
-        enableDynamicSchema: configTable.enableDynamicSchema,
-        fullDataRefreshFlag: configTable.fullDataRefreshFlag,
-        executionSequence: configTable.executionSequence,
-        effectiveDate: configTable.effectiveDate,
-        md5Columns: configTable.md5Columns,
-        customCode: configTable.customCode,
-        createdAt: configTable.createdAt,
-        updatedAt: configTable.updatedAt,
-      }).from(configTable);
+  async getPipelines(userId: string, filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty array if no user config
+    if (!userPool) {
+      return [];
+    }
 
-      const conditions = [];
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
       if (filters?.search) {
-        conditions.push(like(configTable.sourceTableName, `%${filters.search}%`));
+        whereClauses.push(`source_table_name LIKE $${paramIndex}`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
       }
 
       if (filters?.executionLayer && filters.executionLayer !== 'all') {
-        conditions.push(
-          sql`LOWER(${configTable.executionLayer}) = LOWER(${filters.executionLayer})`
-        );
+        whereClauses.push(`LOWER(execution_layer) = LOWER($${paramIndex})`);
+        params.push(filters.executionLayer);
+        paramIndex++;
       }
 
       if (filters?.sourceSystem && filters.sourceSystem !== 'all') {
-        conditions.push(
-          sql`LOWER(${configTable.sourceSystem}) = LOWER(${filters.sourceSystem})`
-        );
+        whereClauses.push(`LOWER(source_system) = LOWER($${paramIndex})`);
+        params.push(filters.sourceSystem);
+        paramIndex++;
       }
 
       if (filters?.status && filters.status !== 'all') {
-        conditions.push(eq(configTable.activeFlag, filters.status));
+        whereClauses.push(`active_flag = $${paramIndex}`);
+        params.push(filters.status);
+        paramIndex++;
       }
 
-      return await query
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(configTable.createdAt));
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT *
+        FROM config_table
+        ${whereClause}
+        ORDER BY created_at DESC
+      `;
+
+      const result = await client.query(query, params);
+      return result.rows;
     } catch (error) {
       console.error('Error fetching pipelines:', error);
       throw new Error(`Failed to fetch pipelines: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      client.release();
+      await userPool.end();
     }
   }
 
@@ -1644,74 +1757,113 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Data dictionary implementation
-  async getDataDictionaryEntries(filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
-    let query = db.select().from(dataDictionaryTable);
-
-    const conditions = [];
-
-    if (filters?.search) {
-      conditions.push(
-        like(dataDictionaryTable.attributeName, `%${filters.search}%`)
-      );
+  async getDataDictionaryEntries(userId: string, filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty array if no user config
+    if (!userPool) {
+      return [];
     }
 
-    if (filters?.executionLayer && filters.executionLayer !== 'all') {
-      conditions.push(
-        eq(dataDictionaryTable.executionLayer, filters.executionLayer)
-      );
-    }
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
-    if (filters?.schemaName && filters.schemaName !== 'all') {
-      conditions.push(
-        eq(dataDictionaryTable.schemaName, filters.schemaName)
-      );
-    }
-
-    if (filters?.tableName && filters.tableName !== 'all') {
-      conditions.push(
-        eq(dataDictionaryTable.tableName, filters.tableName)
-      );
-    }
-
-
-
-
-    // Handle custom field filtering
-    if (filters?.customField && filters?.customValue && filters.customField !== 'all') {
-      switch (filters.customField) {
-        case 'attributeName':
-          conditions.push(like(dataDictionaryTable.attributeName, `%${filters.customValue}%`));
-          break;
-        case 'dataType':
-          conditions.push(like(dataDictionaryTable.dataType, `%${filters.customValue}%`));
-          break;
-        case 'schemaName':
-          conditions.push(like(dataDictionaryTable.schemaName, `%${filters.customValue}%`));
-          break;
-        case 'tableName':
-          conditions.push(like(dataDictionaryTable.tableName, `%${filters.customValue}%`));
-          break;
-        case 'columnDescription':
-          conditions.push(like(dataDictionaryTable.columnDescription, `%${filters.customValue}%`));
-          break;
-        case 'createdBy':
-          conditions.push(like(dataDictionaryTable.createdBy, `%${filters.customValue}%`));
-          break;
-        case 'updatedBy':
-          conditions.push(like(dataDictionaryTable.updatedBy, `%${filters.customValue}%`));
-          break;
-        case 'configKey':
-          const configKeyValue = parseInt(filters.customValue);
-          if (!isNaN(configKeyValue)) {
-            conditions.push(eq(dataDictionaryTable.configKey, configKeyValue));
-          }
-          break;
+      if (filters?.search) {
+        whereClauses.push(`attribute_name LIKE $${paramIndex}`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
       }
-    }
 
-    return await query
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(dataDictionaryTable.insertDate));
+      if (filters?.executionLayer && filters.executionLayer !== 'all') {
+        whereClauses.push(`execution_layer = $${paramIndex}`);
+        params.push(filters.executionLayer);
+        paramIndex++;
+      }
+
+      if (filters?.schemaName && filters.schemaName !== 'all') {
+        whereClauses.push(`schema_name = $${paramIndex}`);
+        params.push(filters.schemaName);
+        paramIndex++;
+      }
+
+      if (filters?.tableName && filters.tableName !== 'all') {
+        whereClauses.push(`table_name = $${paramIndex}`);
+        params.push(filters.tableName);
+        paramIndex++;
+      }
+
+      // Handle custom field filtering
+      if (filters?.customField && filters?.customValue && filters.customField !== 'all') {
+        switch (filters.customField) {
+          case 'attributeName':
+            whereClauses.push(`attribute_name LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'dataType':
+            whereClauses.push(`data_type LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'schemaName':
+            whereClauses.push(`schema_name LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'tableName':
+            whereClauses.push(`table_name LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'columnDescription':
+            whereClauses.push(`column_description LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'createdBy':
+            whereClauses.push(`created_by LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'updatedBy':
+            whereClauses.push(`updated_by LIKE $${paramIndex}`);
+            params.push(`%${filters.customValue}%`);
+            paramIndex++;
+            break;
+          case 'configKey':
+            const configKeyValue = parseInt(filters.customValue);
+            if (!isNaN(configKeyValue)) {
+              whereClauses.push(`config_key = $${paramIndex}`);
+              params.push(configKeyValue);
+              paramIndex++;
+            }
+            break;
+        }
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT *
+        FROM data_dictionary_table
+        ${whereClause}
+        ORDER BY insert_date DESC
+      `;
+
+      const result = await client.query(query, params);
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching data dictionary entries:', error);
+      throw new Error(`Failed to fetch data dictionary entries: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      client.release();
+      await userPool.end();
+    }
   }
 
   async getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined> {
@@ -1875,47 +2027,70 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Reconciliation config methods implementation
-  async getReconciliationConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]> {
-    let query = db.select().from(reconciliationConfigTable);
-
-    const conditions = [];
-
-    if (filters?.search) {
-      conditions.push(
-        or(
-          ilike(reconciliationConfigTable.sourceTable, `%${filters.search.toLowerCase()}%`),
-          ilike(reconciliationConfigTable.targetTable, `%${filters.search.toLowerCase()}%`)
-        )
-      );
+  async getReconciliationConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]> {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty array if no user config
+    if (!userPool) {
+      return [];
     }
 
-    if (filters?.executionLayer && filters.executionLayer !== 'all') {
-      conditions.push(
-        ilike(reconciliationConfigTable.executionLayer, filters.executionLayer.toLowerCase())
-      );
-    }
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
-    if (filters?.configKey) {
-      conditions.push(
-        eq(reconciliationConfigTable.configKey, filters.configKey)
-      );
-    }
+      if (filters?.search) {
+        whereClauses.push(`(LOWER(source_table) LIKE LOWER($${paramIndex}) OR LOWER(target_table) LIKE LOWER($${paramIndex}))`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
+      }
 
-    if (filters?.reconType && filters.reconType !== 'all') {
-      conditions.push(
-        ilike(reconciliationConfigTable.reconType, filters.reconType.toLowerCase())
-      );
-    }
+      if (filters?.executionLayer && filters.executionLayer !== 'all') {
+        whereClauses.push(`LOWER(execution_layer) = LOWER($${paramIndex})`);
+        params.push(filters.executionLayer);
+        paramIndex++;
+      }
 
-    if (filters?.status && filters.status !== 'all') {
-      conditions.push(
-        eq(reconciliationConfigTable.activeFlag, filters.status)
-      );
-    }
+      if (filters?.configKey) {
+        whereClauses.push(`config_key = $${paramIndex}`);
+        params.push(filters.configKey);
+        paramIndex++;
+      }
 
-    return await query
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(reconciliationConfigTable.reconKey));
+      if (filters?.reconType && filters.reconType !== 'all') {
+        whereClauses.push(`LOWER(recon_type) = LOWER($${paramIndex})`);
+        params.push(filters.reconType);
+        paramIndex++;
+      }
+
+      if (filters?.status && filters.status !== 'all') {
+        whereClauses.push(`active_flag = $${paramIndex}`);
+        params.push(filters.status);
+        paramIndex++;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT *
+        FROM reconciliation_config_table
+        ${whereClause}
+        ORDER BY recon_key DESC
+      `;
+
+      const result = await client.query(query, params);
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching reconciliation configs:', error);
+      throw new Error(`Failed to fetch reconciliation configs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      client.release();
+      await userPool.end();
+    }
   }
 
   async getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined> {
@@ -1980,71 +2155,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Data Quality Config implementations
-  async getDataQualityConfigs(filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]> {
-    // Select only the core columns that exist in the database
-    let query = db.select({
-      dataQualityKey: dataQualityConfigTable.dataQualityKey,
-      configKey: dataQualityConfigTable.configKey,
-      executionLayer: dataQualityConfigTable.executionLayer,
-      tableName: dataQualityConfigTable.tableName,
-      attributeName: dataQualityConfigTable.attributeName,
-      validationType: dataQualityConfigTable.validationType,
-      referenceTableName: dataQualityConfigTable.referenceTableName,
-      defaultValue: dataQualityConfigTable.defaultValue,
-      errorTableTransferFlag: dataQualityConfigTable.errorTableTransferFlag,
-      thresholdPercentage: dataQualityConfigTable.thresholdPercentage,
-      activeFlag: dataQualityConfigTable.activeFlag,
-      customQuery: dataQualityConfigTable.customQuery,
-    }).from(dataQualityConfigTable);
-
-    const conditions = [];
-
-    if (filters?.search) {
-      conditions.push(
-        or(
-          ilike(dataQualityConfigTable.tableName, `%${filters.search.toLowerCase()}%`),
-          ilike(dataQualityConfigTable.attributeName, `%${filters.search.toLowerCase()}%`)
-        )
-      );
+  async getDataQualityConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]> {
+    const userPool = await getUserSpecificPool(userId);
+    
+    // Return empty array if no user config
+    if (!userPool) {
+      return [];
     }
 
-    if (filters?.executionLayer && filters.executionLayer !== 'all') {
-      conditions.push(
-        ilike(dataQualityConfigTable.executionLayer, filters.executionLayer.toLowerCase())
-      );
+    const client = await userPool.connect();
+    
+    try {
+      // Build WHERE clause conditions
+      const whereClauses = [];
+      const params: any[] = [];
+      let paramIndex = 1;
+
+      if (filters?.search) {
+        whereClauses.push(`(LOWER(table_name) LIKE LOWER($${paramIndex}) OR LOWER(attribute_name) LIKE LOWER($${paramIndex}))`);
+        params.push(`%${filters.search}%`);
+        paramIndex++;
+      }
+
+      if (filters?.executionLayer && filters.executionLayer !== 'all') {
+        whereClauses.push(`LOWER(execution_layer) = LOWER($${paramIndex})`);
+        params.push(filters.executionLayer);
+        paramIndex++;
+      }
+
+      if (filters?.configKey) {
+        whereClauses.push(`config_key = $${paramIndex}`);
+        params.push(filters.configKey);
+        paramIndex++;
+      }
+
+      if (filters?.validationType && filters.validationType !== 'all') {
+        whereClauses.push(`LOWER(validation_type) = LOWER($${paramIndex})`);
+        params.push(filters.validationType);
+        paramIndex++;
+      }
+
+      if (filters?.status && filters.status !== 'all') {
+        whereClauses.push(`active_flag = $${paramIndex}`);
+        params.push(filters.status);
+        paramIndex++;
+      }
+
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const query = `
+        SELECT 
+          data_quality_key,
+          config_key,
+          execution_layer,
+          table_name,
+          attribute_name,
+          validation_type,
+          reference_table_name,
+          default_value,
+          error_table_transfer_flag,
+          threshold_percentage,
+          active_flag,
+          custom_query
+        FROM data_quality_config_table
+        ${whereClause}
+        ORDER BY data_quality_key DESC
+      `;
+
+      const result = await client.query(query, params);
+      
+      // Add null values for the target fields for application compatibility
+      return result.rows.map(row => ({
+        ...row,
+        targetSystem: null,
+        targetConnectionId: null,
+        targetType: null,
+        targetSchema: null,
+        targetTableName: null,
+      }));
+    } catch (error) {
+      console.error('Error fetching data quality configs:', error);
+      throw new Error(`Failed to fetch data quality configs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      client.release();
+      await userPool.end();
     }
-
-    if (filters?.configKey) {
-      conditions.push(
-        eq(dataQualityConfigTable.configKey, filters.configKey)
-      );
-    }
-
-    if (filters?.validationType && filters.validationType !== 'all') {
-      conditions.push(
-        ilike(dataQualityConfigTable.validationType, filters.validationType)
-      );
-    }
-
-    if (filters?.status && filters.status !== 'all') {
-      conditions.push(
-        eq(dataQualityConfigTable.activeFlag, filters.status)
-      );
-    }
-
-    const results = await query
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(dataQualityConfigTable.dataQualityKey));
-
-    // Add null values for the target fields for application compatibility
-    return results.map(result => ({
-      ...result,
-      targetSystem: null,
-      targetConnectionId: null,
-      targetType: null,
-      targetSchema: null,
-      targetTableName: null,
-    }));
   }
 
   async getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined> {

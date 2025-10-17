@@ -23,14 +23,23 @@ export interface AuthRequest extends Request {
 
 // Generate JWT token
 export function generateToken(payload: JWTPayload): string {
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 }
 
 // Verify JWT token
 export function verifyToken(token: string): JWTPayload | null {
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    return decoded;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (typeof decoded === 'object' && decoded !== null && 'userId' in decoded) {
+      return decoded as JWTPayload;
+    }
+    return null;
   } catch (error) {
     console.error('JWT verification failed:', error);
     return null;
