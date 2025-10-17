@@ -47,7 +47,13 @@ export function Reconciliation() {
       if (filters.reconType) params.append('reconType', filters.reconType.toLowerCase());
       if (filters.status) params.append('status', filters.status);
 
-      const response = await fetch(`/api/reconciliation-configs?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/reconciliation-configs?${params}`, { headers });
       if (!response.ok) throw new Error('Failed to fetch reconciliation configs');
       return (await response.json()) as ReconciliationConfig[];
     }

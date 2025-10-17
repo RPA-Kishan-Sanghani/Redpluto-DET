@@ -47,7 +47,13 @@ export function DataQuality() {
       if (filters.validationType && filters.validationType !== 'all') params.append('validationType', filters.validationType.toLowerCase());
       if (filters.status) params.append('status', filters.status.toLowerCase());
 
-      const response = await fetch(`/api/data-quality-configs?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/data-quality-configs?${params}`, { headers });
       if (!response.ok) throw new Error('Failed to fetch data quality configs');
       return (await response.json()) as DataQualityConfig[];
     }

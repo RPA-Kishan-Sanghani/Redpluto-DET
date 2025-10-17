@@ -43,7 +43,13 @@ export function Pipelines() {
       if (filters.sourceSystem) params.append('sourceSystem', filters.sourceSystem);
       if (filters.status) params.append('status', filters.status);
 
-      const response = await fetch(`/api/pipelines?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/pipelines?${params}`, { headers });
       if (!response.ok) throw new Error('Failed to fetch pipelines');
       return response.json() as ConfigRecord[];
     }
@@ -68,8 +74,15 @@ export function Pipelines() {
   // Delete pipeline mutation
   const deletePipelineMutation = useMutation({
     mutationFn: async (id: number) => {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/pipelines/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
       });
       if (!response.ok) {
         throw new Error('Failed to delete pipeline');

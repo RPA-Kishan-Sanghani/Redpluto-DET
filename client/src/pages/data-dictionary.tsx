@@ -79,7 +79,13 @@ export function DataDictionary() {
   const { data: allEntries = [], isLoading, error } = useQuery({
     queryKey: ['/api/data-dictionary'],
     queryFn: async () => {
-      const response = await fetch('/api/data-dictionary');
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/data-dictionary', { headers });
       if (!response.ok) {
         throw new Error('Failed to fetch data dictionary entries');
       }
@@ -134,9 +140,15 @@ export function DataDictionary() {
   // Update entry mutation for inline editing
   const updateEntryMutation = useMutation({
     mutationFn: async ({id, data}: {id: number, data: Partial<DataDictionaryRecord>}) => {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/data-dictionary/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -164,8 +176,15 @@ export function DataDictionary() {
   // Delete entry mutation
   const deleteEntryMutation = useMutation({
     mutationFn: async (id: number) => {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/data-dictionary/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
       });
       if (!response.ok) {
         throw new Error('Failed to delete entry');
