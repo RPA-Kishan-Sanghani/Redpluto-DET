@@ -6,6 +6,7 @@ import { users } from "@shared/schema";
 import { insertUserSchema, insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
 import { sql } from "drizzle-orm";
 import { generateToken, authMiddleware, type AuthRequest } from "./auth";
+import bcrypt from 'bcryptjs';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User registration endpoint
@@ -36,7 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.getUserByUsername(username);
       }
 
-      if (user && user.password === password) {
+      // Verify password using bcrypt
+      if (user && user.password && await bcrypt.compare(password, user.password)) {
         // Generate JWT token
         const token = generateToken({
           userId: user.id,
@@ -52,7 +54,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent: req.headers['user-agent'] || 'unknown',
         });
 
-        // In production, use proper password hashing
         const { password: _, ...userWithoutPassword } = user;
         res.json({ 
           user: userWithoutPassword,

@@ -3,6 +3,7 @@ import { db, pool, getUserSpecificPool } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } from "drizzle-orm";
 import { Pool } from 'pg';
 import mysql from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
 
 // Shared external database connection pool for metadata queries (fallback)
 const externalPool = new Pool({
@@ -242,12 +243,15 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
+      // Hash the password before storing
+      const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+      
       const [user] = await db
         .insert(users)
         .values({
           username: insertUser.username,
           email: insertUser.email,
-          password: insertUser.password,
+          password: hashedPassword,
           firstName: insertUser.firstName,
           lastName: insertUser.lastName
         })
