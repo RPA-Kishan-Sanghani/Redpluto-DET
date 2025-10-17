@@ -4,6 +4,17 @@ import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } fr
 import { Pool } from 'pg';
 import mysql from 'mysql2/promise';
 
+// Shared external database connection pool for metadata queries
+const externalPool = new Pool({
+  host: '4.240.90.166',
+  port: 5432,
+  database: 'config_db',
+  user: 'rpdet_az',
+  password: 'Rpdet#1234',
+  ssl: false,
+  connectionTimeoutMillis: 10000,
+});
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -1655,23 +1666,12 @@ export class DatabaseStorage implements IStorage {
   async getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined> {
     // FORCE connection to external PostgreSQL database
     try {
-      const externalPool = new Pool({
-        host: '4.240.90.166',
-        port: 5432,
-        database: 'config_db',
-        user: 'rpdet_az',
-        password: 'Rpdet#1234',
-        ssl: false,
-        connectionTimeoutMillis: 10000,
-      });
-
       const query = `
         SELECT * FROM data_dictionary_table
         WHERE data_dictionary_key = $1
       `;
 
       const result = await externalPool.query(query, [id]);
-      await externalPool.end();
 
       if (result.rows.length === 0) {
         return undefined;
@@ -1687,16 +1687,6 @@ export class DatabaseStorage implements IStorage {
   async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
     // FORCE connection to external PostgreSQL database with proper auto-increment
     try {
-      const externalPool = new Pool({
-        host: '4.240.90.166',
-        port: 5432,
-        database: 'config_db',
-        user: 'rpdet_az',
-        password: 'Rpdet#1234',
-        ssl: false,
-        connectionTimeoutMillis: 10000,
-      });
-
       const query = `
         INSERT INTO data_dictionary_table (
           config_key, execution_layer, schema_name, table_name, attribute_name,
@@ -1727,7 +1717,6 @@ export class DatabaseStorage implements IStorage {
       ];
 
       const result = await externalPool.query(query, values);
-      await externalPool.end();
 
       console.log('Successfully inserted into external database with ID:', result.rows[0]?.data_dictionary_key);
       return result.rows[0] as DataDictionaryRecord;
@@ -1740,16 +1729,6 @@ export class DatabaseStorage implements IStorage {
   async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
     // FORCE connection to external PostgreSQL database
     try {
-      const externalPool = new Pool({
-        host: '4.240.90.166',
-        port: 5432,
-        database: 'config_db',
-        user: 'rpdet_az',
-        password: 'Rpdet#1234',
-        ssl: false,
-        connectionTimeoutMillis: 10000,
-      });
-
       // Build dynamic update query with only provided fields
       const updateFields = [];
       const values = [];
@@ -1828,7 +1807,6 @@ export class DatabaseStorage implements IStorage {
       `;
 
       const result = await externalPool.query(query, values);
-      await externalPool.end();
 
       console.log('Successfully updated entry in external database with ID:', id);
       return result.rows[0] as DataDictionaryRecord;
