@@ -74,11 +74,12 @@ export const useAuthState = () => {
       });
 
       if (response.ok) {
-        const { user } = await response.json();
+        const { user, token } = await response.json();
         setUser(user);
         
-        // Store session
+        // Store user and JWT token
         localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
         
         // Set session expiry (15 hours as specified in requirements)
         const expiryTime = new Date();
@@ -99,13 +100,14 @@ export const useAuthState = () => {
 
   const logout = async () => {
     // Log sign out activity
-    if (user?.id) {
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
         await fetch('/api/auth/logout', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-User-Id': user.id,
+            'Authorization': `Bearer ${token}`,
           },
         });
       } catch (error) {
@@ -115,6 +117,7 @@ export const useAuthState = () => {
 
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     localStorage.removeItem('sessionExpiry');
     localStorage.removeItem('rememberMe');
   };

@@ -272,10 +272,11 @@ function ConfigDatabaseSettings({ userId }: { userId?: string }) {
 
   // Fetch existing settings on mount
   useEffect(() => {
-    if (userId) {
+    const token = localStorage.getItem('token');
+    if (token) {
       fetch(`/api/user-config-db-settings`, {
         headers: {
-          'X-User-Id': userId,
+          'Authorization': `Bearer ${token}`,
         },
       })
         .then(res => res.ok ? res.json() : null)
@@ -347,11 +348,21 @@ function ConfigDatabaseSettings({ userId }: { userId?: string }) {
       return;
     }
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token not found. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       // Check if settings exist
       const checkResponse = await fetch(`/api/user-config-db-settings`, {
-        headers: { 'X-User-Id': userId },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       const exists = checkResponse.ok;
 
@@ -364,7 +375,7 @@ function ConfigDatabaseSettings({ userId }: { userId?: string }) {
         method,
         headers: { 
           'Content-Type': 'application/json',
-          'X-User-Id': userId,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(settings),
       });

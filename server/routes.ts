@@ -5,6 +5,7 @@ import { db, pool } from "./db";
 import { users } from "@shared/schema";
 import { insertUserSchema, insertSourceConnectionSchema, updateSourceConnectionSchema, insertConfigSchema, updateConfigSchema, insertDataDictionarySchema, updateDataDictionarySchema, insertReconciliationConfigSchema, updateReconciliationConfigSchema, insertDataQualityConfigSchema, updateDataQualityConfigSchema } from "@shared/schema";
 import { sql } from "drizzle-orm";
+import { generateToken, authMiddleware, type AuthRequest } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User registration endpoint
@@ -36,6 +37,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (user && user.password === password) {
+        // Generate JWT token
+        const token = generateToken({
+          userId: user.id,
+          email: user.email || '',
+          username: user.username || '',
+        });
+
         // Log user activity
         await storage.logUserActivity({
           userId: user.id,
@@ -46,7 +54,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // In production, use proper password hashing
         const { password: _, ...userWithoutPassword } = user;
-        res.json({ user: userWithoutPassword });
+        res.json({ 
+          user: userWithoutPassword,
+          token,
+        });
       } else {
         res.status(401).json({ error: 'Invalid credentials' });
       }
@@ -57,23 +68,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User logout endpoint
-  app.post("/api/auth/logout", async (req, res) => {
+  app.post("/api/auth/logout", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
+      const userId = req.user!.userId;
 
-      if (userId) {
-        // Validate user exists
-        const user = await storage.getUser(userId);
-        if (user) {
-          // Log user activity
-          await storage.logUserActivity({
-            userId,
-            activityType: 'sign_out',
-            ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
-            userAgent: req.headers['user-agent'] || 'unknown',
-          });
-        }
-      }
+      // Log user activity
+      await storage.logUserActivity({
+        userId,
+        activityType: 'sign_out',
+        ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+        userAgent: req.headers['user-agent'] || 'unknown',
+      });
 
       res.json({ message: 'Logged out successfully' });
     } catch (error) {
@@ -955,18 +960,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Config DB Settings routes
-  app.get("/api/user-config-db-settings", async (req, res) => {
+  app.get("/api/user-config-db-settings", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized: User ID required' });
-      }
-
-      // Validate user exists
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
-      }
+      const userId = req.user!.userId;
 
       const settings = await storage.getUserConfigDbSettings(userId);
       if (!settings) {
@@ -980,18 +976,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/user-config-db-settings", async (req, res) => {
+  app.post("/api/user-config-db-settings", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized: User ID required' });
-      }
-
-      // Validate user exists
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
-      }
+      const userId = req.user!.userId;
 
       const settings = await storage.createUserConfigDbSettings({
         ...req.body,
@@ -1004,18 +991,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/user-config-db-settings", async (req, res) => {
+  app.put("/api/user-config-db-settings", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized: User ID required' });
-      }
-
-      // Validate user exists
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
-      }
+      const userId = req.user!.userId;
 
       const updated = await storage.updateUserConfigDbSettings(userId, req.body);
       
@@ -1041,18 +1019,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Activity routes
-  app.post("/api/user-activity", async (req, res) => {
+  app.post("/api/user-activity", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized: User ID required' });
-      }
-
-      // Validate user exists
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
-      }
+      const userId = req.user!.userId;
 
       const activity = await storage.logUserActivity({
         ...req.body,
@@ -1065,18 +1034,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/user-activity", async (req, res) => {
+  app.get("/api/user-activity", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized: User ID required' });
-      }
-
-      // Validate user exists
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
-      }
+      const userId = req.user!.userId;
 
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const activities = await storage.getUserActivity(userId, limit);
