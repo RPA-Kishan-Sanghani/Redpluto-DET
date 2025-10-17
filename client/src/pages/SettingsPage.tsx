@@ -305,11 +305,24 @@ function ConfigDatabaseSettings({ userId }: { userId?: string }) {
   };
 
   const handleTestConnection = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token not found. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsTesting(true);
     try {
       const response = await fetch('/api/user-config-db-settings/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(settings),
       });
 
