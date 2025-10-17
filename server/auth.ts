@@ -3,12 +3,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 
 // JWT secret - must be set via environment variable
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production-' + Math.random().toString(36);
 const JWT_EXPIRY = '15h'; // 15 hours as per requirements
 
-// Validate that JWT_SECRET is set on startup
-if (!JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is not set. The application cannot start without a secure JWT secret.');
+// Warn if using development secret
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  WARNING: JWT_SECRET environment variable is not set. Using temporary development secret.');
+  console.warn('⚠️  For production, set a secure JWT_SECRET environment variable (at least 32 characters).');
 }
 
 export interface JWTPayload {

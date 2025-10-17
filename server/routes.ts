@@ -279,10 +279,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single connection
-  app.get("/api/connections/:id", async (req, res) => {
+  app.get("/api/connections/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const connection = await storage.getConnection(id);
+      const connection = await storage.getConnection(userId, id);
 
       if (!connection) {
         return res.status(404).json({ error: 'Connection not found' });
@@ -296,10 +297,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new connection
-  app.post("/api/connections", async (req, res) => {
+  app.post("/api/connections", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const validatedData = insertSourceConnectionSchema.parse(req.body);
-      const connection = await storage.createConnection(validatedData);
+      const connection = await storage.createConnection(userId, validatedData);
       res.status(201).json(connection);
     } catch (error: any) {
       console.error('Error creating connection:', error);
@@ -311,11 +313,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update connection
-  app.put("/api/connections/:id", async (req, res) => {
+  app.put("/api/connections/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
       const validatedData = updateSourceConnectionSchema.parse(req.body);
-      const connection = await storage.updateConnection(id, validatedData);
+      const connection = await storage.updateConnection(userId, id, validatedData);
 
       if (!connection) {
         return res.status(404).json({ error: 'Connection not found' });
@@ -332,10 +335,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete connection
-  app.delete("/api/connections/:id", async (req, res) => {
+  app.delete("/api/connections/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const success = await storage.deleteConnection(id);
+      const success = await storage.deleteConnection(userId, id);
 
       if (!success) {
         return res.status(404).json({ error: 'Connection not found' });
@@ -349,14 +353,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Test connection
-  app.post("/api/connections/test", async (req, res) => {
+  app.post("/api/connections/test", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      const result = await storage.testConnection(req.body);
+      const userId = req.user!.userId;
+      const result = await storage.testConnection(userId, req.body);
 
       // If test is successful and connectionId exists, update status to Active
       if (result.success && req.body.connectionId) {
         try {
-          await storage.updateConnection(req.body.connectionId, { 
+          await storage.updateConnection(userId, req.body.connectionId, { 
             status: 'Active', 
             lastSync: new Date() 
           });
@@ -378,10 +383,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get database schemas from a connection
-  app.get("/api/connections/:id/schemas", async (req, res) => {
+  app.get("/api/connections/:id/schemas", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const connectionId = parseInt(req.params.id);
-      const schemas = await storage.getDatabaseSchemas(connectionId);
+      const schemas = await storage.getDatabaseSchemas(userId, connectionId);
       res.json(schemas);
     } catch (error) {
       console.error('Error fetching database schemas:', error);
@@ -390,11 +396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get database tables from a connection and schema
-  app.get("/api/connections/:id/schemas/:schema/tables", async (req, res) => {
+  app.get("/api/connections/:id/schemas/:schema/tables", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const connectionId = parseInt(req.params.id);
       const schemaName = req.params.schema;
-      const tables = await storage.getDatabaseTables(connectionId, schemaName);
+      const tables = await storage.getDatabaseTables(userId, connectionId, schemaName);
       res.json(tables);
     } catch (error) {
       console.error('Error fetching database tables:', error);
@@ -403,12 +410,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get database columns from a connection, schema, and table
-  app.get("/api/connections/:id/schemas/:schema/tables/:table/columns", async (req, res) => {
+  app.get("/api/connections/:id/schemas/:schema/tables/:table/columns", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const connectionId = parseInt(req.params.id);
       const schemaName = req.params.schema;
       const tableName = req.params.table;
-      const columns = await storage.getDatabaseColumns(connectionId, schemaName, tableName);
+      const columns = await storage.getDatabaseColumns(userId, connectionId, schemaName, tableName);
       res.json(columns);
     } catch (error) {
       console.error('Error fetching database columns:', error);
@@ -417,12 +425,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get enhanced database column metadata with data types and constraints
-  app.get("/api/connections/:id/schemas/:schema/tables/:table/metadata", async (req, res) => {
+  app.get("/api/connections/:id/schemas/:schema/tables/:table/metadata", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const connectionId = parseInt(req.params.id);
       const schemaName = req.params.schema;
       const tableName = req.params.table;
-      const metadata = await storage.getDatabaseColumnMetadata(connectionId, schemaName, tableName);
+      const metadata = await storage.getDatabaseColumnMetadata(userId, connectionId, schemaName, tableName);
       res.json(metadata);
     } catch (error) {
       console.error('Error fetching column metadata:', error);
@@ -431,14 +440,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get database columns with data types for filtering
-  app.get("/api/connections/:id/schemas/:schema/tables/:table/columns-with-types", async (req, res) => {
+  app.get("/api/connections/:id/schemas/:schema/tables/:table/columns-with-types", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const connectionId = parseInt(req.params.id);
       const schemaName = req.params.schema;
       const tableName = req.params.table;
       const { dataTypes } = req.query;
 
-      const metadata = await storage.getDatabaseColumnMetadata(connectionId, schemaName, tableName);
+      const metadata = await storage.getDatabaseColumnMetadata(userId, connectionId, schemaName, tableName);
 
       // If dataTypes filter is provided, filter columns by data type
       if (dataTypes) {
@@ -503,10 +513,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single pipeline
-  app.get("/api/pipelines/:id", async (req, res) => {
+  app.get("/api/pipelines/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const pipeline = await storage.getPipeline(id);
+      const pipeline = await storage.getPipeline(userId, id);
 
       if (!pipeline) {
         return res.status(404).json({ error: 'Pipeline not found' });
@@ -520,8 +531,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new pipeline
-  app.post("/api/pipelines", async (req, res) => {
+  app.post("/api/pipelines", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const validatedData = insertConfigSchema.parse(req.body);
       // Ensure execution layer, source system, target system, source type, and target type are lowercase
       if (validatedData.executionLayer) {
@@ -543,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.loadType && (validatedData.loadType.toLowerCase() === 'truncate' || validatedData.loadType.toLowerCase() === 'incremental')) {
         validatedData.loadType = `${validatedData.loadType.toLowerCase()}_load`;
       }
-      const pipeline = await storage.createPipeline(validatedData);
+      const pipeline = await storage.createPipeline(userId, validatedData);
       res.status(201).json(pipeline);
     } catch (error: any) {
       console.error('Error creating pipeline:', error);
@@ -555,8 +567,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update pipeline
-  app.put("/api/pipelines/:id", async (req, res) => {
+  app.put("/api/pipelines/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
       const validatedData = updateConfigSchema.parse(req.body);
       // Ensure execution layer, source system, target system, source type, and target type are lowercase
@@ -579,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.loadType && (validatedData.loadType.toLowerCase() === 'truncate' || validatedData.loadType.toLowerCase() === 'incremental')) {
         validatedData.loadType = `${validatedData.loadType.toLowerCase()}_load`;
       }
-      const pipeline = await storage.updatePipeline(id, validatedData);
+      const pipeline = await storage.updatePipeline(userId, id, validatedData);
 
       if (!pipeline) {
         return res.status(404).json({ error: 'Pipeline not found' });
@@ -596,10 +609,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete pipeline
-  app.delete("/api/pipelines/:id", async (req, res) => {
+  app.delete("/api/pipelines/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const success = await storage.deletePipeline(id);
+      const success = await storage.deletePipeline(userId, id);
 
       if (!success) {
         return res.status(404).json({ error: 'Pipeline not found' });
@@ -632,10 +646,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/data-dictionary/:id", async (req, res) => {
+  app.get("/api/data-dictionary/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const entry = await storage.getDataDictionaryEntry(id);
+      const entry = await storage.getDataDictionaryEntry(userId, id);
 
       if (!entry) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
@@ -648,14 +663,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/data-dictionary", async (req, res) => {
+  app.post("/api/data-dictionary", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       console.log('Incoming data dictionary request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertDataDictionarySchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
 
       // Use the main database connection that's forced to external PostgreSQL
-      const entry = await storage.createDataDictionaryEntry(validatedData);
+      const entry = await storage.createDataDictionaryEntry(userId, validatedData);
 
       console.log('Successfully saved to external database with ID:', entry.dataDictionaryKey);
       res.status(201).json(entry);
@@ -684,11 +700,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/data-dictionary/:id", async (req, res) => {
+  app.put("/api/data-dictionary/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
       const validatedData = updateDataDictionarySchema.parse(req.body);
-      const entry = await storage.updateDataDictionaryEntry(id, validatedData);
+      const entry = await storage.updateDataDictionaryEntry(userId, id, validatedData);
 
       if (!entry) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
@@ -701,10 +718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/data-dictionary/:id", async (req, res) => {
+  app.delete("/api/data-dictionary/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const success = await storage.deleteDataDictionaryEntry(id);
+      const success = await storage.deleteDataDictionaryEntry(userId, id);
 
       if (!success) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
@@ -741,10 +759,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   
 
-  app.get("/api/reconciliation-configs/:id", async (req, res) => {
+  app.get("/api/reconciliation-configs/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const config = await storage.getReconciliationConfig(id);
+      const config = await storage.getReconciliationConfig(userId, id);
 
       if (!config) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
@@ -758,8 +777,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Database fix endpoint - cleans up invalid recon_key = 0 records and resets sequence
-  app.post("/api/reconciliation-configs/fix-database", async (req, res) => {
+  app.post("/api/reconciliation-configs/fix-database", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       console.log('Starting database fix for reconciliation_config table...');
       
       // Step 1: Delete all records with recon_key = 0 (invalid records)
@@ -796,10 +816,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/reconciliation-configs", async (req, res) => {
+  app.post("/api/reconciliation-configs", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const validatedData = insertReconciliationConfigSchema.parse(req.body);
-      const config = await storage.createReconciliationConfig(validatedData);
+      const config = await storage.createReconciliationConfig(userId, validatedData);
       res.status(201).json(config);
     } catch (error: any) {
       console.error('Error creating reconciliation config:', error);
@@ -810,11 +831,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/reconciliation-configs/:id", async (req, res) => {
+  app.put("/api/reconciliation-configs/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
       const validatedData = updateReconciliationConfigSchema.parse(req.body);
-      const config = await storage.updateReconciliationConfig(id, validatedData);
+      const config = await storage.updateReconciliationConfig(userId, id, validatedData);
 
       if (!config) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
@@ -830,10 +852,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/reconciliation-configs/:id", async (req, res) => {
+  app.delete("/api/reconciliation-configs/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const success = await storage.deleteReconciliationConfig(id);
+      const success = await storage.deleteReconciliationConfig(userId, id);
 
       if (!success) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
@@ -868,10 +891,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/data-quality-configs/:id", async (req, res) => {
+  app.get("/api/data-quality-configs/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const config = await storage.getDataQualityConfig(id);
+      const config = await storage.getDataQualityConfig(userId, id);
 
       if (!config) {
         return res.status(404).json({ error: 'Data quality config not found' });
@@ -884,12 +908,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/data-quality-configs", async (req, res) => {
+  app.post("/api/data-quality-configs", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       console.log('Received data quality config data:', JSON.stringify(req.body, null, 2));
       const validatedData = insertDataQualityConfigSchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-      const config = await storage.createDataQualityConfig(validatedData);
+      const config = await storage.createDataQualityConfig(userId, validatedData);
       res.status(201).json(config);
     } catch (error: any) {
       console.error('Error creating data quality config:', error);
@@ -901,11 +926,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/data-quality-configs/:id", async (req, res) => {
+  app.put("/api/data-quality-configs/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
       const validatedData = updateDataQualityConfigSchema.parse(req.body);
-      const config = await storage.updateDataQualityConfig(id, validatedData);
+      const config = await storage.updateDataQualityConfig(userId, id, validatedData);
 
       if (!config) {
         return res.status(404).json({ error: 'Data quality config not found' });
@@ -921,10 +947,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/data-quality-configs/:id", async (req, res) => {
+  app.delete("/api/data-quality-configs/:id", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const id = parseInt(req.params.id);
-      const success = await storage.deleteDataQualityConfig(id);
+      const success = await storage.deleteDataQualityConfig(userId, id);
 
       if (!success) {
         return res.status(404).json({ error: 'Data quality config not found' });
@@ -938,10 +965,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get metadata for dropdowns
-  app.get("/api/metadata/:type", async (req, res) => {
+  app.get("/api/metadata/:type", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const { type } = req.params;
-      const metadata = await storage.getMetadata(type);
+      const metadata = await storage.getMetadata(userId, type);
       res.json(metadata);
     } catch (error) {
       console.error('Error fetching metadata:', error);
@@ -950,8 +978,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get existing temporary tables
-  app.get("/api/temporary-tables", async (req, res) => {
+  app.get("/api/temporary-tables", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       // Get distinct temporary target table names from config_table where they are not null/empty
       const tempTables = await db.execute(sql`
         SELECT DISTINCT temporary_target_table 
@@ -1018,8 +1047,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/user-config-db-settings/test", async (req, res) => {
+  app.post("/api/user-config-db-settings/test", authMiddleware, async (req: AuthRequest, res) => {
     try {
+      const userId = req.user!.userId;
       const result = await storage.testUserConfigDbConnection(req.body);
       res.json(result);
     } catch (error) {

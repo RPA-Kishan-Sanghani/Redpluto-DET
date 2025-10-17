@@ -1,5 +1,5 @@
 import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, userConfigDbSettings, userActivity, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type UserConfigDbSettings, type InsertUserConfigDbSettings, type UpdateUserConfigDbSettings, type UserActivity, type InsertUserActivity } from "@shared/schema";
-import { db, pool } from "./db";
+import { db, pool, getUserSpecificPool } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } from "drizzle-orm";
 import { Pool } from 'pg';
 import mysql from 'mysql2/promise';
@@ -14,43 +14,6 @@ const externalPool = new Pool({
   ssl: false,
   connectionTimeoutMillis: 10000,
 });
-
-// Helper function to get user-specific database pool
-async function getUserSpecificPool(userId?: string): Promise<Pool | null> {
-  if (!userId) {
-    return null; // Return null if no userId
-  }
-
-  try {
-    const [settings] = await db
-      .select()
-      .from(userConfigDbSettings)
-      .where(and(
-        eq(userConfigDbSettings.userId, userId),
-        eq(userConfigDbSettings.isActive, true)
-      ))
-      .limit(1);
-
-    if (!settings) {
-      console.log('No user-specific config found, returning null');
-      return null; // Return null if no settings
-    }
-
-    // Create and return user-specific pool
-    return new Pool({
-      host: settings.host,
-      port: settings.port,
-      database: settings.database,
-      user: settings.username,
-      password: settings.password,
-      ssl: settings.sslEnabled || false,
-      connectionTimeoutMillis: settings.connectionTimeout || 10000,
-    });
-  } catch (error) {
-    console.error('Error fetching user config, returning null:', error);
-    return null; // Return null on error
-  }
-}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -160,51 +123,55 @@ export interface IStorage {
   getErrors(userId: string, dateRange?: { start: Date; end: Date }): Promise<ErrorRecord[]>;
 
   // Source connections
-  createConnection(connection: InsertSourceConnection): Promise<SourceConnection>;
+  createConnection(userId: string, connection: InsertSourceConnection): Promise<SourceConnection>;
   getConnections(userId: string, filters?: {
     category?: string;
     search?: string;
     status?: string;
   }): Promise<SourceConnection[]>;
-  getConnection(id: number): Promise<SourceConnection | undefined>;
-  updateConnection(id: number, updates: UpdateSourceConnection): Promise<SourceConnection | undefined>;
-  deleteConnection(id: number): Promise<boolean>;
-  testConnection(connectionData: Partial<SourceConnection>): Promise<{
+  getConnection(userId: string, id: number): Promise<SourceConnection | undefined>;
+  updateConnection(userId: string, id: number, updates: UpdateSourceConnection): Promise<SourceConnection | undefined>;
+  deleteConnection(userId: string, id: number): Promise<boolean>;
+  testConnection(userId: string, connectionData: Partial<SourceConnection>): Promise<{
     success: boolean;
     message: string;
     details?: any;
   }>;
+  getDatabaseSchemas(userId: string, connectionId: number): Promise<string[]>;
+  getDatabaseTables(userId: string, connectionId: number, schemaName: string): Promise<string[]>;
+  getDatabaseColumns(userId: string, connectionId: number, schemaName: string, tableName: string): Promise<string[]>;
+  getDatabaseColumnMetadata(userId: string, connectionId: number, schemaName: string, tableName: string): Promise<any[]>;
 
   // Pipeline configuration methods
   getPipelines(userId: string, filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]>;
-  getPipeline(id: number): Promise<ConfigRecord | undefined>;
-  createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord>;
-  updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined>;
-  deletePipeline(id: number): Promise<boolean>;
+  getPipeline(userId: string, id: number): Promise<ConfigRecord | undefined>;
+  createPipeline(userId: string, pipeline: InsertConfigRecord): Promise<ConfigRecord>;
+  updatePipeline(userId: string, id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined>;
+  deletePipeline(userId: string, id: number): Promise<boolean>;
 
   // Metadata methods for dropdowns
-  getMetadata(type: string): Promise<string[]>;
+  getMetadata(userId: string, type: string): Promise<string[]>;
 
   // Data dictionary methods
   getDataDictionaryEntries(userId: string, filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]>;
-  getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined>;
-  createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
-  updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
-  deleteDataDictionaryEntry(id: number): Promise<boolean>;
+  getDataDictionaryEntry(userId: string, id: number): Promise<DataDictionaryRecord | undefined>;
+  createDataDictionaryEntry(userId: string, entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord>;
+  updateDataDictionaryEntry(userId: string, id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined>;
+  deleteDataDictionaryEntry(userId: string, id: number): Promise<boolean>;
 
   // Reconciliation config methods
   getReconciliationConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]>;
-  getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined>;
-  createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
-  updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
-  deleteReconciliationConfig(id: number): Promise<boolean>;
+  getReconciliationConfig(userId: string, id: number): Promise<ReconciliationConfig | undefined>;
+  createReconciliationConfig(userId: string, config: InsertReconciliationConfig): Promise<ReconciliationConfig>;
+  updateReconciliationConfig(userId: string, id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined>;
+  deleteReconciliationConfig(userId: string, id: number): Promise<boolean>;
 
   // Data Quality Config methods
   getDataQualityConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]>;
-  getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined>;
-  createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig>;
-  updateDataQualityConfig(id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined>;
-  deleteDataQualityConfig(id: number): Promise<boolean>;
+  getDataQualityConfig(userId: string, id: number): Promise<DataQualityConfig | undefined>;
+  createDataQualityConfig(userId: string, config: InsertDataQualityConfig): Promise<DataQualityConfig>;
+  updateDataQualityConfig(userId: string, id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined>;
+  deleteDataQualityConfig(userId: string, id: number): Promise<boolean>;
 
   // User Config DB Settings methods
   getUserConfigDbSettings(userId: string): Promise<UserConfigDbSettings | undefined>;
@@ -307,10 +274,10 @@ export class DatabaseStorage implements IStorage {
     category?: string;
     targetTable?: string;
   }) {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty metrics if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return {
         totalPipelines: 0,
         successfulRuns: 0,
@@ -320,6 +287,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -406,7 +374,6 @@ export class DatabaseStorage implements IStorage {
       return metrics;
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
@@ -418,10 +385,10 @@ export class DatabaseStorage implements IStorage {
     category?: string;
     targetTable?: string;
   }) {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty summary if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return {
         dataQuality: { total: 0, success: 0, failed: 0 },
         reconciliation: { total: 0, success: 0, failed: 0 },
@@ -431,6 +398,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -532,7 +500,6 @@ export class DatabaseStorage implements IStorage {
       return summary;
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
@@ -546,10 +513,10 @@ export class DatabaseStorage implements IStorage {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   } = {}) {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty result if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return {
         data: [],
         total: 0,
@@ -558,6 +525,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
+    const userPool = userPoolResult.pool;
     const {
       page = 1,
       limit = 5,
@@ -686,7 +654,6 @@ export class DatabaseStorage implements IStorage {
       };
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
@@ -700,10 +667,10 @@ export class DatabaseStorage implements IStorage {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   } = {}) {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty result if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return {
         data: [],
         total: 0,
@@ -712,6 +679,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
+    const userPool = userPoolResult.pool;
     const {
       page = 1,
       limit = 10,
@@ -825,18 +793,18 @@ export class DatabaseStorage implements IStorage {
       };
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
   async getErrors(userId: string, dateRange?: { start: Date; end: Date }) {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty array if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return [];
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -864,7 +832,6 @@ export class DatabaseStorage implements IStorage {
       return result.rows;
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
@@ -889,10 +856,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Source connection methods
-  async createConnection(connection: InsertSourceConnection): Promise<SourceConnection> {
+  async createConnection(userId: string, connection: InsertSourceConnection): Promise<SourceConnection> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) throw new Error('User configuration not found');
+    const { db: userDb } = userPoolResult;
+
     try {
       console.log('Creating connection with data:', connection);
-      const [created] = await db
+      const [created] = await userDb
         .insert(sourceConnectionTable)
         .values({
           connectionName: connection.connectionName,
@@ -922,13 +893,14 @@ export class DatabaseStorage implements IStorage {
     search?: string;
     status?: string;
   }): Promise<SourceConnection[]> {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty array if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return [];
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -981,20 +953,27 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Failed to fetch connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
-  async getConnection(id: number): Promise<SourceConnection | undefined> {
-    const [connection] = await db
+  async getConnection(userId: string, id: number): Promise<SourceConnection | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [connection] = await userDb
       .select()
       .from(sourceConnectionTable)
       .where(eq(sourceConnectionTable.connectionId, id));
     return connection || undefined;
   }
 
-  async updateConnection(id: number, updates: UpdateSourceConnection): Promise<SourceConnection | undefined> {
-    const [updated] = await db
+  async updateConnection(userId: string, id: number, updates: UpdateSourceConnection): Promise<SourceConnection | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [updated] = await userDb
       .update(sourceConnectionTable)
       .set({
         ...updates,
@@ -1005,14 +984,18 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteConnection(id: number): Promise<boolean> {
-    const result = await db
+  async deleteConnection(userId: string, id: number): Promise<boolean> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return false;
+    const { db: userDb } = userPoolResult;
+
+    const result = await userDb
       .delete(sourceConnectionTable)
       .where(eq(sourceConnectionTable.connectionId, id));
     return (result.rowCount || 0) > 0;
   }
 
-  async testConnection(connectionData: Partial<SourceConnection>): Promise<{
+  async testConnection(userId: string, connectionData: Partial<SourceConnection>): Promise<{
     success: boolean;
     message: string;
     details?: any;
@@ -1124,9 +1107,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Get database schemas from a connection
-  async getDatabaseSchemas(connectionId: number): Promise<string[]> {
+  async getDatabaseSchemas(userId: string, connectionId: number): Promise<string[]> {
     // Get the connection details first
-    const connection = await this.getConnection(connectionId);
+    const connection = await this.getConnection(userId, connectionId);
     if (!connection) {
       throw new Error('Connection not found');
     }
@@ -1234,9 +1217,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Get database columns from a connection, schema, and table
-  async getDatabaseColumns(connectionId: number, schemaName: string, tableName: string): Promise<string[]> {
+  async getDatabaseColumns(userId: string, connectionId: number, schemaName: string, tableName: string): Promise<string[]> {
     // Get the connection details first
-    const connection = await this.getConnection(connectionId);
+    const connection = await this.getConnection(userId, connectionId);
     if (!connection) {
       throw new Error('Connection not found');
     }
@@ -1338,9 +1321,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Get enhanced database column metadata with data types and constraints
-  async getDatabaseColumnMetadata(connectionId: number, schemaName: string, tableName: string): Promise<any[]> {
+  async getDatabaseColumnMetadata(userId: string, connectionId: number, schemaName: string, tableName: string): Promise<any[]> {
     // Get the connection details first
-    const connection = await this.getConnection(connectionId);
+    const connection = await this.getConnection(userId, connectionId);
     if (!connection) {
       throw new Error('Connection not found');
     }
@@ -1524,9 +1507,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Get database tables from a connection and schema
-  async getDatabaseTables(connectionId: number, schemaName: string): Promise<string[]> {
+  async getDatabaseTables(userId: string, connectionId: number, schemaName: string): Promise<string[]> {
     // Get the connection details first
-    const connection = await this.getConnection(connectionId);
+    const connection = await this.getConnection(userId, connectionId);
     if (!connection) {
       throw new Error('Connection not found');
     }
@@ -1642,13 +1625,14 @@ export class DatabaseStorage implements IStorage {
 
   // Pipeline configuration methods
   async getPipelines(userId: string, filters?: { search?: string; executionLayer?: string; sourceSystem?: string; status?: string }): Promise<ConfigRecord[]> {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty array if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return [];
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -1697,19 +1681,26 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Failed to fetch pipelines: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
-  async getPipeline(id: number): Promise<ConfigRecord | undefined> {
-    const [pipeline] = await db.select().from(configTable).where(eq(configTable.configKey, id));
+  async getPipeline(userId: string, id: number): Promise<ConfigRecord | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [pipeline] = await userDb.select().from(configTable).where(eq(configTable.configKey, id));
     return pipeline || undefined;
   }
 
-  async createPipeline(pipeline: InsertConfigRecord): Promise<ConfigRecord> {
+  async createPipeline(userId: string, pipeline: InsertConfigRecord): Promise<ConfigRecord> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) throw new Error('User configuration not found');
+    const { db: userDb } = userPoolResult;
+
     try {
       console.log('Creating pipeline with data:', JSON.stringify(pipeline, null, 2));
-      const [created] = await db.insert(configTable).values(pipeline).returning();
+      const [created] = await userDb.insert(configTable).values(pipeline).returning();
       return created;
     } catch (error) {
       console.error('Error creating pipeline:', error);
@@ -1717,8 +1708,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updatePipeline(id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined> {
-    const [updated] = await db
+  async updatePipeline(userId: string, id: number, updates: UpdateConfigRecord): Promise<ConfigRecord | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [updated] = await userDb
       .update(configTable)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(configTable.configKey, id))
@@ -1726,12 +1721,16 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deletePipeline(id: number): Promise<boolean> {
-    const result = await db.delete(configTable).where(eq(configTable.configKey, id));
+  async deletePipeline(userId: string, id: number): Promise<boolean> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return false;
+    const { db: userDb } = userPoolResult;
+
+    const result = await userDb.delete(configTable).where(eq(configTable.configKey, id));
     return (result.rowCount || 0) > 0;
   }
 
-  async getMetadata(type: string): Promise<string[]> {
+  async getMetadata(userId: string, type: string): Promise<string[]> {
     // Static metadata for dropdowns - in production this could come from a metadata table
     const metadataMap: Record<string, string[]> = {
       'execution_layer': ['Bronze', 'Silver', 'Gold'],
@@ -1758,13 +1757,14 @@ export class DatabaseStorage implements IStorage {
 
   // Data dictionary implementation
   async getDataDictionaryEntries(userId: string, filters?: { search?: string; executionLayer?: string; schemaName?: string; tableName?: string; customField?: string; customValue?: string }): Promise<DataDictionaryRecord[]> {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty array if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return [];
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -1862,165 +1862,86 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Failed to fetch data dictionary entries: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
-  async getDataDictionaryEntry(id: number): Promise<DataDictionaryRecord | undefined> {
-    // FORCE connection to external PostgreSQL database
+  async getDataDictionaryEntry(userId: string, id: number): Promise<DataDictionaryRecord | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [entry] = await userDb
+      .select()
+      .from(dataDictionaryTable)
+      .where(eq(dataDictionaryTable.dataDictionaryKey, id));
+    return entry || undefined;
+  }
+
+  async createDataDictionaryEntry(userId: string, entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) throw new Error('User configuration not found');
+    const { db: userDb } = userPoolResult;
+
     try {
-      const query = `
-        SELECT * FROM data_dictionary_table
-        WHERE data_dictionary_key = $1
-      `;
-
-      const result = await externalPool.query(query, [id]);
-
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-
-      return result.rows[0] as DataDictionaryRecord;
+      const [created] = await userDb
+        .insert(dataDictionaryTable)
+        .values({
+          configKey: entry.configKey,
+          executionLayer: entry.executionLayer,
+          schemaName: entry.schemaName || null,
+          tableName: entry.tableName || null,
+          attributeName: entry.attributeName,
+          dataType: entry.dataType,
+          length: entry.length || null,
+          precisionValue: entry.precisionValue || null,
+          scale: entry.scale || null,
+          columnDescription: entry.columnDescription || null,
+          createdBy: entry.createdBy || 'API_USER',
+          updatedBy: entry.updatedBy || 'API_USER',
+          isNotNull: entry.isNotNull || 'N',
+          isPrimaryKey: entry.isPrimaryKey || 'N',
+          isForeignKey: entry.isForeignKey || 'N',
+          activeFlag: entry.activeFlag || 'Y'
+        })
+        .returning();
+      
+      console.log('Successfully inserted data dictionary entry with ID:', created.dataDictionaryKey);
+      return created;
     } catch (error) {
-      console.error('External database get entry error:', error);
+      console.error('Error creating data dictionary entry:', error);
       throw error;
     }
   }
 
-  async createDataDictionaryEntry(entry: InsertDataDictionaryRecord): Promise<DataDictionaryRecord> {
-    // FORCE connection to external PostgreSQL database with proper auto-increment
+  async updateDataDictionaryEntry(userId: string, id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
     try {
-      const query = `
-        INSERT INTO data_dictionary_table (
-          config_key, execution_layer, schema_name, table_name, attribute_name,
-          data_type, length, precision_value, scale, insert_date, update_date,
-          column_description, created_by, updated_by, is_not_null, is_primary_key,
-          is_foreign_key, active_flag
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW(), $10, $11, $12, $13, $14, $15, $16)
-        RETURNING *;
-      `;
+      const [updated] = await userDb
+        .update(dataDictionaryTable)
+        .set({
+          ...updates,
+          updatedBy: updates.updatedBy || 'System'
+        })
+        .where(eq(dataDictionaryTable.dataDictionaryKey, id))
+        .returning();
 
-      const values = [
-        entry.configKey,
-        entry.executionLayer,
-        entry.schemaName || null,
-        entry.tableName || null,
-        entry.attributeName,
-        entry.dataType,
-        entry.length || null,
-        entry.precisionValue || null,
-        entry.scale || null,
-        entry.columnDescription || null,
-        entry.createdBy || 'API_USER',
-        entry.updatedBy || 'API_USER',
-        entry.isNotNull || 'N',
-        entry.isPrimaryKey || 'N',
-        entry.isForeignKey || 'N',
-        entry.activeFlag || 'Y'
-      ];
-
-      const result = await externalPool.query(query, values);
-
-      console.log('Successfully inserted into external database with ID:', result.rows[0]?.data_dictionary_key);
-      return result.rows[0] as DataDictionaryRecord;
+      console.log('Successfully updated data dictionary entry with ID:', id);
+      return updated || undefined;
     } catch (error) {
-      console.error('External database insert error:', error);
+      console.error('Error updating data dictionary entry:', error);
       throw error;
     }
   }
 
-  async updateDataDictionaryEntry(id: number, updates: UpdateDataDictionaryRecord): Promise<DataDictionaryRecord | undefined> {
-    // FORCE connection to external PostgreSQL database
-    try {
-      // Build dynamic update query with only provided fields
-      const updateFields = [];
-      const values = [];
-      let paramCount = 1;
+  async deleteDataDictionaryEntry(userId: string, id: number): Promise<boolean> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return false;
+    const { db: userDb } = userPoolResult;
 
-      if (updates.configKey !== undefined) {
-        updateFields.push(`config_key = $${paramCount++}`);
-        values.push(updates.configKey);
-      }
-      if (updates.executionLayer !== undefined) {
-        updateFields.push(`execution_layer = $${paramCount++}`);
-        values.push(updates.executionLayer);
-      }
-      if (updates.schemaName !== undefined) {
-        updateFields.push(`schema_name = $${paramCount++}`);
-        values.push(updates.schemaName);
-      }
-      if (updates.tableName !== undefined) {
-        updateFields.push(`table_name = $${paramCount++}`);
-        values.push(updates.tableName);
-      }
-      if (updates.attributeName !== undefined) {
-        updateFields.push(`attribute_name = $${paramCount++}`);
-        values.push(updates.attributeName);
-      }
-      if (updates.dataType !== undefined) {
-        updateFields.push(`data_type = $${paramCount++}`);
-        values.push(updates.dataType);
-      }
-      if (updates.length !== undefined) {
-        updateFields.push(`length = $${paramCount++}`);
-        values.push(updates.length);
-      }
-      if (updates.precisionValue !== undefined) {
-        updateFields.push(`precision_value = $${paramCount++}`);
-        values.push(updates.precisionValue);
-      }
-      if (updates.scale !== undefined) {
-        updateFields.push(`scale = $${paramCount++}`);
-        values.push(updates.scale);
-      }
-      if (updates.columnDescription !== undefined) {
-        updateFields.push(`column_description = $${paramCount++}`);
-        values.push(updates.columnDescription);
-      }
-      if (updates.isNotNull !== undefined) {
-        updateFields.push(`is_not_null = $${paramCount++}`);
-        values.push(updates.isNotNull);
-      }
-      if (updates.isPrimaryKey !== undefined) {
-        updateFields.push(`is_primary_key = $${paramCount++}`);
-        values.push(updates.isPrimaryKey);
-      }
-      if (updates.isForeignKey !== undefined) {
-        updateFields.push(`is_foreign_key = $${paramCount++}`);
-        values.push(updates.isForeignKey);
-      }
-      if (updates.activeFlag !== undefined) {
-        updateFields.push(`active_flag = $${paramCount++}`);
-        values.push(updates.activeFlag);
-      }
-
-      // Always update the update_date and updated_by
-      updateFields.push(`update_date = NOW()`);
-      updateFields.push(`updated_by = $${paramCount++}`);
-      values.push(updates.updatedBy || 'System');
-
-      // Add the ID for WHERE clause
-      values.push(id);
-
-      const query = `
-        UPDATE data_dictionary_table
-        SET ${updateFields.join(', ')}
-        WHERE data_dictionary_key = $${paramCount}
-        RETURNING *;
-      `;
-
-      const result = await externalPool.query(query, values);
-
-      console.log('Successfully updated entry in external database with ID:', id);
-      return result.rows[0] as DataDictionaryRecord;
-    } catch (error) {
-      console.error('External database update entry error:', error);
-      throw error;
-    }
-  }
-
-  async deleteDataDictionaryEntry(id: number): Promise<boolean> {
-    const result = await db
+    const result = await userDb
       .delete(dataDictionaryTable)
       .where(eq(dataDictionaryTable.dataDictionaryKey, id));
     return (result.rowCount || 0) > 0;
@@ -2028,13 +1949,14 @@ export class DatabaseStorage implements IStorage {
 
   // Reconciliation config methods implementation
   async getReconciliationConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; reconType?: string; status?: string }): Promise<ReconciliationConfig[]> {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty array if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return [];
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -2089,21 +2011,28 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Failed to fetch reconciliation configs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
-  async getReconciliationConfig(id: number): Promise<ReconciliationConfig | undefined> {
-    const [config] = await db
+  async getReconciliationConfig(userId: string, id: number): Promise<ReconciliationConfig | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [config] = await userDb
       .select()
       .from(reconciliationConfigTable)
       .where(eq(reconciliationConfigTable.reconKey, id));
     return config || undefined;
   }
 
-  async createReconciliationConfig(config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
+  async createReconciliationConfig(userId: string, config: InsertReconciliationConfig): Promise<ReconciliationConfig> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) throw new Error('User configuration not found');
+    const { db: userDb } = userPoolResult;
+
     // Get the maximum existing recon_key
-    const maxKeyResult = await db
+    const maxKeyResult = await userDb
       .select({ maxKey: sql`COALESCE(MAX(${reconciliationConfigTable.reconKey}), 0)` })
       .from(reconciliationConfigTable);
 
@@ -2112,7 +2041,7 @@ export class DatabaseStorage implements IStorage {
     console.log('Creating reconciliation config with next recon_key:', nextKey);
     
     // Use Drizzle ORM insert with explicit recon_key
-    const [created] = await db
+    const [created] = await userDb
       .insert(reconciliationConfigTable)
       .values({
         reconKey: nextKey,
@@ -2136,8 +2065,12 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateReconciliationConfig(id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined> {
-    const [updated] = await db
+  async updateReconciliationConfig(userId: string, id: number, updates: UpdateReconciliationConfig): Promise<ReconciliationConfig | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [updated] = await userDb
       .update(reconciliationConfigTable)
       .set(updates)
       .where(eq(reconciliationConfigTable.reconKey, id))
@@ -2147,8 +2080,12 @@ export class DatabaseStorage implements IStorage {
 
   
 
-  async deleteReconciliationConfig(id: number): Promise<boolean> {
-    const result = await db
+  async deleteReconciliationConfig(userId: string, id: number): Promise<boolean> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return false;
+    const { db: userDb } = userPoolResult;
+
+    const result = await userDb
       .delete(reconciliationConfigTable)
       .where(eq(reconciliationConfigTable.reconKey, id));
     return (result.rowCount || 0) > 0;
@@ -2156,13 +2093,14 @@ export class DatabaseStorage implements IStorage {
 
   // Data Quality Config implementations
   async getDataQualityConfigs(userId: string, filters?: { search?: string; executionLayer?: string; configKey?: number; validationType?: string; status?: string }): Promise<DataQualityConfig[]> {
-    const userPool = await getUserSpecificPool(userId);
+    const userPoolResult = await getUserSpecificPool(userId);
     
     // Return empty array if no user config
-    if (!userPool) {
+    if (!userPoolResult) {
       return [];
     }
 
+    const userPool = userPoolResult.pool;
     const client = await userPool.connect();
     
     try {
@@ -2238,21 +2176,28 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Failed to fetch data quality configs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       client.release();
-      await userPool.end();
     }
   }
 
-  async getDataQualityConfig(id: number): Promise<DataQualityConfig | undefined> {
-    const [config] = await db
+  async getDataQualityConfig(userId: string, id: number): Promise<DataQualityConfig | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [config] = await userDb
       .select()
       .from(dataQualityConfigTable)
       .where(eq(dataQualityConfigTable.dataQualityKey, id));
     return config || undefined;
   }
 
-  async createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig> {
+  async createDataQualityConfig(userId: string, config: InsertDataQualityConfig): Promise<DataQualityConfig> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) throw new Error('User configuration not found');
+    const { db: userDb } = userPoolResult;
+
     // Get the maximum existing data_quality_key
-    const maxKeyResult = await db
+    const maxKeyResult = await userDb
       .select({ maxKey: sql`COALESCE(MAX(${dataQualityConfigTable.dataQualityKey}), 0)` })
       .from(dataQualityConfigTable);
 
@@ -2274,15 +2219,19 @@ export class DatabaseStorage implements IStorage {
       customQuery: config.customQuery,
     };
 
-    const [created] = await db
+    const [created] = await userDb
       .insert(dataQualityConfigTable)
       .values(insertData)
       .returning();
     return created;
   }
 
-  async updateDataQualityConfig(id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined> {
-    const [updated] = await db
+  async updateDataQualityConfig(userId: string, id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return undefined;
+    const { db: userDb } = userPoolResult;
+
+    const [updated] = await userDb
       .update(dataQualityConfigTable)
       .set(updates)
       .where(eq(dataQualityConfigTable.dataQualityKey, id))
@@ -2290,8 +2239,12 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteDataQualityConfig(id: number): Promise<boolean> {
-    const result = await db
+  async deleteDataQualityConfig(userId: string, id: number): Promise<boolean> {
+    const userPoolResult = await getUserSpecificPool(userId);
+    if (!userPoolResult) return false;
+    const { db: userDb } = userPoolResult;
+
+    const result = await userDb
       .delete(dataQualityConfigTable)
       .where(eq(dataQualityConfigTable.dataQualityKey, id));
     return (result.rowCount || 0) > 0;
