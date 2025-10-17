@@ -18,11 +18,11 @@ import AboutPage from "@/pages/AboutPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import SignUpPage from "@/pages/SignUpPage";
 import NotFound from "@/pages/not-found";
-import { useAuthState } from "@/hooks/useAuth";
+import { useAuth, useAuthState, AuthContext } from "@/hooks/useAuth";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuthState();
+  const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -75,13 +75,25 @@ function Router() {
   );
 }
 
+function AuthProvider({ children }: { children: React.ReactNode }) {
+  const authState = useAuthState();
+  
+  return (
+    <AuthContext.Provider value={authState}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

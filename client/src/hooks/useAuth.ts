@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 
 interface User {
   id: string;
@@ -17,7 +17,7 @@ interface AuthContextType {
   checkSession: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -26,6 +26,7 @@ export const useAuth = () => {
   }
   return context;
 };
+
 
 // Hook for local auth state management
 export const useAuthState = () => {

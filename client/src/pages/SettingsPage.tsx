@@ -8,12 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthState } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 
 export function SettingsPage() {
-  const { user, logout } = useAuthState();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [isEditingProfile, setIsEditingProfile] = useState(false);

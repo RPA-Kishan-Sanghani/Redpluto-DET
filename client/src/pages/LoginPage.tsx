@@ -5,14 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthState } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, HelpCircle, Info } from 'lucide-react';
 import plutoBackground from '@assets/generated_images/Pluto_space_background_34495b16.png';
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { login, isAuthenticated } = useAuthState();
+  const { login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
