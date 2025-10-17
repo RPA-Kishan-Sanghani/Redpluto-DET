@@ -36,6 +36,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (user && user.password === password) {
+        // Log user activity
+        await storage.logUserActivity({
+          userId: user.id,
+          activityType: 'sign_in',
+          ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+          userAgent: req.headers['user-agent'] || 'unknown',
+        });
+
         // In production, use proper password hashing
         const { password: _, ...userWithoutPassword } = user;
         res.json({ user: userWithoutPassword });
@@ -45,6 +53,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error during login:', error);
       res.status(500).json({ error: 'Login failed' });
+    }
+  });
+
+  // User logout endpoint
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+
+      if (userId) {
+        // Validate user exists
+        const user = await storage.getUser(userId);
+        if (user) {
+          // Log user activity
+          await storage.logUserActivity({
+            userId,
+            activityType: 'sign_out',
+            ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+            userAgent: req.headers['user-agent'] || 'unknown',
+          });
+        }
+      }
+
+      res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      res.status(500).json({ error: 'Logout failed' });
     }
   });
 
@@ -917,6 +951,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching temporary tables:', error);
       res.status(500).json({ error: 'Failed to fetch temporary tables' });
+    }
+  });
+
+  // User Config DB Settings routes
+  app.get("/api/user-config-db-settings", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: User ID required' });
+      }
+
+      // Validate user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
+      }
+
+      const settings = await storage.getUserConfigDbSettings(userId);
+      if (!settings) {
+        return res.status(404).json({ error: 'No config database settings found' });
+      }
+
+      res.json(settings);
+    } catch (error) {
+      console.error('Error fetching user config DB settings:', error);
+      res.status(500).json({ error: 'Failed to fetch config database settings' });
+    }
+  });
+
+  app.post("/api/user-config-db-settings", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: User ID required' });
+      }
+
+      // Validate user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
+      }
+
+      const settings = await storage.createUserConfigDbSettings({
+        ...req.body,
+        userId,
+      });
+      res.status(201).json(settings);
+    } catch (error) {
+      console.error('Error creating user config DB settings:', error);
+      res.status(500).json({ error: 'Failed to create config database settings' });
+    }
+  });
+
+  app.put("/api/user-config-db-settings", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: User ID required' });
+      }
+
+      // Validate user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
+      }
+
+      const updated = await storage.updateUserConfigDbSettings(userId, req.body);
+      
+      if (!updated) {
+        return res.status(404).json({ error: 'Config database settings not found' });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating user config DB settings:', error);
+      res.status(500).json({ error: 'Failed to update config database settings' });
+    }
+  });
+
+  app.post("/api/user-config-db-settings/test", async (req, res) => {
+    try {
+      const result = await storage.testUserConfigDbConnection(req.body);
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      res.status(500).json({ success: false, message: 'Connection test failed', details: error });
+    }
+  });
+
+  // User Activity routes
+  app.post("/api/user-activity", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: User ID required' });
+      }
+
+      // Validate user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
+      }
+
+      const activity = await storage.logUserActivity({
+        ...req.body,
+        userId,
+      });
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error('Error logging user activity:', error);
+      res.status(500).json({ error: 'Failed to log user activity' });
+    }
+  });
+
+  app.get("/api/user-activity", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: User ID required' });
+      }
+
+      // Validate user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid user' });
+      }
+
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const activities = await storage.getUserActivity(userId, limit);
+      res.json(activities);
+    } catch (error) {
+      console.error('Error fetching user activity:', error);
+      res.status(500).json({ error: 'Failed to fetch user activity' });
     }
   });
 

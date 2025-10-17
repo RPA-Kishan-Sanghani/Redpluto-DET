@@ -13,7 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string, rememberMe?: boolean) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
 
@@ -97,7 +97,22 @@ export const useAuthState = () => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Log sign out activity
+    if (user?.id) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-User-Id': user.id,
+          },
+        });
+      } catch (error) {
+        console.error('Error logging logout activity:', error);
+      }
+    }
+
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('sessionExpiry');

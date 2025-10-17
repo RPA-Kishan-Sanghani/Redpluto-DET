@@ -1,10 +1,10 @@
-import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type InsertDataQualityConfig, type UpdateDataQualityConfig } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, userConfigDbSettings, userActivity, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type UserConfigDbSettings, type InsertUserConfigDbSettings, type UpdateUserConfigDbSettings, type UserActivity, type InsertUserActivity } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } from "drizzle-orm";
 import { Pool } from 'pg';
 import mysql from 'mysql2/promise';
 
-// Shared external database connection pool for metadata queries
+// Shared external database connection pool for metadata queries (fallback)
 const externalPool = new Pool({
   host: '4.240.90.166',
   port: 5432,
@@ -14,6 +14,43 @@ const externalPool = new Pool({
   ssl: false,
   connectionTimeoutMillis: 10000,
 });
+
+// Helper function to get user-specific database pool
+async function getUserSpecificPool(userId?: string): Promise<Pool> {
+  if (!userId) {
+    return externalPool; // Return default pool if no userId
+  }
+
+  try {
+    const [settings] = await db
+      .select()
+      .from(userConfigDbSettings)
+      .where(and(
+        eq(userConfigDbSettings.userId, userId),
+        eq(userConfigDbSettings.isActive, true)
+      ))
+      .limit(1);
+
+    if (!settings) {
+      console.log('No user-specific config found, using default pool');
+      return externalPool; // Return default pool if no settings
+    }
+
+    // Create and return user-specific pool
+    return new Pool({
+      host: settings.host,
+      port: settings.port,
+      database: settings.database,
+      user: settings.username,
+      password: settings.password,
+      ssl: settings.sslEnabled || false,
+      connectionTimeoutMillis: settings.connectionTimeout || 10000,
+    });
+  } catch (error) {
+    console.error('Error fetching user config, using default pool:', error);
+    return externalPool; // Return default pool on error
+  }
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -168,6 +205,20 @@ export interface IStorage {
   createDataQualityConfig(config: InsertDataQualityConfig): Promise<DataQualityConfig>;
   updateDataQualityConfig(id: number, updates: UpdateDataQualityConfig): Promise<DataQualityConfig | undefined>;
   deleteDataQualityConfig(id: number): Promise<boolean>;
+
+  // User Config DB Settings methods
+  getUserConfigDbSettings(userId: string): Promise<UserConfigDbSettings | undefined>;
+  createUserConfigDbSettings(settings: InsertUserConfigDbSettings): Promise<UserConfigDbSettings>;
+  updateUserConfigDbSettings(userId: string, settings: UpdateUserConfigDbSettings): Promise<UserConfigDbSettings | undefined>;
+  testUserConfigDbConnection(settings: Partial<UserConfigDbSettings>): Promise<{
+    success: boolean;
+    message: string;
+    details?: any;
+  }>;
+
+  // User Activity methods
+  logUserActivity(activity: InsertUserActivity): Promise<UserActivity>;
+  getUserActivity(userId: string, limit?: number): Promise<UserActivity[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2049,6 +2100,102 @@ export class DatabaseStorage implements IStorage {
       .delete(dataQualityConfigTable)
       .where(eq(dataQualityConfigTable.dataQualityKey, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // User Config DB Settings methods implementation
+  async getUserConfigDbSettings(userId: string): Promise<UserConfigDbSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(userConfigDbSettings)
+      .where(and(
+        eq(userConfigDbSettings.userId, userId),
+        eq(userConfigDbSettings.isActive, true)
+      ))
+      .orderBy(desc(userConfigDbSettings.createdAt))
+      .limit(1);
+    return settings || undefined;
+  }
+
+  async createUserConfigDbSettings(settings: InsertUserConfigDbSettings): Promise<UserConfigDbSettings> {
+    const [created] = await db
+      .insert(userConfigDbSettings)
+      .values(settings)
+      .returning();
+    return created;
+  }
+
+  async updateUserConfigDbSettings(userId: string, updates: UpdateUserConfigDbSettings): Promise<UserConfigDbSettings | undefined> {
+    const [updated] = await db
+      .update(userConfigDbSettings)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(userConfigDbSettings.userId, userId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async testUserConfigDbConnection(settings: Partial<UserConfigDbSettings>): Promise<{
+    success: boolean;
+    message: string;
+    details?: any;
+  }> {
+    if (!settings.host || !settings.port || !settings.database || !settings.username || !settings.password) {
+      return {
+        success: false,
+        message: 'Missing required connection parameters',
+      };
+    }
+
+    let testPool: Pool | null = null;
+    
+    try {
+      testPool = new Pool({
+        host: settings.host,
+        port: settings.port,
+        database: settings.database,
+        user: settings.username,
+        password: settings.password,
+        ssl: settings.sslEnabled || false,
+        connectionTimeoutMillis: settings.connectionTimeout || 10000,
+      });
+
+      await testPool.query('SELECT 1');
+      
+      return {
+        success: true,
+        message: 'Connection successful',
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: 'Connection failed',
+        details: error.message,
+      };
+    } finally {
+      if (testPool) {
+        await testPool.end();
+      }
+    }
+  }
+
+  // User Activity methods implementation
+  async logUserActivity(activity: InsertUserActivity): Promise<UserActivity> {
+    const [logged] = await db
+      .insert(userActivity)
+      .values(activity)
+      .returning();
+    return logged;
+  }
+
+  async getUserActivity(userId: string, limit: number = 50): Promise<UserActivity[]> {
+    return await db
+      .select()
+      .from(userActivity)
+      .where(eq(userActivity.userId, userId))
+      .orderBy(desc(userActivity.timestamp))
+      .limit(limit);
   }
 }
 

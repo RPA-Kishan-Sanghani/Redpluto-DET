@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { User, Settings, LogOut, Key, Database, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -76,10 +76,14 @@ export function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-1">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="database" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Config Database
           </TabsTrigger>
         </TabsList>
 
@@ -240,8 +244,283 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
+        {/* Config Database Tab */}
+        <TabsContent value="database" className="space-y-6">
+          <ConfigDatabaseSettings userId={user?.id} />
+        </TabsContent>
         
       </Tabs>
     </div>
   );
 }
+
+// Config Database Settings Component
+function ConfigDatabaseSettings({ userId }: { userId?: string }) {
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    host: '',
+    port: 5432,
+    database: '',
+    username: '',
+    password: '',
+    sslEnabled: false,
+    connectionTimeout: 10000,
+  });
+
+  // Fetch existing settings on mount
+  useEffect(() => {
+    if (userId) {
+      fetch(`/api/user-config-db-settings`, {
+        headers: {
+          'X-User-Id': userId,
+        },
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setSettings({
+              host: data.host || '',
+              port: data.port || 5432,
+              database: data.database || '',
+              username: data.username || '',
+              password: data.password || '',
+              sslEnabled: data.sslEnabled || false,
+              connectionTimeout: data.connectionTimeout || 10000,
+            });
+          }
+        })
+        .catch(err => console.error('Error loading settings:', err));
+    }
+  }, [userId]);
+
+  const handleInputChange = (field: string, value: string | number | boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    try {
+      const response = await fetch('/api/user-config-db-settings/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Connection Successful",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: result.message + (result.details ? `: ${result.details}` : ''),
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to test connection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Check if settings exist
+      const checkResponse = await fetch(`/api/user-config-db-settings`, {
+        headers: { 'X-User-Id': userId },
+      });
+      const exists = checkResponse.ok;
+
+      const url = exists 
+        ? `/api/user-config-db-settings`
+        : '/api/user-config-db-settings';
+      const method = exists ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+        },
+        body: JSON.stringify(settings),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Settings Saved",
+          description: "Your config database settings have been saved successfully.",
+        });
+        setIsEditing(false);
+      } else {
+        throw new Error('Failed to save settings');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Config Database Settings</CardTitle>
+        <CardDescription>
+          Configure your external database connection for data operations
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="host">Host</Label>
+            <Input
+              id="host"
+              data-testid="input-host"
+              value={settings.host}
+              disabled={!isEditing}
+              onChange={(e) => handleInputChange('host', e.target.value)}
+              placeholder="e.g., 4.240.90.166"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="port">Port</Label>
+            <Input
+              id="port"
+              data-testid="input-port"
+              type="number"
+              value={settings.port}
+              disabled={!isEditing}
+              onChange={(e) => handleInputChange('port', parseInt(e.target.value))}
+              placeholder="5432"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="database">Database Name</Label>
+            <Input
+              id="database"
+              data-testid="input-database"
+              value={settings.database}
+              disabled={!isEditing}
+              onChange={(e) => handleInputChange('database', e.target.value)}
+              placeholder="e.g., config_db"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              data-testid="input-username"
+              value={settings.username}
+              disabled={!isEditing}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              placeholder="Database username"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              data-testid="input-password"
+              type="password"
+              value={settings.password}
+              disabled={!isEditing}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              placeholder="Database password"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="connectionTimeout">Connection Timeout (ms)</Label>
+            <Input
+              id="connectionTimeout"
+              data-testid="input-timeout"
+              type="number"
+              value={settings.connectionTimeout}
+              disabled={!isEditing}
+              onChange={(e) => handleInputChange('connectionTimeout', parseInt(e.target.value))}
+              placeholder="10000"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="sslEnabled"
+            data-testid="checkbox-ssl"
+            checked={settings.sslEnabled}
+            disabled={!isEditing}
+            onChange={(e) => handleInputChange('sslEnabled', e.target.checked)}
+            className="h-4 w-4"
+          />
+          <Label htmlFor="sslEnabled" className="cursor-pointer">
+            Enable SSL
+          </Label>
+        </div>
+
+        <div className="flex justify-between pt-4">
+          <div className="space-x-2">
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)} data-testid="button-edit">
+                Edit Settings
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditing(false)}
+                  data-testid="button-cancel"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  data-testid="button-save"
+                >
+                  {isSaving ? "Saving..." : "Save Settings"}
+                </Button>
+              </>
+            )}
+          </div>
+          <Button 
+            variant="secondary" 
+            onClick={handleTestConnection}
+            disabled={isTesting || !settings.host || !settings.database}
+            data-testid="button-test"
+          >
+            {isTesting ? "Testing..." : "Test Connection"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
