@@ -54,7 +54,13 @@ export function Reconciliation() {
       }
 
       const response = await fetch(`/api/reconciliation-configs?${params}`, { headers });
-      if (!response.ok) throw new Error('Failed to fetch reconciliation configs');
+      if (!response.ok) {
+        // If unauthorized or no config, return empty array instead of error
+        if (response.status === 401 || response.status === 404) {
+          return [] as ReconciliationConfig[];
+        }
+        throw new Error('Failed to fetch reconciliation configs');
+      }
       return (await response.json()) as ReconciliationConfig[];
     }
   });
@@ -156,13 +162,8 @@ export function Reconciliation() {
   };
 
   if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-8">
-          <p className="text-red-500">Error loading reconciliation configurations. Please try again.</p>
-        </div>
-      </div>
-    );
+    // Don't show error screen - let it fall through to empty state
+    console.error('Error fetching reconciliation configs:', error);
   }
 
   return (

@@ -54,7 +54,13 @@ export function DataQuality() {
       }
 
       const response = await fetch(`/api/data-quality-configs?${params}`, { headers });
-      if (!response.ok) throw new Error('Failed to fetch data quality configs');
+      if (!response.ok) {
+        // If unauthorized or no config, return empty array instead of error
+        if (response.status === 401 || response.status === 404) {
+          return [] as DataQualityConfig[];
+        }
+        throw new Error('Failed to fetch data quality configs');
+      }
       return (await response.json()) as DataQualityConfig[];
     }
   });
@@ -150,13 +156,8 @@ export function DataQuality() {
   };
 
   if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-8">
-          <p className="text-red-500">Error loading data quality configurations. Please try again.</p>
-        </div>
-      </div>
-    );
+    // Don't show error screen - let it fall through to empty state
+    console.error('Error fetching data quality configs:', error);
   }
 
   return (

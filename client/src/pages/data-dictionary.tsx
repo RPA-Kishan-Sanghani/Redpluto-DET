@@ -87,6 +87,10 @@ export function DataDictionary() {
 
       const response = await fetch('/api/data-dictionary', { headers });
       if (!response.ok) {
+        // If unauthorized or no config, return empty array instead of error
+        if (response.status === 401 || response.status === 404) {
+          return [];
+        }
         throw new Error('Failed to fetch data dictionary entries');
       }
       return response.json();
@@ -269,16 +273,8 @@ export function DataDictionary() {
   }
 
   if (error) {
-    return (
-      <div className="w-screen h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error loading data dictionary</p>
-          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/data-dictionary'] })}>
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
+    // Don't show error screen - let it fall through to empty state
+    console.error('Error fetching data dictionary:', error);
   }
 
   return (

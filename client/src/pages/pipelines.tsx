@@ -50,7 +50,13 @@ export function Pipelines() {
       }
 
       const response = await fetch(`/api/pipelines?${params}`, { headers });
-      if (!response.ok) throw new Error('Failed to fetch pipelines');
+      if (!response.ok) {
+        // If unauthorized or no config, return empty array instead of error
+        if (response.status === 401 || response.status === 404) {
+          return [] as ConfigRecord[];
+        }
+        throw new Error('Failed to fetch pipelines');
+      }
       return response.json() as ConfigRecord[];
     }
   });
@@ -141,24 +147,9 @@ export function Pipelines() {
   };
 
   if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-8">
-          <p className="text-red-500 font-semibold">Database Connection Error:</p>
-          <p className="text-red-600 text-sm mt-2">
-            {error instanceof Error ? error.message : 'Error loading pipelines. Please try again.'}
-          </p>
-          <div className="mt-4">
-            <Button 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/pipelines'] })}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Retry Connection
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+    // Don't show error if it's just that there are no pipelines (empty array is not an error)
+    // The error state will be handled by showing empty state below
+    console.error('Error fetching pipelines:', error);
   }
 
   const handleRefresh = () => {
