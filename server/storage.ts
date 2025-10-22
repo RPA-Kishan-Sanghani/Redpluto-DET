@@ -5,17 +5,6 @@ import { Pool } from 'pg';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
-// Shared external database connection pool for metadata queries (fallback)
-const externalPool = new Pool({
-  host: '4.240.90.166',
-  port: 5432,
-  database: 'config_db',
-  user: 'rpdet_az',
-  password: 'Rpdet#1234',
-  ssl: false,
-  connectionTimeoutMillis: 10000,
-});
-
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
