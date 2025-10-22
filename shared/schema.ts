@@ -317,6 +317,9 @@ export type DataQualityConfig = DataQualityConfigBase & {
   targetTableName?: string | null;
 };
 
+export type InsertDataQualityConfig = z.infer<typeof insertDataQualityConfigSchema>;
+export type UpdateDataQualityConfig = z.infer<typeof updateDataQualityConfigSchema>;
+
 // Config Settings Connections Table (separate from source connections)
 export const configConnectionTable = pgTable("config_connections", {
   connectionId: serial("connection_id").primaryKey(),

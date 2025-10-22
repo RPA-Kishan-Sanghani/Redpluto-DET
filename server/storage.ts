@@ -1,4 +1,4 @@
-import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, userConfigDbSettings, userActivity, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type UserConfigDbSettings, type InsertUserConfigDbSettings, type UpdateUserConfigDbSettings, type UserActivity, type InsertUserActivity } from "@shared/schema";
+import { users, auditTable, errorTable, sourceConnectionTable, configTable, dataDictionaryTable, reconciliationConfigTable, dataQualityConfigTable, userConfigDbSettings, userActivity, type User, type InsertUser, type AuditRecord, type ErrorRecord, type SourceConnection, type InsertSourceConnection, type UpdateSourceConnection, type ConfigRecord, type InsertConfigRecord, type UpdateConfigRecord, type DataDictionaryRecord, type InsertDataDictionaryRecord, type UpdateDataDictionaryRecord, type ReconciliationConfig, type InsertReconciliationConfig, type UpdateReconciliationConfig, type DataQualityConfig, type InsertDataQualityConfig, type UpdateDataQualityConfig, type UserConfigDbSettings, type InsertUserConfigDbSettings, type UpdateUserConfigDbSettings, type UserActivity, type InsertUserActivity } from "@shared/schema";
 import { db, pool, getUserSpecificPool } from "./db";
 import { eq, and, gte, lte, count, desc, asc, like, inArray, sql, ilike, or } from "drizzle-orm";
 import { Pool } from 'pg';
@@ -2037,10 +2037,10 @@ export class DatabaseStorage implements IStorage {
 
     // Get the maximum existing recon_key
     const maxKeyResult = await userDb
-      .select({ maxKey: sql`COALESCE(MAX(${reconciliationConfigTable.reconKey}), 0)` })
+      .select({ maxKey: sql<number>`COALESCE(MAX(${reconciliationConfigTable.reconKey}), 0)` })
       .from(reconciliationConfigTable);
 
-    const nextKey = (maxKeyResult[0]?.maxKey || 0) + 1;
+    const nextKey = (maxKeyResult[0]?.maxKey ?? 0) + 1;
 
     console.log('Creating reconciliation config with next recon_key:', nextKey);
     
@@ -2202,10 +2202,10 @@ export class DatabaseStorage implements IStorage {
 
     // Get the maximum existing data_quality_key
     const maxKeyResult = await userDb
-      .select({ maxKey: sql`COALESCE(MAX(${dataQualityConfigTable.dataQualityKey}), 0)` })
+      .select({ maxKey: sql<number>`COALESCE(MAX(${dataQualityConfigTable.dataQualityKey}), 0)` })
       .from(dataQualityConfigTable);
 
-    const nextKey = (maxKeyResult[0]?.maxKey || 0) + 1;
+    const nextKey = (maxKeyResult[0]?.maxKey ?? 0) + 1;
 
     // Only insert fields that exist in the external database, with explicit primary key
     const insertData = {
