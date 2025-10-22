@@ -3,18 +3,18 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Admin Database (external PostgreSQL) - stores users, user_config_db_settings, user_activity
+// Admin Database (NeonDB PostgreSQL) - stores users, user_config_db_settings, user_activity
 const ADMIN_DATABASE_CONFIG = {
-  host: '4.240.90.166',
+  host: 'ep-misty-mountain-afd65hmo.c-2.us-west-2.aws.neon.tech',
   port: 5432,
-  database: 'config_db',
-  user: 'rpdet_az',
-  password: 'Rpdet#1234',
-  ssl: false,
+  database: 'neondb',
+  user: 'neondb_owner',
+  password: 'npg_A0aTlv5uOPHq',
+  ssl: true,
   connectionTimeoutMillis: 10000,
 };
 
-console.log('Connecting to Admin Database at', ADMIN_DATABASE_CONFIG.host);
+console.log('Connecting to Admin Database (NeonDB) at', ADMIN_DATABASE_CONFIG.host);
 
 export const pool = new Pool(ADMIN_DATABASE_CONFIG);
 
@@ -23,7 +23,7 @@ export const db = drizzle({ client: pool, schema, logger: true });
 // Test the connection
 pool.connect()
   .then(client => {
-    console.log('Successfully connected to Admin Database');
+    console.log('Successfully connected to Admin Database (NeonDB)');
     client.release();
   })
   .catch(err => {

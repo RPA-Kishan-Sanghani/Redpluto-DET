@@ -27,11 +27,26 @@ Preferred communication style: Simple, everyday language.
 ## Data Storage Solutions
 - **PostgreSQL** as the primary database
 - **Drizzle ORM** for type-safe database operations and schema management
-- **Neon Database** serverless PostgreSQL for cloud deployment
-- Three main tables:
-  - `users` - User authentication and management
+- **NeonDB** serverless PostgreSQL for authentication and admin data
+  - Admin Database (NeonDB): Stores users, user_activity, and user_config_db_settings
+  - Location: ep-misty-mountain-afd65hmo.c-2.us-west-2.aws.neon.tech
+  - Database: neondb
+- User-configured external databases store application data:
   - `audit_table` - Pipeline execution tracking and metrics
   - `error_table` - Error logging and failure analysis
+  - Other pipeline-specific tables based on user configuration
+
+### Database Migration History
+- **October 22, 2025**: Migrated authentication system from external PostgreSQL (4.240.90.166) to NeonDB
+  - Migrated 4 users with bcrypt-hashed passwords
+  - Migrated user activity records and database configuration settings
+  - All credentials now stored securely in NeonDB
+
+### Security Considerations
+- ⚠️ **Production TODO**: Database credentials are currently hardcoded in `server/db.ts`
+- For production deployment, move credentials to environment variables or secret manager
+- User passwords are hashed using bcrypt (10 salt rounds) before storage
+- JWT tokens used for authentication (SECRET should be set via environment variable)
 
 ## Database Schema Design
 The audit table tracks comprehensive pipeline execution data including:
