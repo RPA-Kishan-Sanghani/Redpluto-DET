@@ -383,11 +383,20 @@ export type UserConfigDbSettings = typeof userConfigDbSettings.$inferSelect;
 export type InsertUserConfigDbSettings = z.infer<typeof insertUserConfigDbSettingsSchema>;
 export type UpdateUserConfigDbSettings = z.infer<typeof updateUserConfigDbSettingsSchema>;
 
-// User Activity table - tracks user sign in/sign out
+// User Activity table - comprehensive tracking of all user interactions
 export const userActivity = pgTable("user_activity", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
-  activityType: varchar("activity_type", { length: 50 }).notNull(), // 'sign_in', 'sign_out'
+  activityType: varchar("activity_type", { length: 100 }).notNull(), 
+  // Activity types: 'sign_in', 'sign_out', 'page_view', 'filter_applied', 
+  // 'config_updated', 'connection_created', 'connection_updated', 'connection_deleted',
+  // 'pipeline_viewed', 'data_quality_viewed', 'data_dictionary_viewed', 
+  // 'reconciliation_viewed', 'dashboard_viewed', 'settings_updated'
+  activityCategory: varchar("activity_category", { length: 50 }), // 'auth', 'navigation', 'data', 'config'
+  resourceType: varchar("resource_type", { length: 50 }), // 'connection', 'pipeline', 'filter', etc.
+  resourceId: varchar("resource_id", { length: 255 }), // ID of the resource being acted upon
+  actionDetails: text("action_details"), // JSON string with activity-specific details
+  pagePath: varchar("page_path", { length: 500 }), // Current page/route
   ipAddress: varchar("ip_address", { length: 100 }),
   userAgent: varchar("user_agent", { length: 500 }),
   timestamp: timestamp("timestamp").defaultNow(),

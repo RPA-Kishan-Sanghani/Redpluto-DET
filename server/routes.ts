@@ -7,6 +7,7 @@ import { insertUserSchema, insertSourceConnectionSchema, updateSourceConnectionS
 import { sql } from "drizzle-orm";
 import { generateToken, authMiddleware, type AuthRequest } from "./auth";
 import bcrypt from 'bcryptjs';
+import { trackActivity, trackFilterActivity, trackResourceActivity, ActivityType, ActivityCategory } from "./activity-tracker";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User registration endpoint
@@ -50,6 +51,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.logUserActivity({
           userId: user.id,
           activityType: 'sign_in',
+          activityCategory: 'auth',
+          pagePath: '/login',
           ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
           userAgent: req.headers['user-agent'] || 'unknown',
         });
@@ -77,6 +80,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.logUserActivity({
         userId,
         activityType: 'sign_out',
+        activityCategory: 'auth',
+        pagePath: req.originalUrl,
         ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
         userAgent: req.headers['user-agent'] || 'unknown',
       });
@@ -111,6 +116,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetTable: targetTable as string,
       };
 
+      // Track dashboard view with filters if applied
+      const hasFilters = search || system || layer || status || category || targetTable;
+      if (hasFilters) {
+        await trackFilterActivity(req, filters);
+      }
+      await trackActivity(req, {
+        activityType: ActivityType.DASHBOARD_VIEWED,
+        activityCategory: ActivityCategory.NAVIGATION,
+        resourceType: 'dashboard',
+        resourceId: 'metrics',
+      });
+
       const metrics = await storage.getDashboardMetrics(userId, dateRange, filters);
       res.json(metrics);
     } catch (error) {
@@ -141,6 +158,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         category: category as string,
         targetTable: targetTable as string,
       };
+
+      // Track dashboard pipeline summary view with filters if applied
+      try {
+        const hasFilters = search || system || layer || status || category || targetTable;
+        if (hasFilters) {
+          await trackFilterActivity(req, filters);
+        }
+        await trackActivity(req, {
+          activityType: ActivityType.DASHBOARD_VIEWED,
+          activityCategory: ActivityCategory.NAVIGATION,
+          resourceType: 'dashboard',
+          resourceId: 'pipeline-summary',
+        });
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
 
       const summary = await storage.getPipelineSummary(userId, dateRange, filters);
       res.json(summary);
@@ -272,6 +305,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const connections = await storage.getConnections(userId, filters);
+      
+      // Track view activity with filters if applied
+      try {
+        const hasFilters = category || search || status;
+        if (hasFilters) {
+          await trackFilterActivity(req, filters);
+        }
+        await trackActivity(req, {
+          activityType: ActivityType.CONNECTION_VIEWED,
+          activityCategory: ActivityCategory.NAVIGATION,
+          resourceType: 'connection',
+        });
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.json(connections);
     } catch (error) {
       console.error('Error fetching connections:', error);
@@ -303,6 +352,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.userId;
       const validatedData = insertSourceConnectionSchema.parse(req.body);
       const connection = await storage.createConnection(userId, validatedData);
+      
+      // Track connection creation
+      try {
+        await trackResourceActivity(req, 'created', 'connection', connection.connectionId?.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.status(201).json(connection);
     } catch (error: any) {
       console.error('Error creating connection:', error);
@@ -325,6 +382,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Connection not found' });
       }
 
+      // Track connection update
+      try {
+        await trackResourceActivity(req, 'updated', 'connection', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json(connection);
     } catch (error: any) {
       console.error('Error updating connection:', error);
@@ -344,6 +408,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!success) {
         return res.status(404).json({ error: 'Connection not found' });
+      }
+
+      // Track connection deletion
+      try {
+        await trackResourceActivity(req, 'deleted', 'connection', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
       }
 
       res.json({ success: true, message: 'Connection deleted successfully' });
@@ -370,6 +441,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('Error updating connection status:', updateError);
           // Don't fail the entire request if status update fails
         }
+      }
+
+      // Track connection test
+      try {
+        await trackResourceActivity(req, 'tested', 'connection', req.body.connectionId?.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
       }
 
       res.json(result);
@@ -506,6 +584,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const pipelines = await storage.getPipelines(userId, filters);
+      
+      // Track pipeline view with filters if applied
+      try {
+        const hasFilters = search || executionLayer || sourceSystem || status;
+        if (hasFilters) {
+          await trackFilterActivity(req, filters);
+        }
+        await trackActivity(req, {
+          activityType: ActivityType.PIPELINE_VIEWED,
+          activityCategory: ActivityCategory.NAVIGATION,
+          resourceType: 'pipeline',
+        });
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.json(pipelines);
     } catch (error) {
       console.error('Error fetching pipelines:', error);
@@ -557,6 +651,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.loadType = `${validatedData.loadType.toLowerCase()}_load`;
       }
       const pipeline = await storage.createPipeline(userId, validatedData);
+      
+      // Track pipeline creation
+      try {
+        await trackResourceActivity(req, 'created', 'pipeline', pipeline.configKey?.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.status(201).json(pipeline);
     } catch (error: any) {
       console.error('Error creating pipeline:', error);
@@ -599,6 +701,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Pipeline not found' });
       }
 
+      // Track pipeline update
+      try {
+        await trackResourceActivity(req, 'updated', 'pipeline', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json(pipeline);
     } catch (error: any) {
       console.error('Error updating pipeline:', error);
@@ -620,6 +729,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Pipeline not found' });
       }
 
+      // Track pipeline deletion
+      try {
+        await trackResourceActivity(req, 'deleted', 'pipeline', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json({ success: true, message: 'Pipeline deleted successfully' });
     } catch (error) {
       console.error('Error deleting pipeline:', error);
@@ -633,13 +749,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.userId;
       const { search, executionLayer, schemaName, tableName, sourceSystem } = req.query;
 
-      const entries = await storage.getDataDictionaryEntries(userId, {
+      const filters = {
         search: search as string,
         executionLayer: executionLayer as string,
         schemaName: schemaName as string,
         tableName: tableName as string,
         sourceSystem: sourceSystem as string
-      });
+      };
+
+      const entries = await storage.getDataDictionaryEntries(userId, filters);
+      
+      // Track data dictionary view with filters if applied
+      try {
+        const hasFilters = search || executionLayer || schemaName || tableName || sourceSystem;
+        if (hasFilters) {
+          await trackFilterActivity(req, filters);
+        }
+        await trackActivity(req, {
+          activityType: ActivityType.DATA_DICTIONARY_VIEWED,
+          activityCategory: ActivityCategory.NAVIGATION,
+          resourceType: 'data-dictionary',
+        });
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.json(entries);
     } catch (error) {
       console.error('Error fetching data dictionary entries:', error);
@@ -675,6 +809,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entry = await storage.createDataDictionaryEntry(userId, validatedData);
 
       console.log('Successfully saved to external database with ID:', entry.dataDictionaryKey);
+      
+      // Track data dictionary creation
+      try {
+        await trackResourceActivity(req, 'created', 'data-dictionary', entry.dataDictionaryKey?.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.status(201).json(entry);
     } catch (error) {
       console.error('Error creating data dictionary entry:', error);
@@ -712,6 +854,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
       }
 
+      // Track data dictionary update
+      try {
+        await trackResourceActivity(req, 'updated', 'data-dictionary', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json(entry);
     } catch (error) {
       console.error('Error updating data dictionary entry:', error);
@@ -727,6 +876,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!success) {
         return res.status(404).json({ error: 'Data dictionary entry not found' });
+      }
+
+      // Track data dictionary deletion
+      try {
+        await trackResourceActivity(req, 'deleted', 'data-dictionary', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
       }
 
       res.json({ success: true, message: 'Data dictionary entry deleted successfully' });
@@ -751,6 +907,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const configs = await storage.getReconciliationConfigs(userId, filters);
+      
+      // Track reconciliation view with filters if applied
+      try {
+        const hasFilters = search || executionLayer || configKey || reconType || status;
+        if (hasFilters) {
+          await trackFilterActivity(req, filters);
+        }
+        await trackActivity(req, {
+          activityType: ActivityType.RECONCILIATION_VIEWED,
+          activityCategory: ActivityCategory.NAVIGATION,
+          resourceType: 'reconciliation',
+        });
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.json(configs);
     } catch (error) {
       console.error('Error fetching reconciliation configs:', error);
@@ -822,6 +994,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.userId;
       const validatedData = insertReconciliationConfigSchema.parse(req.body);
       const config = await storage.createReconciliationConfig(userId, validatedData);
+      
+      // Track reconciliation creation
+      try {
+        await trackResourceActivity(req, 'created', 'reconciliation', config.reconKey?.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.status(201).json(config);
     } catch (error: any) {
       console.error('Error creating reconciliation config:', error);
@@ -843,6 +1023,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Reconciliation config not found' });
       }
 
+      // Track reconciliation update
+      try {
+        await trackResourceActivity(req, 'updated', 'reconciliation', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json(config);
     } catch (error: any) {
       console.error('Error updating reconciliation config:', error);
@@ -861,6 +1048,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!success) {
         return res.status(404).json({ error: 'Reconciliation config not found' });
+      }
+
+      // Track reconciliation deletion
+      try {
+        await trackResourceActivity(req, 'deleted', 'reconciliation', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
       }
 
       res.json({ success: true, message: 'Reconciliation config deleted successfully' });
@@ -885,6 +1079,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const configs = await storage.getDataQualityConfigs(userId, filters);
+      
+      // Track data quality view with filters if applied
+      try {
+        const hasFilters = search || executionLayer || configKey || validationType || status;
+        if (hasFilters) {
+          await trackFilterActivity(req, filters);
+        }
+        await trackActivity(req, {
+          activityType: ActivityType.DATA_QUALITY_VIEWED,
+          activityCategory: ActivityCategory.NAVIGATION,
+          resourceType: 'data-quality',
+        });
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.json(configs);
     } catch (error) {
       console.error('Error fetching data quality configs:', error);
@@ -916,6 +1126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertDataQualityConfigSchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       const config = await storage.createDataQualityConfig(userId, validatedData);
+      
+      // Track data quality creation
+      try {
+        await trackResourceActivity(req, 'created', 'data-quality', config.dataQualityKey?.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.status(201).json(config);
     } catch (error: any) {
       console.error('Error creating data quality config:', error);
@@ -938,6 +1156,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Data quality config not found' });
       }
 
+      // Track data quality update
+      try {
+        await trackResourceActivity(req, 'updated', 'data-quality', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json(config);
     } catch (error: any) {
       console.error('Error updating data quality config:', error);
@@ -956,6 +1181,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!success) {
         return res.status(404).json({ error: 'Data quality config not found' });
+      }
+
+      // Track data quality deletion
+      try {
+        await trackResourceActivity(req, 'deleted', 'data-quality', id.toString());
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
       }
 
       res.json({ success: true, message: 'Data quality config deleted successfully' });
@@ -1041,6 +1273,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Config database settings not found' });
       }
 
+      // Track settings update
+      try {
+        await trackResourceActivity(req, 'updated', 'settings');
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+
       res.json(updated);
     } catch (error) {
       console.error('Error updating user config DB settings:', error);
@@ -1052,6 +1291,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.userId;
       const result = await storage.testUserConfigDbConnection(req.body);
+      
+      // Track settings test
+      try {
+        await trackResourceActivity(req, 'tested', 'settings');
+      } catch (trackError) {
+        console.error('Failed to track activity:', trackError);
+      }
+      
       res.json(result);
     } catch (error) {
       console.error('Error testing connection:', error);
