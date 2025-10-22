@@ -22,7 +22,16 @@ export function useDashboardMetrics(dateRange?: DateRange, refreshKey?: number, 
       if (filters?.category) params.append('category', filters.category);
       if (filters?.targetTable) params.append('targetTable', filters.targetTable);
       
-      const response = await fetch(`/api/dashboard/metrics?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/dashboard/metrics?${params}`, {
+        headers,
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch metrics');
       return response.json();
     },
@@ -46,7 +55,16 @@ export function usePipelineSummary(dateRange?: DateRange, refreshKey?: number, f
       if (filters?.category) params.append('category', filters.category);
       if (filters?.targetTable) params.append('targetTable', filters.targetTable);
       
-      const response = await fetch(`/api/dashboard/pipeline-summary?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/dashboard/pipeline-summary?${params}`, {
+        headers,
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch pipeline summary');
       return response.json();
     },
@@ -94,7 +112,16 @@ export function usePipelineRuns(options: {
       if (options.filters?.category) params.append('category', options.filters.category);
       if (options.filters?.targetTable) params.append('targetTable', options.filters.targetTable);
       
-      const response = await fetch(`/api/dashboard/pipelines?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/dashboard/pipelines?${params}`, {
+        headers,
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch pipeline runs');
       return response.json();
     },
@@ -111,7 +138,17 @@ export function useErrors(dateRange?: DateRange, refreshKey?: number) {
         params.append('startDate', dateRange.start.toISOString());
         params.append('endDate', dateRange.end.toISOString());
       }
-      const response = await fetch(`/api/dashboard/errors?${params}`);
+      
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/dashboard/errors?${params}`, {
+        headers,
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch errors');
       return response.json();
     },

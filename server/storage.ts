@@ -2003,7 +2003,7 @@ export class DatabaseStorage implements IStorage {
 
       const query = `
         SELECT *
-        FROM reconciliation_config_table
+        FROM reconciliation_config
         ${whereClause}
         ORDER BY recon_key DESC
       `;
