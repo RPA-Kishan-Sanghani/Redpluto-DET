@@ -2300,34 +2300,80 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
-    let testPool: Pool | null = null;
+    // Detect database type based on port (3306 = MySQL, 5432 = PostgreSQL)
+    const isMySQL = settings.port === 3306;
+    const isPostgreSQL = settings.port === 5432;
     
-    try {
-      testPool = new Pool({
-        host: settings.host,
-        port: settings.port,
-        database: settings.database,
-        user: settings.username,
-        password: settings.password,
-        ssl: settings.sslEnabled || false,
-        connectionTimeoutMillis: settings.connectionTimeout || 10000,
-      });
-
-      await testPool.query('SELECT 1');
-      
-      return {
-        success: true,
-        message: 'Connection successful',
-      };
-    } catch (error: any) {
+    if (!isMySQL && !isPostgreSQL) {
       return {
         success: false,
-        message: 'Connection failed',
-        details: error.message,
+        message: 'Unsupported database port. Use 3306 for MySQL or 5432 for PostgreSQL.',
       };
-    } finally {
-      if (testPool) {
-        await testPool.end();
+    }
+
+    if (isMySQL) {
+      // Test MySQL connection
+      let connection = null;
+      
+      try {
+        connection = await mysql.createConnection({
+          host: settings.host,
+          port: settings.port,
+          database: settings.database,
+          user: settings.username,
+          password: settings.password,
+          ssl: settings.sslEnabled ? {} : undefined,
+          connectTimeout: settings.connectionTimeout || 10000,
+        });
+
+        await connection.query('SELECT 1');
+        
+        return {
+          success: true,
+          message: 'MySQL connection successful',
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          message: 'MySQL connection failed',
+          details: error.message,
+        };
+      } finally {
+        if (connection) {
+          await connection.end();
+        }
+      }
+    } else {
+      // Test PostgreSQL connection
+      let testPool: Pool | null = null;
+      
+      try {
+        testPool = new Pool({
+          host: settings.host,
+          port: settings.port,
+          database: settings.database,
+          user: settings.username,
+          password: settings.password,
+          ssl: settings.sslEnabled || false,
+          connectionTimeoutMillis: settings.connectionTimeout || 10000,
+        });
+
+        await testPool.query('SELECT 1');
+        
+        return {
+          success: true,
+          message: 'PostgreSQL connection successful',
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          message: 'PostgreSQL connection failed',
+          details: error.message,
+        };
+      } finally {
+        if (testPool) {
+          await testPool.end();
+        }
       }
     }
   }
