@@ -220,11 +220,11 @@ export function Pipelines() {
                         <CardDescription className="flex items-center space-x-4">
                           <span className="flex items-center">
                             <Database className="h-3 w-3 mr-1" />
-                            {pipeline.sourceSystem || 'Unknown'}
+                            {pipeline.sourceSystem ? pipeline.sourceSystem.charAt(0).toUpperCase() + pipeline.sourceSystem.slice(1) : 'Not Set'}
                           </span>
                           <span className="flex items-center">
                             <Settings className="h-3 w-3 mr-1" />
-                            {pipeline.loadType || 'N/A'}
+                            {pipeline.loadType ? pipeline.loadType.replace('_load', '').charAt(0).toUpperCase() + pipeline.loadType.replace('_load', '').slice(1) : 'N/A'}
                           </span>
                           <span className="flex items-center">
                             <Calendar className="h-3 w-3 mr-1" />
