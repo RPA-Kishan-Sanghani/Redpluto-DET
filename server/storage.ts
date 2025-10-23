@@ -1625,55 +1625,47 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    const userPool = userPoolResult.pool;
-    const client = await userPool.connect();
+    const { db: userDb } = userPoolResult;
     
     try {
-      // Build WHERE clause conditions
-      const whereClauses = [];
-      const params: any[] = [];
-      let paramIndex = 1;
+      // Build WHERE conditions using Drizzle ORM
+      const conditions = [];
 
       if (filters?.search) {
-        whereClauses.push(`source_table_name LIKE $${paramIndex}`);
-        params.push(`%${filters.search}%`);
-        paramIndex++;
+        conditions.push(ilike(configTable.sourceTableName, `%${filters.search}%`));
       }
 
       if (filters?.executionLayer && filters.executionLayer !== 'all') {
-        whereClauses.push(`LOWER(execution_layer) = LOWER($${paramIndex})`);
-        params.push(filters.executionLayer);
-        paramIndex++;
+        conditions.push(ilike(configTable.executionLayer, filters.executionLayer));
       }
 
       if (filters?.sourceSystem && filters.sourceSystem !== 'all') {
-        whereClauses.push(`LOWER(source_system) = LOWER($${paramIndex})`);
-        params.push(filters.sourceSystem);
-        paramIndex++;
+        conditions.push(ilike(configTable.sourceSystem, filters.sourceSystem));
       }
 
       if (filters?.status && filters.status !== 'all') {
-        whereClauses.push(`active_flag = $${paramIndex}`);
-        params.push(filters.status);
-        paramIndex++;
+        conditions.push(eq(configTable.activeFlag, filters.status));
       }
 
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-      const query = `
-        SELECT *
-        FROM config_table
-        ${whereClause}
-        ORDER BY created_at DESC
-      `;
-
-      const result = await client.query(query, params);
-      return result.rows;
+      // Execute query with Drizzle ORM (automatically converts snake_case to camelCase)
+      let result;
+      if (conditions.length > 0) {
+        result = await userDb
+          .select()
+          .from(configTable)
+          .where(and(...conditions))
+          .orderBy(desc(configTable.createdAt));
+      } else {
+        result = await userDb
+          .select()
+          .from(configTable)
+          .orderBy(desc(configTable.createdAt));
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error fetching pipelines:', error);
       throw new Error(`Failed to fetch pipelines: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      client.release();
     }
   }
 
