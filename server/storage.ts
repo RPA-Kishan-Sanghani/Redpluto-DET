@@ -893,14 +893,11 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    const userPool = userPoolResult.pool;
-    const client = await userPool.connect();
+    const { db: userDb } = userPoolResult;
     
     try {
-      // Build WHERE clause conditions
-      const whereClauses = [];
-      const params: any[] = [];
-      let paramIndex = 1;
+      // Build WHERE conditions using Drizzle ORM
+      const conditions = [];
 
       if (filters?.category && filters.category !== 'all') {
         const categoryMap: { [key: string]: string[] } = {
@@ -912,40 +909,37 @@ export class DatabaseStorage implements IStorage {
         };
 
         if (categoryMap[filters.category]) {
-          whereClauses.push(`connection_type = ANY($${paramIndex})`);
-          params.push(categoryMap[filters.category]);
-          paramIndex++;
+          conditions.push(inArray(sourceConnectionTable.connectionType, categoryMap[filters.category]));
         }
       }
 
       if (filters?.search) {
-        whereClauses.push(`connection_name LIKE $${paramIndex}`);
-        params.push(`%${filters.search}%`);
-        paramIndex++;
+        conditions.push(like(sourceConnectionTable.connectionName, `%${filters.search}%`));
       }
 
       if (filters?.status && filters.status !== 'all') {
-        whereClauses.push(`status = $${paramIndex}`);
-        params.push(filters.status);
-        paramIndex++;
+        conditions.push(eq(sourceConnectionTable.status, filters.status));
       }
 
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-      const query = `
-        SELECT *
-        FROM source_connection_table
-        ${whereClause}
-        ORDER BY created_at DESC
-      `;
-
-      const result = await client.query(query, params);
-      return result.rows;
+      // Execute query with Drizzle ORM (automatically converts snake_case to camelCase)
+      let result;
+      if (conditions.length > 0) {
+        result = await userDb
+          .select()
+          .from(sourceConnectionTable)
+          .where(and(...conditions))
+          .orderBy(desc(sourceConnectionTable.createdAt));
+      } else {
+        result = await userDb
+          .select()
+          .from(sourceConnectionTable)
+          .orderBy(desc(sourceConnectionTable.createdAt));
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error fetching connections:', error);
       throw new Error(`Failed to fetch connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      client.release();
     }
   }
 
