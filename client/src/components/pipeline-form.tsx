@@ -32,6 +32,16 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   // Helper function to format system names from database (lowercase) to display format
   const formatSystemName = (systemName: string | null | undefined): string | undefined => {
     if (!systemName) return undefined;
@@ -98,56 +108,56 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const { data: executionLayers = [] } = useQuery({
     queryKey: ['/api/metadata/execution_layer'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/execution_layer');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/execution_layer', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
   const { data: loadTypes = [] } = useQuery({
     queryKey: ['/api/metadata/load_type'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/load_type');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/load_type', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
   const { data: sourceSystems = [] } = useQuery({
     queryKey: ['/api/metadata/source_system'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/source_system');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/source_system', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
   const { data: sourceTypes = [] } = useQuery({
     queryKey: ['/api/metadata/source_type'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/source_type');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/source_type', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
   const { data: targetTypes = [] } = useQuery({
     queryKey: ['/api/metadata/target_type'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/target_type');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/target_type', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
   const { data: delimiters = [] } = useQuery({
     queryKey: ['/api/metadata/file_delimiter'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/file_delimiter');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/file_delimiter', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
   const { data: executionSequences = [] } = useQuery({
     queryKey: ['/api/metadata/execution_sequence'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/execution_sequence');
-      return response.json() as string[];
+      const response = await fetch('/api/metadata/execution_sequence', { headers: getAuthHeaders() });
+      return await response.json() as string[];
     }
   });
 
@@ -169,7 +179,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
   const { data: allSourceConnections = [] } = useQuery({
     queryKey: ['/api/connections'],
     queryFn: async () => {
-      const response = await fetch(`/api/connections`);
+      const response = await fetch(`/api/connections`, { headers: getAuthHeaders() });
       return await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
     }
   });
@@ -218,8 +228,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     queryKey: ['/api/connections', selectedConnectionId, 'schemas'],
     queryFn: async () => {
       if (!selectedConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedConnectionId}/schemas`);
-      return response.json() as string[];
+      const response = await fetch(`/api/connections/${selectedConnectionId}/schemas`, { headers: getAuthHeaders() });
+      return await response.json() as string[];
     },
     enabled: !!selectedConnectionId
   });
@@ -229,8 +239,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     queryKey: ['/api/connections', selectedConnectionId, 'schemas', selectedSchema, 'tables'],
     queryFn: async () => {
       if (!selectedConnectionId || !selectedSchema) return [];
-      const response = await fetch(`/api/connections/${selectedConnectionId}/schemas/${selectedSchema}/tables`);
-      return response.json() as string[];
+      const response = await fetch(`/api/connections/${selectedConnectionId}/schemas/${selectedSchema}/tables`, { headers: getAuthHeaders() });
+      return await response.json() as string[];
     },
     enabled: !!selectedConnectionId && !!selectedSchema
   });
@@ -274,8 +284,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
     queryFn: async () => {
       if (!selectedTargetConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
-      return response.json() as string[];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`, { headers: getAuthHeaders() });
+      return await response.json() as string[];
     },
     enabled: !!selectedTargetConnectionId
   });
@@ -285,8 +295,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
     queryFn: async () => {
       if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
-      return response.json() as string[];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`, { headers: getAuthHeaders() });
+      return await response.json() as string[];
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
@@ -299,8 +309,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'columns'],
     queryFn: async () => {
       if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns`);
-      return response.json() as string[];
+      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns`, { headers: getAuthHeaders() });
+      return await response.json() as string[];
     },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
@@ -339,6 +349,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
         method,
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(data)
       });
@@ -1540,8 +1551,8 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                         const { data: existingTempTables = [] } = useQuery({
                           queryKey: ['/api/temporary-tables'],
                           queryFn: async () => {
-                            const response = await fetch('/api/temporary-tables');
-                            return response.json() as string[];
+                            const response = await fetch('/api/temporary-tables', { headers: getAuthHeaders() });
+                            return await response.json() as string[];
                           }
                         });
 
