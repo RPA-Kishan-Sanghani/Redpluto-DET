@@ -1917,61 +1917,56 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    const userPool = userPoolResult.pool;
-    const client = await userPool.connect();
+    const { db: userDb } = userPoolResult;
     
     try {
-      // Build WHERE clause conditions
-      const whereClauses = [];
-      const params: any[] = [];
-      let paramIndex = 1;
+      // Build WHERE conditions using Drizzle ORM
+      const conditions = [];
 
       if (filters?.search) {
-        whereClauses.push(`(LOWER(source_table) LIKE LOWER($${paramIndex}) OR LOWER(target_table) LIKE LOWER($${paramIndex}))`);
-        params.push(`%${filters.search}%`);
-        paramIndex++;
+        conditions.push(
+          or(
+            ilike(reconciliationConfigTable.sourceTable, `%${filters.search}%`),
+            ilike(reconciliationConfigTable.targetTable, `%${filters.search}%`)
+          )
+        );
       }
 
       if (filters?.executionLayer && filters.executionLayer !== 'all') {
-        whereClauses.push(`LOWER(execution_layer) = LOWER($${paramIndex})`);
-        params.push(filters.executionLayer);
-        paramIndex++;
+        conditions.push(ilike(reconciliationConfigTable.executionLayer, filters.executionLayer));
       }
 
       if (filters?.configKey) {
-        whereClauses.push(`config_key = $${paramIndex}`);
-        params.push(filters.configKey);
-        paramIndex++;
+        conditions.push(eq(reconciliationConfigTable.configKey, filters.configKey));
       }
 
       if (filters?.reconType && filters.reconType !== 'all') {
-        whereClauses.push(`LOWER(recon_type) = LOWER($${paramIndex})`);
-        params.push(filters.reconType);
-        paramIndex++;
+        conditions.push(ilike(reconciliationConfigTable.reconType, filters.reconType));
       }
 
       if (filters?.status && filters.status !== 'all') {
-        whereClauses.push(`active_flag = $${paramIndex}`);
-        params.push(filters.status);
-        paramIndex++;
+        conditions.push(eq(reconciliationConfigTable.activeFlag, filters.status));
       }
 
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-      const query = `
-        SELECT *
-        FROM reconciliation_config
-        ${whereClause}
-        ORDER BY recon_key DESC
-      `;
-
-      const result = await client.query(query, params);
-      return result.rows;
+      // Execute query with Drizzle ORM (automatically converts snake_case to camelCase)
+      let result;
+      if (conditions.length > 0) {
+        result = await userDb
+          .select()
+          .from(reconciliationConfigTable)
+          .where(and(...conditions))
+          .orderBy(desc(reconciliationConfigTable.reconKey));
+      } else {
+        result = await userDb
+          .select()
+          .from(reconciliationConfigTable)
+          .orderBy(desc(reconciliationConfigTable.reconKey));
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error fetching reconciliation configs:', error);
       throw new Error(`Failed to fetch reconciliation configs: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      client.release();
     }
   }
 
@@ -2061,82 +2056,56 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    const userPool = userPoolResult.pool;
-    const client = await userPool.connect();
+    const { db: userDb } = userPoolResult;
     
     try {
-      // Build WHERE clause conditions
-      const whereClauses = [];
-      const params: any[] = [];
-      let paramIndex = 1;
+      // Build WHERE conditions using Drizzle ORM
+      const conditions = [];
 
       if (filters?.search) {
-        whereClauses.push(`(LOWER(table_name) LIKE LOWER($${paramIndex}) OR LOWER(attribute_name) LIKE LOWER($${paramIndex}))`);
-        params.push(`%${filters.search}%`);
-        paramIndex++;
+        conditions.push(
+          or(
+            ilike(dataQualityConfigTable.tableName, `%${filters.search}%`),
+            ilike(dataQualityConfigTable.attributeName, `%${filters.search}%`)
+          )
+        );
       }
 
       if (filters?.executionLayer && filters.executionLayer !== 'all') {
-        whereClauses.push(`LOWER(execution_layer) = LOWER($${paramIndex})`);
-        params.push(filters.executionLayer);
-        paramIndex++;
+        conditions.push(ilike(dataQualityConfigTable.executionLayer, filters.executionLayer));
       }
 
       if (filters?.configKey) {
-        whereClauses.push(`config_key = $${paramIndex}`);
-        params.push(filters.configKey);
-        paramIndex++;
+        conditions.push(eq(dataQualityConfigTable.configKey, filters.configKey));
       }
 
       if (filters?.validationType && filters.validationType !== 'all') {
-        whereClauses.push(`LOWER(validation_type) = LOWER($${paramIndex})`);
-        params.push(filters.validationType);
-        paramIndex++;
+        conditions.push(ilike(dataQualityConfigTable.validationType, filters.validationType));
       }
 
       if (filters?.status && filters.status !== 'all') {
-        whereClauses.push(`active_flag = $${paramIndex}`);
-        params.push(filters.status);
-        paramIndex++;
+        conditions.push(eq(dataQualityConfigTable.activeFlag, filters.status));
       }
 
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-      const query = `
-        SELECT 
-          data_quality_key,
-          config_key,
-          execution_layer,
-          table_name,
-          attribute_name,
-          validation_type,
-          reference_table_name,
-          default_value,
-          error_table_transfer_flag,
-          threshold_percentage,
-          active_flag,
-          custom_query
-        FROM data_quality_config_table
-        ${whereClause}
-        ORDER BY data_quality_key DESC
-      `;
-
-      const result = await client.query(query, params);
+      // Execute query with Drizzle ORM (automatically converts snake_case to camelCase)
+      let result;
+      if (conditions.length > 0) {
+        result = await userDb
+          .select()
+          .from(dataQualityConfigTable)
+          .where(and(...conditions))
+          .orderBy(desc(dataQualityConfigTable.dataQualityKey));
+      } else {
+        result = await userDb
+          .select()
+          .from(dataQualityConfigTable)
+          .orderBy(desc(dataQualityConfigTable.dataQualityKey));
+      }
       
-      // Add null values for the target fields for application compatibility
-      return result.rows.map(row => ({
-        ...row,
-        targetSystem: null,
-        targetConnectionId: null,
-        targetType: null,
-        targetSchema: null,
-        targetTableName: null,
-      }));
+      return result;
     } catch (error) {
       console.error('Error fetching data quality configs:', error);
       throw new Error(`Failed to fetch data quality configs: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      client.release();
     }
   }
 
