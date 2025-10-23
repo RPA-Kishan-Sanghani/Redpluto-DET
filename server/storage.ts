@@ -1749,104 +1749,80 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    const userPool = userPoolResult.pool;
-    const client = await userPool.connect();
+    const { db: userDb } = userPoolResult;
     
     try {
-      // Build WHERE clause conditions
-      const whereClauses = [];
-      const params: any[] = [];
-      let paramIndex = 1;
+      // Build WHERE conditions using Drizzle ORM
+      const conditions = [];
 
       if (filters?.search) {
-        whereClauses.push(`attribute_name LIKE $${paramIndex}`);
-        params.push(`%${filters.search}%`);
-        paramIndex++;
+        conditions.push(like(dataDictionaryTable.attributeName, `%${filters.search}%`));
       }
 
       if (filters?.executionLayer && filters.executionLayer !== 'all') {
-        whereClauses.push(`execution_layer = $${paramIndex}`);
-        params.push(filters.executionLayer);
-        paramIndex++;
+        conditions.push(eq(dataDictionaryTable.executionLayer, filters.executionLayer));
       }
 
       if (filters?.schemaName && filters.schemaName !== 'all') {
-        whereClauses.push(`schema_name = $${paramIndex}`);
-        params.push(filters.schemaName);
-        paramIndex++;
+        conditions.push(eq(dataDictionaryTable.schemaName, filters.schemaName));
       }
 
       if (filters?.tableName && filters.tableName !== 'all') {
-        whereClauses.push(`table_name = $${paramIndex}`);
-        params.push(filters.tableName);
-        paramIndex++;
+        conditions.push(eq(dataDictionaryTable.tableName, filters.tableName));
       }
 
       // Handle custom field filtering
       if (filters?.customField && filters?.customValue && filters.customField !== 'all') {
         switch (filters.customField) {
           case 'attributeName':
-            whereClauses.push(`attribute_name LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.attributeName, `%${filters.customValue}%`));
             break;
           case 'dataType':
-            whereClauses.push(`data_type LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.dataType, `%${filters.customValue}%`));
             break;
           case 'schemaName':
-            whereClauses.push(`schema_name LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.schemaName, `%${filters.customValue}%`));
             break;
           case 'tableName':
-            whereClauses.push(`table_name LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.tableName, `%${filters.customValue}%`));
             break;
           case 'columnDescription':
-            whereClauses.push(`column_description LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.columnDescription, `%${filters.customValue}%`));
             break;
           case 'createdBy':
-            whereClauses.push(`created_by LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.createdBy, `%${filters.customValue}%`));
             break;
           case 'updatedBy':
-            whereClauses.push(`updated_by LIKE $${paramIndex}`);
-            params.push(`%${filters.customValue}%`);
-            paramIndex++;
+            conditions.push(like(dataDictionaryTable.updatedBy, `%${filters.customValue}%`));
             break;
           case 'configKey':
             const configKeyValue = parseInt(filters.customValue);
             if (!isNaN(configKeyValue)) {
-              whereClauses.push(`config_key = $${paramIndex}`);
-              params.push(configKeyValue);
-              paramIndex++;
+              conditions.push(eq(dataDictionaryTable.configKey, configKeyValue));
             }
             break;
         }
       }
 
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-      const query = `
-        SELECT *
-        FROM data_dictionary_table
-        ${whereClause}
-        ORDER BY insert_date DESC
-      `;
-
-      const result = await client.query(query, params);
-      return result.rows;
+      // Execute query with Drizzle ORM (automatically converts snake_case to camelCase)
+      let result;
+      if (conditions.length > 0) {
+        result = await userDb
+          .select()
+          .from(dataDictionaryTable)
+          .where(and(...conditions))
+          .orderBy(desc(dataDictionaryTable.insertDate));
+      } else {
+        result = await userDb
+          .select()
+          .from(dataDictionaryTable)
+          .orderBy(desc(dataDictionaryTable.insertDate));
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error fetching data dictionary entries:', error);
       throw new Error(`Failed to fetch data dictionary entries: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      client.release();
     }
   }
 
