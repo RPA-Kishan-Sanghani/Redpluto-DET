@@ -285,7 +285,7 @@ export function Reconciliation() {
                                 </span>
                                 <span className="flex items-center">
                                   <Settings className="h-3 w-3 mr-1" />
-                                  {config.reconType.replace(/_/g, ' ')}
+                                  {config.reconType ? config.reconType.replace(/_/g, ' ') : 'N/A'}
                                 </span>
                                 {config.executionLayer && (
                                   <span className="flex items-center">

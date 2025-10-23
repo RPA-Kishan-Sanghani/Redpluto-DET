@@ -150,7 +150,7 @@ export function DataQuality() {
 
     return (
       <Badge variant={variants[validationType] || 'outline'}>
-        {validationType.replace('_', ' ')}
+        {validationType ? validationType.replace('_', ' ') : 'N/A'}
       </Badge>
     );
   };
@@ -283,7 +283,7 @@ export function DataQuality() {
                                   </span>
                                   <span className="flex items-center">
                                     <Settings className="h-3 w-3 mr-1" />
-                                    {config.validationType.replace('_', ' ')}
+                                    {config.validationType ? config.validationType.replace('_', ' ') : 'N/A'}
                                   </span>
                                   <span className="flex items-center">
                                     <Database className="h-3 w-3 mr-1" />
