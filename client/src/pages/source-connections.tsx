@@ -79,9 +79,19 @@ export default function SourceConnections() {
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await fetch(`/api/connections?${params}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/connections?${params}`, {
+        credentials: 'include',
+        headers,
+      });
       if (!response.ok) throw new Error('Failed to fetch connections');
-      return response.json() as SourceConnection[];
+      return (await response.json()) as SourceConnection[];
     },
   });
 
@@ -175,9 +185,10 @@ export default function SourceConnections() {
            { color: 'bg-gray-100 text-gray-800', icon: Settings };
   };
 
-  const getStatusInfo = (status: string) => {
-    const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'text-gray-600';
-    const Icon = STATUS_ICONS[status as keyof typeof STATUS_ICONS] || Clock;
+  const getStatusInfo = (status: string | null) => {
+    const statusKey = status || 'Pending';
+    const color = STATUS_COLORS[statusKey as keyof typeof STATUS_COLORS] || 'text-gray-600';
+    const Icon = STATUS_ICONS[statusKey as keyof typeof STATUS_ICONS] || Clock;
     return { color, Icon };
   };
 
