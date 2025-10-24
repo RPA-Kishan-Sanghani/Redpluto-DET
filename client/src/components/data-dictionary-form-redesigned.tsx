@@ -231,7 +231,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.sourceConnectionId, 'schemas'],
     queryFn: async () => {
       if (!watchedValues.sourceConnectionId) return [];
-      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas`, { headers });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
@@ -243,7 +248,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.sourceConnectionId, 'schemas', watchedValues.sourceSchemaName, 'tables'],
     queryFn: async () => {
       if (!watchedValues.sourceConnectionId || !watchedValues.sourceSchemaName) return [];
-      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables`, { headers });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
@@ -255,7 +265,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.targetConnectionId, 'schemas'],
     queryFn: async () => {
       if (!watchedValues.targetConnectionId) return [];
-      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas`, { headers });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
@@ -267,7 +282,12 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.targetConnectionId, 'schemas', watchedValues.targetSchemaName, 'tables'],
     queryFn: async () => {
       if (!watchedValues.targetConnectionId || !watchedValues.targetSchemaName) return [];
-      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables`, { headers });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
