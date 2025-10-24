@@ -36,6 +36,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type {
   ReconciliationConfig,
   InsertReconciliationConfig,
+  ConfigRecord,
 } from "@shared/schema";
 import {
   Database,
@@ -88,47 +89,31 @@ export function ReconciliationForm({
   const queryClient = useQueryClient();
 
   // Fetch metadata for dropdowns
-  const { data: executionLayers = [] } = useQuery({
+  const { data: executionLayers = [] } = useQuery<string[]>({
     queryKey: ["/api/metadata/execution_layer"],
-    queryFn: () =>
-      fetch("/api/metadata/execution_layer").then((res) => res.json()) as Promise<string[]>,
   });
 
-  const { data: reconTypes = [] } = useQuery({
+  const { data: reconTypes = [] } = useQuery<string[]>({
     queryKey: ["/api/metadata/recon_type"],
-    queryFn: () =>
-      fetch("/api/metadata/recon_type").then((res) => res.json()) as Promise<string[]>,
   });
 
-  const { data: activeFlags = [] } = useQuery({
+  const { data: activeFlags = [] } = useQuery<string[]>({
     queryKey: ["/api/metadata/active_flag"],
-    queryFn: () =>
-      fetch("/api/metadata/active_flag").then((res) => res.json()) as Promise<string[]>,
   });
 
-  const { data: sourceSystems = [] } = useQuery({
+  const { data: sourceSystems = [] } = useQuery<string[]>({
     queryKey: ["/api/metadata/source_system"],
-    queryFn: () =>
-      fetch("/api/metadata/source_system").then((res) => res.json()) as Promise<string[]>,
   });
 
-  const { data: sourceTypes = [] } = useQuery({
+  const { data: sourceTypes = [] } = useQuery<string[]>({
     queryKey: ["/api/metadata/source_type"],
-    queryFn: () =>
-      fetch("/api/metadata/source_type").then((res) => res.json()) as Promise<string[]>,
   });
 
   
 
   // Fetch the pipeline config to get source/target system info when editing
-  const { data: pipelineConfig } = useQuery({
+  const { data: pipelineConfig } = useQuery<ConfigRecord | null>({
     queryKey: ['/api/pipelines', config?.configKey],
-    queryFn: async () => {
-      if (!config?.configKey) return null;
-      const response = await fetch(`/api/pipelines/${config.configKey}`);
-      if (!response.ok) return null;
-      return await response.json();
-    },
     enabled: !!config?.configKey
   });
 
@@ -192,9 +177,8 @@ export function ReconciliationForm({
   }, [pipelineConfig, config, form]);
 
   // Fetch pipeline configs for the dropdown
-  const { data: configs = [] } = useQuery({
+  const { data: configs = [] } = useQuery<any[]>({
     queryKey: ["/api/pipelines"],
-    queryFn: () => fetch("/api/pipelines").then((res) => res.json()) as Promise<any[]>,
   });
 
   // Watch form values for dynamic dropdowns
@@ -207,15 +191,13 @@ export function ReconciliationForm({
   const selectedTargetTable = form.watch('targetTable');
 
   // Fetch connections filtered by source system
-  const { data: sourceConnections = [] } = useQuery({
-    queryKey: ['/api/connections', { sourceSystem: selectedSourceSystem }],
-    queryFn: async () => {
-      if (!selectedSourceSystem) return [];
-      const response = await fetch(`/api/connections`);
-      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+  const { data: allSourceConnections = [] } = useQuery<Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>>({
+    queryKey: ['/api/connections'],
+    enabled: !!selectedSourceSystem
+  });
 
-      // Filter connections by matching connection type with selected source system
-      return allConnections.filter(conn => 
+  const sourceConnections = selectedSourceSystem 
+    ? allSourceConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedSourceSystem.toLowerCase() ||
         (selectedSourceSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
         (selectedSourceSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
@@ -225,44 +207,30 @@ export function ReconciliationForm({
         (selectedSourceSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
         (selectedSourceSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
         (selectedSourceSystem === 'Salesforce' && conn.connectionType === 'API')
-      );
-    },
-    enabled: !!selectedSourceSystem
-  });
+      )
+    : [];
 
   // Fetch schemas for selected connection
-  const { data: sourceSchemas = [] } = useQuery({
+  const { data: sourceSchemas = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas'],
-    queryFn: async () => {
-      if (!selectedSourceConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
-      return response.json() as string[];
-    },
     enabled: !!selectedSourceConnectionId
   });
 
   // Fetch tables for selected connection and schema
-  const { data: sourceTables = [] } = useQuery({
+  const { data: sourceTables = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas', selectedSourceSchema, 'tables'],
-    queryFn: async () => {
-      if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
-      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
-      return response.json() as string[];
-    },
     enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
   });
 
   // Target configuration queries
   // Fetch target connections filtered by target system
-  const { data: targetConnections = [] } = useQuery({
-    queryKey: ['/api/connections', { targetSystem: selectedTargetSystem }],
-    queryFn: async () => {
-      if (!selectedTargetSystem) return [];
-      const response = await fetch(`/api/connections`);
-      const allConnections = await response.json() as Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>;
+  const { data: allTargetConnections = [] } = useQuery<Array<{ connectionId: number; connectionName: string; connectionType: string; status: string }>>({
+    queryKey: ['/api/connections'],
+    enabled: !!selectedTargetSystem
+  });
 
-      // Filter connections by matching connection type with selected target system
-      return allConnections.filter(conn => 
+  const targetConnections = selectedTargetSystem 
+    ? allTargetConnections.filter(conn => 
         conn.connectionType.toLowerCase() === selectedTargetSystem.toLowerCase() ||
         (selectedTargetSystem === 'SQL Server' && conn.connectionType === 'SQL Server') ||
         (selectedTargetSystem === 'MySQL' && conn.connectionType === 'MySQL') ||
@@ -272,41 +240,24 @@ export function ReconciliationForm({
         (selectedTargetSystem === 'MongoDB' && conn.connectionType === 'MongoDB') ||
         (selectedTargetSystem === 'BigQuery' && conn.connectionType === 'GCP') ||
         (selectedTargetSystem === 'Salesforce' && conn.connectionType === 'API')
-      );
-    },
-    enabled: !!selectedTargetSystem
-  });
+      )
+    : [];
 
   // Fetch target schemas for selected target connection
-  const { data: targetSchemas = [] } = useQuery({
+  const { data: targetSchemas = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
-      return response.json() as string[];
-    },
     enabled: !!selectedTargetConnectionId
   });
 
   // Fetch target tables for selected target connection and schema
-  const { data: targetTables = [] } = useQuery({
+  const { data: targetTables = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
-      return response.json() as string[];
-    },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
 
   // Fetch target table columns for selected target table
-  const { data: targetColumns = [] } = useQuery({
+  const { data: targetColumns = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables', selectedTargetTable, 'columns'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId || !selectedTargetSchema || !selectedTargetTable) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables/${selectedTargetTable}/columns`);
-      return response.json() as string[];
-    },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema && !!selectedTargetTable
   });
 
