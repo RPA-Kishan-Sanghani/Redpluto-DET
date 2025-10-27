@@ -231,12 +231,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.sourceConnectionId, 'schemas'],
     queryFn: async () => {
       if (!watchedValues.sourceConnectionId) return [];
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas`, { headers });
+      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas`, { 
+        headers: getAuthHeaders() 
+      });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
@@ -248,12 +245,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.sourceConnectionId, 'schemas', watchedValues.sourceSchemaName, 'tables'],
     queryFn: async () => {
       if (!watchedValues.sourceConnectionId || !watchedValues.sourceSchemaName) return [];
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables`, { headers });
+      const response = await fetch(`/api/connections/${watchedValues.sourceConnectionId}/schemas/${watchedValues.sourceSchemaName}/tables`, { 
+        headers: getAuthHeaders() 
+      });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
@@ -265,12 +259,9 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.targetConnectionId, 'schemas'],
     queryFn: async () => {
       if (!watchedValues.targetConnectionId) return [];
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas`, { headers });
+      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas`, { 
+        headers: getAuthHeaders() 
+      });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
@@ -282,18 +273,27 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     queryKey: ['/api/connections', watchedValues.targetConnectionId, 'schemas', watchedValues.targetSchemaName, 'tables'],
     queryFn: async () => {
       if (!watchedValues.targetConnectionId || !watchedValues.targetSchemaName) return [];
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables`, { headers });
+      const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables`, { 
+        headers: getAuthHeaders() 
+      });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     },
     enabled: !!watchedValues.targetConnectionId && !!watchedValues.targetSchemaName
   });
 
+
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
 
   // Auto-fetch metadata when target object is selected (only for Table type)
   useEffect(() => {
@@ -316,7 +316,10 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
       setIsLoadingMetadata(true);
       try {
-        const response = await fetch(`/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables/${watchedValues.targetTableName}/metadata`);
+        const response = await fetch(
+          `/api/connections/${watchedValues.targetConnectionId}/schemas/${watchedValues.targetSchemaName}/tables/${watchedValues.targetTableName}/metadata`,
+          { headers: getAuthHeaders() }
+        );
         if (!response.ok) throw new Error('Network response was not ok');
         const metadata = await response.json() as ColumnMetadata[];
 
