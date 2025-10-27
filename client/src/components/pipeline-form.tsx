@@ -1528,7 +1528,7 @@ export function PipelineForm({ pipeline, onSuccess, onCancel }: PipelineFormProp
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {executionSequences.filter(seq => seq !== 'NA').map((sequence) => (
+                              {executionSequences.map((sequence) => (
                                 <SelectItem key={sequence} value={sequence}>{sequence}</SelectItem>
                               ))}
                             </SelectContent>
