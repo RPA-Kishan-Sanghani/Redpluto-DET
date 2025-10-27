@@ -143,7 +143,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
       // Fetch the pipeline config using the configKey to get connection info
       const fetchConfigAndPopulate = async () => {
         try {
-          const configResponse = await fetch(`/api/pipelines/${entry.configKey}`);
+          const configResponse = await fetch(`/api/pipelines/${entry.configKey}`, { headers: getAuthHeaders() });
           if (!configResponse.ok) {
             throw new Error('Failed to fetch pipeline config');
           }
@@ -171,7 +171,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
           form.setValue('targetFileName', config.targetFilePath || "");
           
           // Fetch and populate column metadata from existing data dictionary entries
-          const dictResponse = await fetch('/api/data-dictionary');
+          const dictResponse = await fetch('/api/data-dictionary', { headers: getAuthHeaders() });
           if (dictResponse.ok) {
             const allEntries = await dictResponse.json();
             const tableColumns = allEntries
@@ -370,7 +370,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
           const response = await fetch(`/api/data-dictionary/${entry.dataDictionaryKey}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData),
           });
 
@@ -383,7 +383,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
         }
         
         // Fetch all existing data dictionary entries for this table
-        const existingEntriesResponse = await fetch('/api/data-dictionary');
+        const existingEntriesResponse = await fetch('/api/data-dictionary', { headers: getAuthHeaders() });
         if (!existingEntriesResponse.ok) {
           throw new Error('Failed to fetch existing entries');
         }
@@ -424,7 +424,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             // Update existing entry
             const response = await fetch(`/api/data-dictionary/${existingEntry.dataDictionaryKey}`, {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
               body: JSON.stringify(entryData),
             });
             
@@ -438,7 +438,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
             // Create new entry
             const response = await fetch('/api/data-dictionary', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
               body: JSON.stringify(entryData),
             });
             
@@ -476,7 +476,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
 
           return fetch('/api/data-dictionary', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData),
           }).then(async (response) => {
             if (!response.ok) {
