@@ -66,29 +66,24 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
   const queryClient = useQueryClient();
 
   // Fetch metadata for dropdowns
-  const { data: executionLayers = [] } = useQuery({
+  const { data: executionLayers = [] } = useQuery<string[]>({
     queryKey: ['/api/metadata/execution_layer'],
-    queryFn: () => fetch('/api/metadata/execution_layer').then(res => res.json()) as Promise<string[]>
   });
 
-  const { data: sourceSystems = [] } = useQuery({
+  const { data: sourceSystems = [] } = useQuery<string[]>({
     queryKey: ['/api/metadata/source_system'],
-    queryFn: () => fetch('/api/metadata/source_system').then(res => res.json()) as Promise<string[]>
   });
 
-  const { data: allConnections = [] } = useQuery({
+  const { data: allConnections = [] } = useQuery<any[]>({
     queryKey: ['/api/connections'],
-    queryFn: () => fetch('/api/connections').then(res => res.json()) as Promise<any[]>
   });
 
-  const { data: dataTypes = [] } = useQuery({
+  const { data: dataTypes = [] } = useQuery<string[]>({
     queryKey: ['/api/metadata/data_type'],
-    queryFn: () => fetch('/api/metadata/data_type').then(res => res.json()) as Promise<string[]>
   });
 
-  const { data: activeFlags = [] } = useQuery({
+  const { data: activeFlags = [] } = useQuery<string[]>({
     queryKey: ['/api/metadata/active_flag'],
-    queryFn: () => fetch('/api/metadata/active_flag').then(res => res.json()) as Promise<string[]>
   });
 
   const form = useForm<FormData>({
@@ -149,13 +144,8 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
   );
 
   // Fetch source schemas for selected source connection
-  const { data: sourceSchemas = [] } = useQuery({
+  const { data: sourceSchemas = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas'],
-    queryFn: async () => {
-      if (!selectedSourceConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas`);
-      return response.json() as string[];
-    },
     enabled: !!selectedSourceConnectionId
   });
 
@@ -163,24 +153,14 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
   const selectedSourceSchema = form.watch('sourceObject');
 
   // Fetch source tables/objects for selected source connection and schema
-  const { data: sourceObjects = [] } = useQuery({
+  const { data: sourceObjects = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedSourceConnectionId, 'schemas', selectedSourceSchema, 'tables'],
-    queryFn: async () => {
-      if (!selectedSourceConnectionId || !selectedSourceSchema) return [];
-      const response = await fetch(`/api/connections/${selectedSourceConnectionId}/schemas/${selectedSourceSchema}/tables`);
-      return response.json() as string[];
-    },
     enabled: !!selectedSourceConnectionId && !!selectedSourceSchema
   });
 
   // Fetch target schemas for selected target connection
-  const { data: targetSchemas = [] } = useQuery({
+  const { data: targetSchemas = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas`);
-      return response.json() as string[];
-    },
     enabled: !!selectedTargetConnectionId
   });
 
@@ -188,13 +168,8 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
   const selectedTargetSchema = form.watch('targetSchemaName');
 
   // Fetch target tables for selected target connection and schema
-  const { data: targetTables = [] } = useQuery({
+  const { data: targetTables = [] } = useQuery<string[]>({
     queryKey: ['/api/connections', selectedTargetConnectionId, 'schemas', selectedTargetSchema, 'tables'],
-    queryFn: async () => {
-      if (!selectedTargetConnectionId || !selectedTargetSchema) return [];
-      const response = await fetch(`/api/connections/${selectedTargetConnectionId}/schemas/${selectedTargetSchema}/tables`);
-      return response.json() as string[];
-    },
     enabled: !!selectedTargetConnectionId && !!selectedTargetSchema
   });
 
@@ -257,26 +232,14 @@ export function DataDictionaryForm({ entry, onSuccess, onCancel }: DataDictionar
 
       if (entry) {
         // Update existing entry
-        await fetch(`/api/data-dictionary/${entry.dataDictionaryKey}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submitData),
-        });
+        await apiRequest('PUT', `/api/data-dictionary/${entry.dataDictionaryKey}`, submitData);
         toast({
           title: 'Success',
           description: 'Data dictionary entry updated successfully',
         });
       } else {
         // Create new entry
-        const response = await fetch('/api/data-dictionary', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submitData),
-        });
+        const response = await apiRequest('POST', '/api/data-dictionary', submitData);
         
         if (!response.ok) {
           const errorData = await response.json();
