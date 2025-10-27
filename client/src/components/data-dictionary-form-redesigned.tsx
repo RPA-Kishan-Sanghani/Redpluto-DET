@@ -85,11 +85,23 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   // Watch form values for cascading dropdowns
   const watchedValues = form.watch();
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   // Fetch source and target types
   const { data: sourceTypes = [] } = useQuery({
     queryKey: ['/api/metadata/source_type'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/source_type');
+      const response = await fetch('/api/metadata/source_type', { headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     }
@@ -99,7 +111,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const { data: executionLayers = [] } = useQuery({
     queryKey: ['/api/metadata/execution_layer'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/execution_layer');
+      const response = await fetch('/api/metadata/execution_layer', { headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     }
@@ -109,7 +121,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const { data: sourceSystems = [] } = useQuery({
     queryKey: ['/api/metadata/source_system'],
     queryFn: async () => {
-      const response = await fetch('/api/metadata/source_system');
+      const response = await fetch('/api/metadata/source_system', { headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as string[];
     }
@@ -119,7 +131,7 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
   const { data: allConnections = [] } = useQuery({
     queryKey: ['/api/connections'],
     queryFn: async () => {
-      const response = await fetch('/api/connections');
+      const response = await fetch('/api/connections', { headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Network response was not ok');
       return await response.json() as any[];
     }
@@ -281,19 +293,6 @@ export function DataDictionaryFormRedesigned({ entry, onSuccess, onCancel }: Dat
     },
     enabled: !!watchedValues.targetConnectionId && !!watchedValues.targetSchemaName
   });
-
-
-  // Helper function to get auth headers
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  };
 
   // Auto-fetch metadata when target object is selected (only for Table type)
   useEffect(() => {
